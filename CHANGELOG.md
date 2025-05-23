@@ -1,6 +1,8 @@
 ## <small>0.0.2 (2025-05-23)</small>
 
+* refactor: fixed integration tests; ([529100d](https://github.com/EasyLayer/bitcoin-crawler/commit/529100d))
 * refactor: fixed integration tests; ([3c0d183](https://github.com/EasyLayer/bitcoin-crawler/commit/3c0d183))
+* release v0.0.2 ([bbfd506](https://github.com/EasyLayer/bitcoin-crawler/commit/bbfd506))
 * release v0.0.2 ([93f1feb](https://github.com/EasyLayer/bitcoin-crawler/commit/93f1feb))
 * release v0.0.2 ([45c7760](https://github.com/EasyLayer/bitcoin-crawler/commit/45c7760))
 * chore: base implementation; ([786e711](https://github.com/EasyLayer/bitcoin-crawler/commit/786e711))
