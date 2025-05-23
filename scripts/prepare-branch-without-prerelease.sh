@@ -42,7 +42,7 @@ echo "Setting package versions to: $version"
 
 if [[ "$version" == "release" ]]; then
   echo "🔄  Converting prerelease to release version"
-  ./node_modules/.bin/lerna version --no-prerelease --exact --yes --no-git-tag-version --no-push --force-publish=\*
+  ./node_modules/.bin/lerna version --exact --yes --no-git-tag-version --no-push --force-publish=\*
 else
   echo "🔄  Bumping version: $version"
   ./node_modules/.bin/lerna version $version --exact --yes --no-git-tag-version --no-push --force-publish=\*
@@ -61,18 +61,24 @@ echo "🔄  Injecting env variables into DOCS.md"
 ./node_modules/.bin/ts-node ./package/scripts/generate-docs.ts
 
 # Copy the main DOCS.md into docs/<version>.md
-DOCS_SRC="DOCS.md"
-DOCS_DST="docs/$version_num.md"
-echo "📚  Creating documentation file: $DOCS_DST"
-mkdir -p docs
-cp "$DOCS_SRC" "$DOCS_DST"
+DOCS_DIR="docs"
+DOCS_SRC="package/DOCS.md"
+DOCS_DEST="docs/v$version_num.md"
+
+# Ensure docs directory exists
+mkdir -p "$DOCS_DIR"
+
+# Copy and overwrite the versioned docs file
+cp "$DOCS_SRC" "$DOCS_DEST"
+echo "📄  Copied $DOCS_SRC to $DOCS_DEST"
 
 # Commit all changes in a single commit (version bump, CHANGELOG, docs)
 echo "🚀  Committing all changes"
 git add \
   yarn.lock \
+  lerna.json \
   CHANGELOG.md \
-  "$DOCS_DST" \
+  "$DOCS_DEST" \
   "$DOCS_SRC" \
   $(find . -name 'package.json' -not -path '*/node_modules/*')
 

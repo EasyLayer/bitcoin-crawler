@@ -1,25 +1,3 @@
-// import { v4 as uuidv4 } from 'uuid';
-import { EventStatus } from '@easylayer/common/cqrs';
-import { AGGREGATE_ID } from './blocks.model';
-
-export interface NetworkEventStoreRecord {
-  version: number;
-  requestId: string;
-  status: EventStatus;
-  type: string;
-  payload: Record<string, any>;
-  blockHeight: number;
-}
-
-export interface BlocksEventStoreRecord {
-  version: number;
-  requestId: string;
-  status: EventStatus;
-  type: string;
-  payload: Record<string, any>;
-  blockHeight: number;
-}
-
 export const mockBlocks = [
   {
     hash: '0000000000000000000000000000000000000000000000000000000000000001',
@@ -262,108 +240,24 @@ export const mockBlocks = [
   },
 ];
 
+// SQL mocks for table creation
 export const networkTableSQL = `
 CREATE TABLE IF NOT EXISTS network (
-  version     INTEGER PRIMARY KEY DEFAULT 0,
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
   requestId   VARCHAR        DEFAULT NULL,
-  status      TEXT           DEFAULT '${EventStatus.UNPUBLISHED}',
   type        VARCHAR        NOT NULL,
   payload     JSON           NOT NULL,
   blockHeight INTEGER        DEFAULT 0
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS UQ_network_v_reqid
-  ON network (version, requestId);
-CREATE INDEX IF NOT EXISTS IDX_network_blockh
-  ON network (blockHeight);
+CREATE INDEX IF NOT EXISTS IDX_network_blockh ON network (blockHeight);
 `;
 
-export const blocksTableSQL = `
-CREATE TABLE IF NOT EXISTS ${AGGREGATE_ID} (
-  version     INTEGER PRIMARY KEY DEFAULT 0,
+export const balanceTableSQL = `
+CREATE TABLE IF NOT EXISTS balance (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
   requestId   VARCHAR        DEFAULT NULL,
-  status      TEXT           DEFAULT '${EventStatus.UNPUBLISHED}',
   type        VARCHAR        NOT NULL,
   payload     JSON           NOT NULL,
   blockHeight INTEGER        DEFAULT 0
 );
-
-CREATE UNIQUE INDEX IF NOT EXISTS UQ_blocks_v_reqid
-  ON network (version, requestId);
-CREATE INDEX IF NOT EXISTS IDX_blocks_blockh
-  ON network (blockHeight);
 `;
-
-export const mockNetworks: NetworkEventStoreRecord[] = [
-  {
-    version: 1,
-    requestId: 'req-1',
-    status: EventStatus.PUBLISHED,
-    type: 'BitcoinNetworkInitializedEvent',
-    payload: {},
-    blockHeight: 0,
-  },
-  {
-    version: 2,
-    requestId: 'req-2',
-    status: EventStatus.PUBLISHED,
-    type: 'BitcoinNetworkBlocksAddedEvent',
-    payload: {
-      blocks: mockBlocks.map((block) => ({
-        height: block.height,
-        hash: block.hash,
-        previousblockhash: block.previousblockhash,
-        tx: block.tx.map((t: any) => t.txid),
-      })),
-    },
-    blockHeight: 2,
-  },
-];
-
-export const mockBlockModel: NetworkEventStoreRecord[] = [
-  {
-    version: 1,
-    requestId: 'req-1',
-    status: EventStatus.PUBLISHED,
-    type: 'BlockAddedEvent',
-    payload: {
-      block: {
-        height: mockBlocks[0]!.height,
-        hash: mockBlocks[0]!.hash,
-        previousblockhash: mockBlocks[0]!.previousblockhash,
-        tx: mockBlocks[0]!.tx.map((t: any) => t.txid),
-      },
-    },
-    blockHeight: 0,
-  },
-  {
-    version: 2,
-    requestId: 'req-2',
-    status: EventStatus.PUBLISHED,
-    type: 'BlockAddedEvent',
-    payload: {
-      block: {
-        height: mockBlocks[1]!.height,
-        hash: mockBlocks[1]!.hash,
-        previousblockhash: mockBlocks[1]!.previousblockhash,
-        tx: mockBlocks[1]!.tx.map((t: any) => t.txid),
-      },
-    },
-    blockHeight: 1,
-  },
-  {
-    version: 3,
-    requestId: 'req-3',
-    status: EventStatus.PUBLISHED,
-    type: 'BlockAddedEvent',
-    payload: {
-      block: {
-        height: mockBlocks[2]!.height,
-        hash: mockBlocks[2]!.hash,
-        previousblockhash: mockBlocks[2]!.previousblockhash,
-        tx: mockBlocks[2]!.tx.map((t: any) => t.txid),
-      },
-    },
-    blockHeight: 2,
-  },
-];

@@ -4,22 +4,26 @@ import { mockBlocks } from './mocks';
 BlockchainProviderService.prototype.getManyBlocksStatsByHeights = async function (
   heights: (string | number)[]
 ): Promise<any> {
-  return mockBlocks
+  const result = mockBlocks
     .filter((b) => heights.includes(b.height))
     .map((b) => ({
       blockhash: b.hash,
       total_size: 1,
       height: b.height,
     }));
+  return result;
 };
 
+// Mock implementation for getting blocks by hashes
 BlockchainProviderService.prototype.getManyBlocksByHashes = async function (hashes: string[]): Promise<any> {
-  // return mockBlocks.filter(b => hashes.includes(b.hash));
-  return hashes.map((hash) => {
+  const result = hashes.map((hash) => {
     const blk = mockBlocks.find((b) => b.hash === hash);
-    if (!blk) throw new Error(`No mock block for hash ${hash}`);
+    if (!blk) {
+      throw new Error(`No mock block for hash ${hash}`);
+    }
     return JSON.stringify(blk);
   });
+  return result;
 };
 
 BlockParserService['parseRawBlock'] = (raw: string, height: number) => {

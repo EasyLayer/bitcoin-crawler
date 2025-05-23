@@ -22,7 +22,7 @@ describe('/Bitcoin Crawler: HTTP Transport Checks(supertest)', () => {
 
   beforeAll(async () => {
     jest.resetModules();
-    jest.useFakeTimers({ advanceTimers: true });
+    jest.useRealTimers();
 
     // Load environment variables
     config({ path: resolve(process.cwd(), 'src/http-checks(supertest)/.env') });
@@ -85,12 +85,9 @@ describe('/Bitcoin Crawler: HTTP Transport Checks(supertest)', () => {
     if (appContext) {
       app = appContext;
     }
-
-    jest.runAllTimers();
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     if (dbService) {
       // eslint-disable-next-line no-console
       await dbService.close().catch(console.error);

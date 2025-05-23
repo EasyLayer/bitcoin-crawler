@@ -47,7 +47,7 @@ jobs:
       - name: Set environment variables
         run: |
           # Define the environment variables using GitHub Secrets
-          BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS="${{ secrets.BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS }}"
+          BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS="${{ secrets.NETWORK_PROVIDER_QUICK_NODE_URLS }}"
           # Add more variables here if needed
 
           # Find all .env files within the ./e2e-tests directory and its subdirectories
