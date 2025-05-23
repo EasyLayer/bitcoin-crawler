@@ -95,13 +95,17 @@ describe('/Bitcoin Crawler: IPC Transport Checks', () => {
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     if (dbService) {
       // eslint-disable-next-line no-console
       await dbService.close().catch(console.error);
     }
 
-    child.kill();
+    if (child) {
+      child.kill('SIGTERM');
+      await new Promise((resolve) => child.on('exit', resolve));
+    }
+
+    jest.useRealTimers();
   });
 
   it(`should return the full Network model at the latest block height`, async () => {

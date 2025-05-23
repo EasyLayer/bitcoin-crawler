@@ -8,7 +8,7 @@ import { cleanDataFolder } from '../+helpers/clean-data-folder';
 import type { BlockAddedEvent } from './blocks.model';
 import { mockBlocks, networkTableSQL, balanceTableSQL } from './mocks';
 
-describe('/Bitcoin Crawler: IPC Transport Checks', () => {
+describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
   let dbService!: SQLiteService;
   let child: ChildProcess;
   let client: Client;
@@ -98,11 +98,23 @@ describe('/Bitcoin Crawler: IPC Transport Checks', () => {
     // Close the write database connection after inserting events
     await dbService.close();
 
-    child.kill();
+    // Gracefully terminate child process
+    child.kill('SIGTERM');
+
+    // Wait for child process to exit
+    await new Promise<void>((resolve) => {
+      child.on('exit', () => {
+        resolve();
+      });
+    });
+
+    // Run any remaining timers
+    jest.runAllTimers();
   });
 
   afterAll(async () => {
     jest.useRealTimers();
+
     if (dbService) {
       // eslint-disable-next-line no-console
       await dbService.close().catch(console.error);
