@@ -57,10 +57,16 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
     const mockPath = resolve(process.cwd(), 'src/events-subscribe/app-mocks.ts');
 
     child = fork(appPath, [], {
-      execArgv: ['-r', 'ts-node/register', '-r', mockPath],
+      execArgv: ['-r', 'ts-node/register/transpile-only', '-r', mockPath],
       stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
       env: process.env,
     });
+
+    // child = fork(appPath, [], {
+    //   execArgv: ['-r', 'ts-node/register', '-r', mockPath],
+    //   stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+    //   env: process.env,
+    // });
 
     // Create a client with IPC transport
     client = new Client({
