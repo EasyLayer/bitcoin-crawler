@@ -26,7 +26,8 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
 
   beforeAll(async () => {
     jest.resetModules();
-    jest.useFakeTimers({ advanceTimers: true });
+    jest.useRealTimers();
+    // jest.useFakeTimers({ legacyFakeTimers: true });
 
     // Deferred factory
     const makeDeferred = () => {
@@ -75,8 +76,6 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
     // On the next attempt, two events arrive at once, so everything works correctly
     // but it’s important to keep this behavior in mind.
     client.subscribe('BlockAddedEvent', async ({ payload }: BlockAddedEvent) => {
-      // eslint-disable-next-line no-console
-      console.log('1EVENT\n');
       const p = JSON.stringify(payload.block).replace(/'/g, "''");
 
       await dbService.exec(`
@@ -95,17 +94,14 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
       }
     });
 
-    jest.runAllTimers();
-    // eslint-disable-next-line no-console
-    console.log('1LOG\n');
+    // jest.runAllTimers();
+
     // Wait until expected number of events handled
     await eventsDeferred.promise;
-    // eslint-disable-next-line no-console
-    console.log('2LOG\n');
+
     // Close the write database connection after inserting events
     await dbService.close();
-    // eslint-disable-next-line no-console
-    console.log('3LOG\n');
+
     // Gracefully terminate child process
     child.kill('SIGTERM');
 
@@ -115,10 +111,9 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
         resolve();
       });
     });
-    // eslint-disable-next-line no-console
-    console.log('4LOG\n');
+
     // Run any remaining timers
-    jest.runAllTimers();
+    // jest.runAllTimers();
   });
 
   afterAll(async () => {
