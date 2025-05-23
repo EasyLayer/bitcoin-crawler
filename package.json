@@ -1,0 +1,59 @@
+{
+  "name": "bitcoin",
+  "version": "0.0.0",
+  "description": "",
+  "author": "Yaroslav Pavliuk",
+  "license": "MIT with restrictions - see LICENSE file for details",
+  "private": true,
+  "packageManager": "yarn@4.5.0",
+  "type": "commonjs",
+  "workspaces": {
+    "packages": [
+      "examples/*",
+      "package",
+      "e2e-tests",
+      "integration-tests"
+    ]
+  },
+  "scripts": {
+    "clear": "lerna run clear:dist && lerna run clear:node_modules && rimraf node_modules && yarn cache clean --all",
+    "clear:node_modules": "lerna run  clear:node_modules && rimraf node_modules",
+    "clear:dist": "lerna run clear:dist",
+    "build:cjs": "tsc -b package/tsconfig.cjs.json",
+    "build:esm": "lerna run build:esm --stream",
+    "build": "yarn build:cjs && yarn build:esm",
+    "start:example:bitcoin-one-address-balance": "cd ./examples/bitcoin-one-address-balance && yarn start",
+    "test:unit": "lerna run test:unit --stream --",
+    "test:e2e": "lerna run test:e2e --stream",
+    "test:integration": "lerna run test:integration --stream",
+    "lint": "lerna run lint --stream",
+    "lint:fix": "lerna run lint:fix --stream",
+    "prepare": "husky install",
+    "pre-commit": "lerna run lint --stream && lerna run docs:check --stream",
+    "pre-push": "lerna run test:unit",
+    "commit": "cz",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1 -k lerna.json",
+    "docs:website:generate": "lerna run docs:website:generate --stream",
+    "docs:development:generate": "typedoc"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "18.4.3",
+    "@commitlint/config-conventional": "18.4.3",
+    "@eslint/eslintrc": "3.3.1",
+    "@eslint/js": "9.26.0",
+    "@typescript-eslint/eslint-plugin": "8.32.0",
+    "@typescript-eslint/parser": "8.32.0",
+    "commitizen": "4.3.0",
+    "conventional-changelog-cli": "5.0.0",
+    "cz-conventional-changelog": "3.3.0",
+    "eslint": "9.26.0",
+    "eslint-config-prettier": "10.1.5",
+    "eslint-plugin-prettier": "5.4.0",
+    "husky": "8.0.3",
+    "lerna": "8.0.0",
+    "prettier": "3.1.1",
+    "rimraf": "5.0.5",
+    "typedoc": "0.25.6",
+    "typescript": "5.3.3"
+  }
+}

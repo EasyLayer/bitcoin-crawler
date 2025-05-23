@@ -1,0 +1,12 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "out": "./typedoc",
+    "entryPoints": [
+        "package/*",
+    ],
+    "exclude": [],
+    "name": "EasyLayer Bitcoin Crawler Docs",
+    // "entryPointStrategy": "packages",
+    "includeVersion": true,
+    "readme": "none"
+}

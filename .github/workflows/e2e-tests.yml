@@ -1,0 +1,76 @@
+name: E2E Tests Workflow
+
+on:
+  pull_request:
+    branches: [master, development]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  all-in-one:
+    name: 'All-in-one (node: 22)'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Monorepo install
+        uses: ./.github/actions/yarn-nm-install
+
+      - name: Monorepo build
+        uses: ./.github/actions/run-build
+
+      - name: Install SQLite Dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+
+      # Recursively find and copy .env.example to .env for each test package
+      - name: Set up .env files for each e2e test package
+        run: |
+          find ./e2e-tests -type f -name ".env.example" | while read example_env; do
+            env_dir=$(dirname "$example_env")
+            cp "$example_env" "$env_dir/.env"
+          done
+        shell: bash
+
+      # Set multiple environment variables from GitHub Secrets
+      - name: Set environment variables
+        run: |
+          # Define the environment variables using GitHub Secrets
+          BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS="${{ secrets.BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS }}"
+          # Add more variables here if needed
+
+          # Find all .env files within the ./e2e-tests directory and its subdirectories
+          find ./e2e-tests -type f -name ".env" | while read env_file; do
+            echo "Processing $env_file"
+
+            # Update BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS
+            if grep -q "^BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS=" "$env_file"; then
+              # Replace the existing value of the variable
+              sed -i "s|^BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS=.*|BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS=${BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS}|" "$env_file"
+              echo "Updated BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS in $env_file"
+            else
+              # Add the variable if it does not exist
+              echo "BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS=${BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS}" >> "$env_file"
+              echo "Added BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS to $env_file"
+            fi
+
+            # Add more variables here following the same pattern if needed
+          done
+        shell: bash
+
+
+      # Run E2E tests
+      - name: 📥 Run E2E Tests
+        run: yarn test:e2e
+        shell: bash

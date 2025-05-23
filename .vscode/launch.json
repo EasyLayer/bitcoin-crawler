@@ -1,0 +1,75 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+          "name": "Debug E2E Tests",
+          "type": "node",
+          "runtimeVersion": "18.18.2",
+          "request": "launch",
+          "runtimeArgs": [
+            "--inspect-brk"
+          ],
+          "cwd": "${workspaceFolder}/e2e-tests",
+          "program": "${workspaceFolder}/node_modules/.bin/jest",
+          "args": [
+            "--runInBand",
+            "--config",
+            "./jest.config.mjs",
+            "--detectOpenHandles"
+          ],
+          "console": "integratedTerminal",
+          "internalConsoleOptions": "neverOpen",
+          "env": {
+            "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+          },
+          "windows": {
+            "program": "${workspaceFolder}/node_modules/jest/bin/jest"
+          }
+      },
+      {
+        "name": "Debug Integration Tests",
+        "type": "node",
+        "runtimeVersion": "18.18.2",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk"
+        ],
+        "cwd": "${workspaceFolder}/integration-tests",
+        "program": "${workspaceFolder}/node_modules/.bin/jest",
+        "args": [
+          "--runInBand",
+          "--config",
+          "./jest.config.mjs",
+          "--detectOpenHandles"
+        ],
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+        },
+        "windows": {
+          "program": "${workspaceFolder}/node_modules/jest/bin/jest"
+        }
+      },
+      {
+        "name": "Debug BTC One Address Balance",
+        "type": "node",
+        "runtimeVersion": "22.15.0",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk",
+          "-r",
+          "ts-node/register"
+        ],
+        "cwd": "${workspaceFolder}/examples/bitcoin-one-address-balance",
+        "program": "${workspaceFolder}/examples/bitcoin-one-address-balance/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/bitcoin-one-address-balance/.env",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/bitcoin-one-address-balance/tsconfig.json"
+        },
+      },
+    ]
+}
+  
