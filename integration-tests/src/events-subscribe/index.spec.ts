@@ -27,7 +27,7 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
   beforeAll(async () => {
     jest.resetModules();
     // jest.useRealTimers();
-    jest.useFakeTimers({ legacyFakeTimers: true });
+    jest.useFakeTimers({ advanceTimers: true });
 
     // Deferred factory
     const makeDeferred = () => {
@@ -61,12 +61,6 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
       stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
       env: process.env,
     });
-
-    // child = fork(resolve(process.cwd(), 'src/events-subscribe/app.ts'), [], {
-    //   execArgv: ['-r', 'ts-node/register', '-r', resolve(__dirname, 'app-mocks.ts')],
-    //   stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
-    //   env: process.env,
-    // });
 
     // Create a client with IPC transport
     client = new Client({
