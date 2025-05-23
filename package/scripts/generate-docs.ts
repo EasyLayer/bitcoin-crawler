@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 import { resolve } from 'node:path';
-import { readFileSync, writeFileSync, readdirSync, removeSync, ensureFileSync } from 'fs-extra';
+import { readFileSync, writeFileSync, readdirSync, removeSync, ensureFileSync, ensureDirSync } from 'fs-extra';
 import { spawnSync } from 'child_process';
 
 // 1. Generate JSON schemas into .tmp
@@ -35,7 +35,7 @@ const mdSections = files.map(file => {
 });
 
 // 3. Inject into DOCS.md between CONFIG-START / CONFIG-END
-const docsPath = 'DOCS.md';
+const docsPath = resolve(__dirname, '../DOCS.md');
 let docs = readFileSync(docsPath, 'utf8');
 const configBlock = `<!-- CONFIG-START -->
 ## Configuration Reference

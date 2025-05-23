@@ -61,7 +61,7 @@ echo "🔄  Injecting env variables into DOCS.md"
 ./node_modules/.bin/ts-node ./package/scripts/generate-docs.ts
 
 # Copy the main DOCS.md into docs/<version>.md
-DOCS_SRC="DOCS.md"
+DOCS_SRC="package/DOCS.md"
 DOCS_DST="docs/$version_num.md"
 echo "📚  Creating documentation file: $DOCS_DST"
 mkdir -p docs

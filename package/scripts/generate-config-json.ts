@@ -14,6 +14,7 @@ function generateConfigJson(outputFolder = '.tmp') {
     .filter(v => typeof v === 'function')
     .forEach((ConfigClass: ConfigConstructor) => {
       const schema = targetConstructorToSchema(ConfigClass as any);
+      
       if (!schema) {
         console.log(`⚠️  No schema for ${ConfigClass.name}, skipping.`);
         return;
