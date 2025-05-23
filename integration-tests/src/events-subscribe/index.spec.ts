@@ -9,7 +9,7 @@ import type { BlockAddedEvent } from './blocks.model';
 import { mockBlocks, networkTableSQL, balanceTableSQL } from './mocks';
 
 // Set timeout for all tests in this file
-jest.setTimeout(120000); // 2 minute
+jest.setTimeout(60000); // 1 minute
 
 describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
   let dbService!: SQLiteService;
@@ -53,11 +53,20 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
     await dbService.exec(networkTableSQL);
     await dbService.exec(balanceTableSQL);
 
-    child = fork(resolve(process.cwd(), 'src/events-subscribe/app.ts'), [], {
-      execArgv: ['-r', 'ts-node/register', '-r', resolve(__dirname, 'app-mocks.ts')],
+    const appPath = resolve(process.cwd(), 'src/events-subscribe/app.ts');
+    const mockPath = resolve(process.cwd(), 'src/events-subscribe/app-mocks.ts');
+
+    child = fork(appPath, [], {
+      execArgv: ['-r', 'ts-node/register', '-r', mockPath],
       stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
       env: process.env,
     });
+
+    // child = fork(resolve(process.cwd(), 'src/events-subscribe/app.ts'), [], {
+    //   execArgv: ['-r', 'ts-node/register', '-r', resolve(__dirname, 'app-mocks.ts')],
+    //   stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+    //   env: process.env,
+    // });
 
     // Create a client with IPC transport
     client = new Client({
@@ -96,8 +105,8 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
 
     jest.runAllTimers();
 
-    await Promise.resolve();
-    await new Promise<void>((r) => setImmediate(r));
+    // await Promise.resolve();
+    // await new Promise<void>((r) => setImmediate(r));
 
     // Wait until expected number of events handled
     await eventsDeferred.promise;
