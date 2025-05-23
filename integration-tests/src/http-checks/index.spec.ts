@@ -23,7 +23,7 @@ describe('/Bitcoin Crawler: HTTP Transport Checks', () => {
 
   beforeAll(async () => {
     jest.resetModules();
-    jest.useFakeTimers({ advanceTimers: true });
+    jest.useRealTimers();
 
     // Load environment variables
     config({ path: resolve(process.cwd(), 'src/http-checks/.env') });
@@ -93,12 +93,9 @@ describe('/Bitcoin Crawler: HTTP Transport Checks', () => {
         baseUrl: `http://${process.env.HTTP_HOST}:${process.env.HTTP_PORT}`,
       },
     });
-
-    jest.runAllTimers();
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     if (dbService) {
       // eslint-disable-next-line no-console
       await dbService.close().catch(console.error);

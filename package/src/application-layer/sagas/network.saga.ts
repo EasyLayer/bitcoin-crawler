@@ -19,11 +19,7 @@ export class NetworkSaga {
       executeWithRetry({
         event: BitcoinNetworkInitializedEvent,
         command: async ({ payload }: BitcoinNetworkInitializedEvent) => {
-          // eslint-disable-next-line no-console
-          console.log('BEFORE');
           await this.blocksQueueService.start(payload.blockHeight);
-          // eslint-disable-next-line no-console
-          console.log('AFTER');
         },
       })
     );
