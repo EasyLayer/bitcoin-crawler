@@ -670,7 +670,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@easylayer/bitcoin-crawler@npm:0.0.4, @easylayer/bitcoin-crawler@workspace:package":
+"@easylayer/bitcoin-crawler@npm:0.0.5, @easylayer/bitcoin-crawler@workspace:package":
   version: 0.0.0-use.local
   resolution: "@easylayer/bitcoin-crawler@workspace:package"
   dependencies:
@@ -3561,7 +3561,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "bitcoin-one-address-balance@workspace:examples/bitcoin-one-address-balance"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.4"
+    "@easylayer/bitcoin-crawler": "npm:0.0.5"
     "@easylayer/common": "npm:0.6.11"
     "@types/node": "npm:20.10.4"
     pg-query-stream: "npm:4.9.6"
@@ -5344,7 +5344,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "e2e-bitcoin-crawler@workspace:e2e-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.4"
+    "@easylayer/bitcoin-crawler": "npm:0.0.5"
     "@easylayer/common": "npm:0.6.11"
     "@types/jest": "npm:29.5.11"
     "@types/node": "npm:20.10.4"
@@ -7413,7 +7413,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "integration-crawler@workspace:integration-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.4"
+    "@easylayer/bitcoin-crawler": "npm:0.0.5"
     "@easylayer/common": "npm:0.6.11"
     "@easylayer/transport-sdk": "npm:1.0.15"
     "@types/jest": "npm:29.5.11"

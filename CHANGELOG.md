@@ -1,5 +1,6 @@
-## <small>0.0.4 (2025-05-23)</small>
+## <small>0.0.5 (2025-05-23)</small>
 
+* infra: fixed deployment scripts; ([7529adc](https://github.com/EasyLayer/bitcoin-crawler/commit/7529adc))
 * infra: fixed lerna scripts; ([b4ea5a0](https://github.com/EasyLayer/bitcoin-crawler/commit/b4ea5a0))
 * release v0.0.2 ([d827d35](https://github.com/EasyLayer/bitcoin-crawler/commit/d827d35))
 * release v0.0.2 ([1d6aca7](https://github.com/EasyLayer/bitcoin-crawler/commit/1d6aca7))
@@ -7,6 +8,7 @@
 * release v0.0.2 ([bbfd506](https://github.com/EasyLayer/bitcoin-crawler/commit/bbfd506))
 * release v0.0.2 ([93f1feb](https://github.com/EasyLayer/bitcoin-crawler/commit/93f1feb))
 * release v0.0.2 ([45c7760](https://github.com/EasyLayer/bitcoin-crawler/commit/45c7760))
+* release v0.0.4 ([b61744f](https://github.com/EasyLayer/bitcoin-crawler/commit/b61744f))
 * refactor: fixed integration tests; ([779feab](https://github.com/EasyLayer/bitcoin-crawler/commit/779feab))
 * refactor: fixed integration tests; ([529100d](https://github.com/EasyLayer/bitcoin-crawler/commit/529100d))
 * refactor: fixed integration tests; ([3c0d183](https://github.com/EasyLayer/bitcoin-crawler/commit/3c0d183))
