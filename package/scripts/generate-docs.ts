@@ -1,11 +1,11 @@
 #!/usr/bin/env ts-node
 import { resolve } from 'node:path';
-import { readFileSync, writeFileSync, readdirSync, removeSync, ensureFileSync, ensureDirSync } from 'fs-extra';
-import { spawnSync } from 'child_process';
+import { readFileSync, writeFileSync, readdirSync, removeSync } from 'fs-extra';
+import { generateConfigJson } from './generate-config-json';
 
 // 1. Generate JSON schemas into .tmp
 console.log('🔧 Generating config schemas…');
-spawnSync('ts-node', ['scripts/generate-config-json.ts', '.tmp'], { stdio: 'inherit' });
+generateConfigJson('.tmp');
 
 // 2. Read each .tmp/*.json and build Markdown tables
 const tmpDir = '.tmp';

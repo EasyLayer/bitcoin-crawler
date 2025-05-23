@@ -6,7 +6,7 @@ import * as currentConfigs from '../src/config';
 
 type ConfigConstructor = new (...args: any[]) => any;
 
-function generateConfigJson(outputFolder = '.tmp') {
+export function generateConfigJson(outputFolder = '.tmp') {
   // Clear or create the .tmp folder
   ensureDirSync(outputFolder);
 
@@ -40,6 +40,8 @@ function generateConfigJson(outputFolder = '.tmp') {
 }
 
 // CLI entrypoint
-const args = process.argv.slice(2);
-const outDir = args[0] || '.tmp';
-generateConfigJson(outDir);
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  const outDir = args[0] || '.tmp';
+  generateConfigJson(outDir);
+}
