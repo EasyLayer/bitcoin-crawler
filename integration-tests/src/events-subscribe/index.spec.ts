@@ -26,8 +26,8 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
 
   beforeAll(async () => {
     jest.resetModules();
-    // jest.useRealTimers();
-    jest.useFakeTimers({ advanceTimers: true });
+    jest.useRealTimers();
+    // jest.useFakeTimers({ advanceTimers: true });
 
     // Deferred factory
     const makeDeferred = () => {
@@ -103,7 +103,7 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
       }
     });
 
-    jest.runAllTimers();
+    // jest.runAllTimers();
 
     // await Promise.resolve();
     // await new Promise<void>((r) => setImmediate(r));
@@ -125,7 +125,7 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
     });
 
     // Run any remaining timers
-    jest.runAllTimers();
+    // jest.runAllTimers();
   });
 
   afterAll(async () => {
