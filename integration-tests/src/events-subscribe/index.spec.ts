@@ -77,7 +77,7 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
     // that the child sends them before the connection is fully established.
     // Because we immediately throw an error in that case, the first event is rejected.
     // On the next attempt, two events arrive at once, so everything works correctly
-    // but it’s important to keep this behavior in mind.
+    // but it's important to keep this behavior in mind.
     client.subscribe('BlockAddedEvent', async ({ payload }: BlockAddedEvent) => {
       const p = JSON.stringify(payload.block).replace(/'/g, "''");
 
