@@ -76,6 +76,7 @@ echo "📄  Copied $DOCS_SRC to $DOCS_DEST"
 echo "🚀  Committing all changes"
 git add \
   yarn.lock \
+  lerna.json \
   CHANGELOG.md \
   "$DOCS_DEST" \
   "$DOCS_SRC" \
