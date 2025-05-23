@@ -1,6 +1,3 @@
-// eslint-disable-next-line no-console
-console.log('[app-mocks] LOADED from', __filename);
-
 import { BlockchainProviderService, BlockParserService } from '@easylayer/bitcoin';
 import { mockBlocks } from './mocks';
 
