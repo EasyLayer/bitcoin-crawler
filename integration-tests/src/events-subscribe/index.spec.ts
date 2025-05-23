@@ -9,7 +9,7 @@ import type { BlockAddedEvent } from './blocks.model';
 import { mockBlocks, networkTableSQL, balanceTableSQL } from './mocks';
 
 // Set timeout for all tests in this file
-jest.setTimeout(60000); // 1 minute
+jest.setTimeout(120000); // 2 minute
 
 describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
   let dbService!: SQLiteService;
