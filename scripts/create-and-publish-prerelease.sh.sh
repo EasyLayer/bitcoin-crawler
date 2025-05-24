@@ -5,7 +5,10 @@ set -e
 
 # Ensure SUFFIX is provided (e.g., alpha, beta)
 SUFFIX="${SUFFIX:?Error: SUFFIX must be set (e.g., alpha, beta)}"
-echo "🛠  Prerelease starting with suffix: $SUFFIX"
+# Get version type (e.g., patch, minor or major)
+VERSION="${VERSION:?Error: VERSION must be set (e.g., patch, minor, major)}"
+
+echo "🛠  Prerelease starting with suffix: $SUFFIX and version type: $VERSION"
 
 git config user.name "github-actions"
 git config user.email "github-actions@github.com"
@@ -40,8 +43,8 @@ generate_changelog() {
 
 
 # Bump the prerelease version without creating a git tag or pushing
-echo "🔖  Bumping version: prerelease --preid $SUFFIX"
-./node_modules/.bin/lerna version prerelease \
+echo "🔖  Bumping version: $VERSION --preid $SUFFIX"
+./node_modules/.bin/lerna version "$VERSION" \
   --preid "$SUFFIX" \
   --yes \
   --no-push \

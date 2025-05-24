@@ -4,7 +4,7 @@
 set -e
 
 # Get version type (e.g., patch, minor or major)
-version=$VERSION
+VERSION="${VERSION:?Error: VERSION must be set (e.g., patch, minor, major)}"
 
 git config user.name "github-actions"
 git config user.email "github-actions@github.com"
@@ -38,13 +38,19 @@ generate_changelog() {
 # ────────────────────────────────────────────────────────────────────────────────
 
 # Update package versions (e.g., patch, minor or major)
-echo "Setting package versions to: $version"
+echo "Setting package versions to: $VERSION"
 
-if [[ "$version" == "release" ]]; then
-  echo "🔄  Converting prerelease to release version"
-  ./node_modules/.bin/lerna version --exact --yes --no-git-tag-version --no-push --force-publish=\*
+if [[ "$VERSION" == "release" ]]; then
+  # Extract the current prerelease version from lerna.json (e.g. "1.0.0-beta.3")
+  current_raw=$(jq -r '.version' lerna.json)
+
+  # Strip off any prerelease suffix to get the base version (e.g. "1.0.0")
+  release_version="${current_raw%%-*}"
+  echo "🚀 Converting prerelease $current_raw to final release version $release_version"
+
+  ./node_modules/.bin/lerna version $release_version --exact --yes --no-git-tag-version --no-push --force-publish=\*
 else
-  echo "🔄  Bumping version: $version"
+  echo "🔄  Bumping version: $VERSION"
   ./node_modules/.bin/lerna version $version --exact --yes --no-git-tag-version --no-push --force-publish=\*
 fi
 

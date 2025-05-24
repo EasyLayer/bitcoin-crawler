@@ -1,4 +1,4 @@
-name: 'Prepare Development Branch Without Prerelease Flow'
+name: 'Prepare Development Branch Before Release Flow'
 
 on:
   workflow_dispatch:
@@ -34,7 +34,7 @@ jobs:
 
       - name: Run Prepare Branch Script
         id: invoke_prepare
-        run: bash ./scripts/prepare-branch-without-prerelease.sh
+        run: bash ./scripts/prepare-branch-before-release.sh
         env:
           VERSION: ${{ github.event.inputs.version }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
