@@ -41,10 +41,18 @@ generate_changelog() {
 
 # ────────────────────────────────────────────────────────────────────────────────
 
+case "$VERSION" in
+  patch)      bump_type="prepatch"  ;;
+  minor)      bump_type="preminor"  ;;
+  major)      bump_type="premajor"  ;;
+  prerelease) bump_type="prerelease";;
+  *)          bump_type="$VERSION"   ;;
+esac
+
+echo "🔖 Bumping version type: $bump_type --preid $SUFFIX"
 
 # Bump the prerelease version without creating a git tag or pushing
-echo "🔖  Bumping version: $VERSION --preid $SUFFIX"
-./node_modules/.bin/lerna version "$VERSION" \
+./node_modules/.bin/lerna version "$bump_type" \
   --preid "$SUFFIX" \
   --yes \
   --no-push \

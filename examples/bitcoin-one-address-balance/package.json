@@ -1,7 +1,7 @@
 {
   "name": "bitcoin-one-address-balance",
   "private": true,
-  "version": "0.0.8",
+  "version": "0.0.10",
   "description": "This is an example app for development",
   "type": "commonjs",
   "scripts": {
@@ -10,7 +10,7 @@
     "start": "node --inspect -r ts-node/register src/main.ts"
   },
   "dependencies": {
-    "@easylayer/bitcoin-crawler": "0.0.8",
+    "@easylayer/bitcoin-crawler": "0.0.10",
     "@easylayer/common": "0.6.12",
     "pg-query-stream": "4.9.6"
   },

@@ -35,12 +35,6 @@ jobs:
       - name: Install dependencies in current repository
         uses: ./.github/actions/yarn-nm-install
 
-      - name: Get Version
-        id: get_version
-        run: |
-          VERSION=$(node -p "require('./lerna.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
       - name: Run Prerelease Publish Packages Script
         id: publish_prerelease
         run: bash ./scripts/create-and-publish-prerelease.sh
@@ -50,6 +44,12 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HUSKY: '0'
+      
+      - name: Get Bumped Version
+        id: get_bumped
+        run: |
+          VERSION=$(jq -r '.version' lerna.json)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
       
       - name: Create Git Tag if not exists
         run: |
