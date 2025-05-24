@@ -1,3 +1,11 @@
+## <small>0.0.9 (2025-05-24)</small>
+
+* infra: fixed prerelease script name; ([90a91b3](https://github.com/EasyLayer/bitcoin-crawler/commit/90a91b3))
+* infra: updated release workflows; ([818c8f8](https://github.com/EasyLayer/bitcoin-crawler/commit/818c8f8))
+* refactor: updated readme; ([25a5969](https://github.com/EasyLayer/bitcoin-crawler/commit/25a5969))
+
+
+
 ## <small>0.0.8 (2025-05-23)</small>
 
 * refactor: added debug logs into tests; ([db99e8c](https://github.com/EasyLayer/bitcoin-crawler/commit/db99e8c))
