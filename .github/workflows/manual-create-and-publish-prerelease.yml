@@ -3,6 +3,15 @@ name: 'Create & Publish Prerelease'
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'Version type to bump (patch, minor, major)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
       suffix:
         description: 'Version suffix for prerelease (e.g., alpha, beta)'
         required: true
@@ -26,11 +35,18 @@ jobs:
       - name: Install dependencies in current repository
         uses: ./.github/actions/yarn-nm-install
 
+      - name: Get Version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./lerna.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: Run Prerelease Publish Packages Script
         id: publish_prerelease
         run: bash ./scripts/create-and-publish-prerelease.sh
         env:
           SUFFIX: ${{ github.event.inputs.suffix }}
+          VERSION: ${{ github.event.inputs.version }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HUSKY: '0'
@@ -47,12 +63,6 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get Version
-        id: get_version
-        run: |
-          VERSION=$(node -p "require('./lerna.json').version")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Generate Release Notes from CHANGELOG.md
         id: notes
