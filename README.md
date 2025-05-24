@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@easylayer/bitcoin-crawler"><img alt="npm version" src="https://img.shields.io/npm/v/@easylayer/bitcoin-crawler.svg?style=flat-square"></a>
   <a href="https://www.npmjs.com/package/@easylayer/bitcoin-crawler"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@easylayer/bitcoin-crawler.svg?style=flat-square"></a>
-  <a href="https://github.com/easylayer/bitcoin-crawler/blob/master/package/LICENSE"><img alt="license" src="https://img.shields.io/github/license/easylayer/bitcoin-crawler?style=flat-square"></a>
+  <a href="https://github.com/easylayer/bitcoin-crawler/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/github/license/easylayer/bitcoin-crawler?style=flat-square"></a>
 </p>
 
 ---
