@@ -1,3 +1,9 @@
+## <small>0.0.10 (2025-05-24)</small>
+
+* refactor: added license into root folder; ([c05b4ad](https://github.com/EasyLayer/bitcoin-crawler/commit/c05b4ad))
+
+
+
 ## <small>0.0.10-alpha.0 (2025-05-24)</small>
 
 * infra: fixed prerelease script name; ([90a91b3](https://github.com/EasyLayer/bitcoin-crawler/commit/90a91b3))
