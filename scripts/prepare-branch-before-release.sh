@@ -51,7 +51,7 @@ if [[ "$VERSION" == "release" ]]; then
   ./node_modules/.bin/lerna version $release_version --exact --yes --no-git-tag-version --no-push --force-publish=\*
 else
   echo "🔄  Bumping version: $VERSION"
-  ./node_modules/.bin/lerna version $version --exact --yes --no-git-tag-version --no-push --force-publish=\*
+  ./node_modules/.bin/lerna version $VERSION --exact --yes --no-git-tag-version --no-push --force-publish=\*
 fi
 
 # Read the new version from lerna.json

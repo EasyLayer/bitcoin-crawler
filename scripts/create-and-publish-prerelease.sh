@@ -56,6 +56,7 @@ echo "🔖 Bumping version type: $bump_type --preid $SUFFIX"
   --preid "$SUFFIX" \
   --yes \
   --no-push \
+  --exact \
   --no-git-tag-version \
   --force-publish=*
 
