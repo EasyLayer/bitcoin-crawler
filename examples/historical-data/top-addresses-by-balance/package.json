@@ -1,5 +1,5 @@
 {
-  "name": "bitcoin-one-address-balance",
+  "name": "top-addresses-by-balance",
   "private": true,
   "version": "0.0.10",
   "description": "This is an example app for development",
@@ -11,8 +11,9 @@
   },
   "dependencies": {
     "@easylayer/bitcoin-crawler": "0.0.10",
-    "@easylayer/common": "0.6.12",
-    "pg-query-stream": "4.9.6"
+    "@easylayer/common": "0.9.1",
+    "@easylayer/transport-sdk": "1.1.1",
+    "uuid": "9.0.1"
   },
   "devDependencies": {
     "@types/node": "20.10.4",
@@ -27,7 +28,7 @@
     "uuid": "a2903462-4cbe-4a2f-9852-bf89714b5b13"
   },
   "engines": {
-    "node": ">=16.0.0 <=22.x.x",
+    "node": ">=17.0.0 <=22.x.x",
     "npm": ">=8.0.0"
   },
   "license": ""

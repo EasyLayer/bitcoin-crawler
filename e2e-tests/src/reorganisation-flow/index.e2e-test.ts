@@ -7,7 +7,6 @@ import {
   BitcoinNetworkBlocksAddedEvent,
   BitcoinNetworkReorganizedEvent,
   BlockchainProviderService,
-  BlockParserService,
 } from '@easylayer/bitcoin';
 import { SQLiteService } from '../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../+helpers/clean-data-folder';
@@ -27,25 +26,17 @@ jest
   });
 
 jest
-  .spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHashes')
-  .mockImplementation(async (hashes: string[]): Promise<string[]> => {
-    return hashes.map((hash) => {
-      const blk = mockFakeChainBlocks.find((b) => b.hash === hash);
-      if (!blk) throw new Error(`No mock block for hash ${hash}`);
-      return JSON.stringify(blk);
+  .spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHeights')
+  .mockImplementation(async (heights: any[]): Promise<any[]> => {
+    return heights.map((height) => {
+      const blk = mockFakeChainBlocks.find((b) => b.height === height);
+      if (!blk) throw new Error(`No mock block for hash ${height}`);
+      return blk;
     });
   });
 
-jest.spyOn(BlockParserService, 'parseRawBlock').mockImplementation((raw: string, height: number) => {
-  const blk = JSON.parse(raw);
-  if (blk.height !== height) {
-    throw new Error(`Height mismatch: ${blk.height} vs ${height}`);
-  }
-  return blk;
-});
-
 jest
-  .spyOn(BlockchainProviderService.prototype, 'getOneBlockByHeight')
+  .spyOn(BlockchainProviderService.prototype, 'getBasicBlockByHeight')
   .mockImplementation(async (height): Promise<any> => {
     return mockRealChainBlocks.find((block: any) => block.height === height);
   });
@@ -85,6 +76,7 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
 
   afterAll(async () => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
     if (dbService) {
       // eslint-disable-next-line no-console
       await dbService.close().catch(console.error);

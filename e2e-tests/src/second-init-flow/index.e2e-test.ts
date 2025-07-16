@@ -20,7 +20,7 @@ describe('/Bitcoin Crawler: Second Initializaton Flow', () => {
     jest.useFakeTimers({ advanceTimers: true });
 
     // Load environment variables
-    config({ path: resolve(process.cwd(), 'src/first-init-flow/.env') });
+    config({ path: resolve(process.cwd(), 'src/second-init-flow/.env') });
 
     // Clear the database
     await cleanDataFolder('eventstore');
@@ -69,6 +69,7 @@ describe('/Bitcoin Crawler: Second Initializaton Flow', () => {
 
   afterAll(async () => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
     if (dbService) {
       // eslint-disable-next-line no-console
       await dbService.close().catch(console.error);

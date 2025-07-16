@@ -13,6 +13,10 @@ echo "🛠  Prerelease starting with suffix: $SUFFIX and version type: $VERSION"
 git config user.name "github-actions"
 git config user.email "github-actions@github.com"
 
+# Fetch the latest commits and tags from main, then merge into current branch
+git fetch origin master --tags
+git merge --no-ff origin/master --no-edit
+
 # ────────────────────────────────────────────────────────────────────────────────
 # generate_changelog
 #
@@ -22,10 +26,6 @@ git config user.email "github-actions@github.com"
 # 3b. Otherwise, generate only the next release section (-r 1).
 # ────────────────────────────────────────────────────────────────────────────────
 generate_changelog() {
-  # Fetch the latest commits and tags from main, then merge into current branch
-  git fetch origin master --tags
-  git merge --no-ff origin/master --no-edit
-
   # Retrieve the latest semantic version tag
   local latest_tag
   latest_tag=$(git tag --list --sort=-version:refname | head -n1)
