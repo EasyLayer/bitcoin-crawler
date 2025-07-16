@@ -1,6 +1,6 @@
 {
     "name": "e2e-bitcoin-crawler",
-    "version": "0.0.10",
+    "version": "0.1.0",
     "description": "",
     "private": true,
     "type": "commonjs",
@@ -17,7 +17,7 @@
     "license": "",
     "packageManager": "yarn@4.5.0",
     "dependencies": {
-        "@easylayer/bitcoin-crawler": "0.0.10",
+        "@easylayer/bitcoin-crawler": "0.1.0",
         "@easylayer/common": "0.9.1",
         "dotenv": "16.4.5",
         "sqlite3": "5.1.7"

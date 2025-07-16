@@ -677,7 +677,33 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@easylayer/bitcoin-crawler@npm:0.0.10, @easylayer/bitcoin-crawler@workspace:package":
+"@easylayer/bitcoin-crawler@npm:0.0.10":
+  version: 0.0.10
+  resolution: "@easylayer/bitcoin-crawler@npm:0.0.10"
+  dependencies:
+    "@easylayer/bitcoin": "npm:0.6.12"
+    "@easylayer/common": "npm:0.6.12"
+    "@nestjs/common": "npm:10.2.10"
+    "@nestjs/core": "npm:10.2.10"
+    "@nestjs/microservices": "npm:10.2.10"
+    "@nestjs/platform-express": "npm:10.2.10"
+    check-node-version: "npm:4.2.1"
+    class-transformer: "npm:0.5.1"
+    class-transformer-validator: "npm:0.9.1"
+    class-validator: "npm:0.14.0"
+    class-validator-jsonschema: "npm:5.0.0"
+    commander: "npm:11.1.0"
+    dotenv: "npm:16.4.5"
+    fs-extra: "npm:11.2.0"
+    piscina: "npm:4.1.0"
+    reflect-metadata: "npm:0.1.14"
+    rxjs: "npm:7.8.1"
+    uuid: "npm:9.0.1"
+  checksum: 10/9b01846d151dd173645a38417e9b6e6e81f04d531c107fbe8f0752606a505913945471f71b1c133af2a3867f84eac59419e1d68333e594c45f7ce612242a0212
+  languageName: node
+  linkType: hard
+
+"@easylayer/bitcoin-crawler@npm:0.1.0, @easylayer/bitcoin-crawler@workspace:package":
   version: 0.0.0-use.local
   resolution: "@easylayer/bitcoin-crawler@workspace:package"
   dependencies:
@@ -716,6 +742,31 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@easylayer/bitcoin@npm:0.6.12":
+  version: 0.6.12
+  resolution: "@easylayer/bitcoin@npm:0.6.12"
+  dependencies:
+    "@easylayer/common": "npm:0.6.12"
+    "@nestjs/common": "npm:10.2.10"
+    "@nestjs/core": "npm:10.2.10"
+    "@nestjs/swagger": "npm:7.1.17"
+    async-mutex: "npm:0.5.0"
+    bip32: "npm:4.0.0"
+    bip39: "npm:3.1.0"
+    bitcoin-core: "npm:4.1.0"
+    bitcoinjs-lib: "npm:6.1.6"
+    ecpair: "npm:2.1.0"
+    lodash: "npm:4.17.21"
+    piscina: "npm:4.1.0"
+    reflect-metadata: "npm:0.1.14"
+    rxjs: "npm:7.8.1"
+    stream-json: "npm:1.8.0"
+    tiny-secp256k1: "npm:2.2.3"
+    uuid: "npm:9.0.1"
+  checksum: 10/10744b1733cf1c57011579c4bc0c221a02369d0cf1f3273f1c3e48ef77457a64abe3fe1d6d5eb0bdeaed148feb0997945ac57551192296f6afd70604f1972e3b
+  languageName: node
+  linkType: hard
+
 "@easylayer/bitcoin@npm:0.9.1":
   version: 0.9.1
   resolution: "@easylayer/bitcoin@npm:0.9.1"
@@ -739,6 +790,42 @@ __metadata:
     tiny-secp256k1: "npm:2.2.3"
     uuid: "npm:9.0.1"
   checksum: 10/68fae0afa3116c7068a2d1460c46e5ae6ea5c8951eaa9137dfc390a063ad8907ab4003d3b0fc64558665cb1309ac63eaa13efede6e711baac32c9141507408a2
+  languageName: node
+  linkType: hard
+
+"@easylayer/common@npm:0.6.12":
+  version: 0.6.12
+  resolution: "@easylayer/common@npm:0.6.12"
+  dependencies:
+    "@nestjs/common": "npm:10.2.10"
+    "@nestjs/core": "npm:10.2.10"
+    "@nestjs/cqrs": "npm:10.2.6"
+    "@nestjs/microservices": "npm:10.2.10"
+    "@nestjs/swagger": "npm:7.1.17"
+    "@nestjs/typeorm": "npm:10.0.2"
+    "@nestjs/websockets": "npm:10.2.10"
+    better-sqlite3: "npm:11.2.1"
+    better-sqlite3-multiple-ciphers: "npm:11.1.2"
+    bignumber.js: "npm:9.1.2"
+    bn.js: "npm:5.2.1"
+    bunyan: "npm:1.8.15"
+    chalk: "npm:4.1.2"
+    lodash: "npm:4.17.21"
+    p-queue: "npm:6.6.2"
+    pg: "npm:8.12.0"
+    pg-copy-streams: "npm:6.0.6"
+    pg-error-enum: "npm:0.7.1"
+    pg-query-stream: "npm:4.9.6"
+    piscina: "npm:4.1.0"
+    reflect-metadata: "npm:0.1.14"
+    rxjs: "npm:7.8.1"
+    socket.io: "npm:4.8.1"
+    sqlite3: "npm:5.1.7"
+    stream-json: "npm:1.8.0"
+    typeorm: "npm:0.3.20"
+    typeorm-transactional: "npm:0.5.0"
+    uuid: "npm:9.0.1"
+  checksum: 10/4eab6f058450f8c632c0857c1378d38649618c97a893dfc13a76409353f99be46ab4d9990ae7658e46929a3e62b7b01662700d9ca31296edcbe72e212d3268b4
   languageName: node
   linkType: hard
 
@@ -5537,7 +5624,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "e2e-bitcoin-crawler@workspace:e2e-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
+    "@easylayer/bitcoin-crawler": "npm:0.1.0"
     "@easylayer/common": "npm:0.9.1"
     "@types/jest": "npm:29.5.11"
     "@types/node": "npm:20.10.4"
@@ -7649,7 +7736,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "integration-crawler@workspace:integration-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
+    "@easylayer/bitcoin-crawler": "npm:0.1.0"
     "@easylayer/common": "npm:0.9.1"
     "@easylayer/transport-sdk": "npm:1.1.1"
     "@types/jest": "npm:29.5.11"
