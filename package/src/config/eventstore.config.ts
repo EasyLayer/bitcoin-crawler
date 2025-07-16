@@ -75,10 +75,10 @@ export class EventStoreConfig {
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
-    return n === 0 ? 0 : n || 50;
+    return n === 0 ? 0 : n || 1000;
   })
   @IsNumber()
-  BITCOIN_CRAWLER_EVENTSTORE_SNAPSHOT_INTERVAL: number = 50;
+  BITCOIN_CRAWLER_EVENTSTORE_SNAPSHOT_INTERVAL: number = 1000;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);

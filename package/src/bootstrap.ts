@@ -6,21 +6,16 @@ import type { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { NestFactory } from '@nestjs/core';
 import type { INestApplication, INestApplicationContext } from '@nestjs/common';
-import type { MicroserviceOptions } from '@nestjs/microservices';
-import { Transport } from '@nestjs/microservices';
-import { NestLogger } from '@easylayer/common/logger';
-import type { CustomEventBus } from '@easylayer/common/cqrs';
+import { NestLogger, AppLogger } from '@easylayer/common/logger';
+import type { CustomEventBus, IQueryHandler, IEventHandler } from '@easylayer/common/cqrs';
 import { CqrsModule } from '@easylayer/common/cqrs';
-import { BitcoinAppModule } from './app.module';
-import { AppConfig } from './config';
+import { AppModule } from './app.module';
 import type { ModelType } from './framework';
 
 interface BootstrapOptions {
   Models: ModelType[];
-  rpc?: boolean;
-  ws?: boolean;
-  tcp?: boolean;
-  ipc?: boolean;
+  QueryHandlers?: Array<new (...args: any[]) => IQueryHandler>;
+  EventHandlers?: Array<new (...args: any[]) => IEventHandler>;
   testing?: TestingOptions;
 }
 
@@ -36,78 +31,47 @@ interface EventWaiter<T = any> {
 
 export const bootstrap = async ({
   Models,
-  rpc,
-  ws,
-  tcp,
-  ipc,
+  QueryHandlers,
+  EventHandlers,
   testing = {},
-}: BootstrapOptions): Promise<INestApplicationContext | INestApplication | void> => {
-  // IMPORTANT: we use dotenv here to load envs globally.
-  // It has to be before importing all plugins.
+}: BootstrapOptions): Promise<INestApplicationContext | INestApplication> => {
+  // Load environment variables globally
   config({ path: resolve(process.cwd(), '.env') });
 
   const logger = new NestLogger();
 
   try {
-    // Register root application module
-    const rootModule = await BitcoinAppModule.register({ Models, ws, tcp, ipc });
+    // Register root application module with transport configurations
+    const rootModule = await AppModule.register({ Models, QueryHandlers, EventHandlers });
+
     let appContext: INestApplicationContext | INestApplication;
+    const httpPort = Number(process.env.HTTP_PORT ?? '0');
+    const wsPort = Number(process.env.WS_PORT ?? '0');
+    const hasNetworkTransports = httpPort > 0 || wsPort > 0;
+    const isTest = process?.env?.NODE_ENV === 'test';
 
-    // Determine transport mode flags
-    const isTcpOnly = !rpc && !ws && !!tcp && !ipc;
-    const isIpcOnly = !rpc && !ws && !tcp && !!ipc && !!process.send;
-    const isNoTransport = !rpc && !ws && !tcp && !ipc;
-
-    // Create appropriate Nest context
-    if (isTcpOnly) {
-      appContext = await NestFactory.createMicroservice<MicroserviceOptions>(rootModule, {
-        transport: Transport.TCP,
-        logger,
-      });
-    } else if (isIpcOnly || isNoTransport) {
+    if (!hasNetworkTransports) {
       appContext = await NestFactory.createApplicationContext(rootModule, { logger });
     } else {
       appContext = await NestFactory.create(rootModule, { logger });
     }
 
-    // Setup graceful shutdown handlers
-    setupGracefulShutdownHandlers(appContext, logger);
+    // Get logger and config from context
+    const customLogger = appContext.get(AppLogger);
 
-    // Retrieve AppConfig from context
-    const config = appContext.get(AppConfig);
+    // Setup graceful shutdown handlers only in non-test mode
+    if (!isTest) {
+      setupGracefulShutdownHandlers(appContext, customLogger);
+    }
 
     // Prepare test event subscribers if running in TEST mode
     let testPromises: Promise<void>[] = [];
-    if (config.isTEST()) {
+    if (isTest) {
       testPromises = setupTestEventSubscribers(appContext, testing);
     }
 
-    // Start transports
-    if (isTcpOnly) {
-      // Start pure TCP microservice
-      await (appContext as any).listen({
-        transport: Transport.TCP,
-        options: {
-          host: config.TCP_HOST,
-          port: config.TCP_PORT,
-        },
-      });
-      logger.log(`TCP microservice listening on ${config.TCP_HOST}:${config.TCP_PORT}`, 'Bootstrap');
-    } else if (isIpcOnly || isNoTransport) {
-      await appContext.init();
-    } else {
-      // Start HTTP/WS server
-      const app = appContext as INestApplication;
-      await app.listen(config.HTTP_PORT, config.HTTP_HOST);
-      logger.log(`HTTP server listening on ${config.HTTP_HOST}:${config.HTTP_PORT}`, 'Bootstrap');
-
-      // Optionally connect TCP microservice in hybrid mode
-      if (tcp) {
-        connectTcpMicroservice(app, logger, config);
-        await app.startAllMicroservices();
-        logger.log(`Hybrid TCP microservice started on ${config.TCP_HOST}:${config.TCP_PORT}`, 'Bootstrap');
-      }
-    }
+    // Initialize the application
+    await appContext.init();
 
     // If test subscribers exist, wait for events and then close
     if (testPromises.length > 0) {
@@ -116,10 +80,16 @@ export const bootstrap = async ({
       return appContext;
     }
 
-    // IMPORTANT: only for test mode
-    if (config.isTEST()) {
+    // Return context for test mode or keep running for production
+    if (isTest) {
       return appContext;
     }
+
+    // Application is running, transport modules have started their servers
+    customLogger.info('Application bootstrap completed');
+
+    // In production mode, keep the process running
+    return appContext;
   } catch (err) {
     logger.error(`Bootstrap failed: ${err}`, '', 'Bootstrap');
     process.exit(1);
@@ -127,20 +97,9 @@ export const bootstrap = async ({
 };
 
 /**
- * Connects a TCP microservice to an existing HTTP application (hybrid mode).
- */
-function connectTcpMicroservice(app: INestApplication, logger: NestLogger, config: AppConfig) {
-  app.connectMicroservice({
-    transport: Transport.TCP,
-    options: { host: config.TCP_HOST, port: config.TCP_PORT },
-  });
-  logger.log('Connected TCP microservice in hybrid mode', 'Bootstrap');
-}
-
-/**
  * Sets up graceful shutdown on SIGINT and SIGTERM.
  */
-function setupGracefulShutdownHandlers(app: INestApplicationContext | INestApplication, logger: NestLogger) {
+function setupGracefulShutdownHandlers(app: INestApplicationContext, logger: AppLogger) {
   process.on('SIGINT', () => gracefulShutdown(app, logger));
   process.on('SIGTERM', () => gracefulShutdown(app, logger));
 }
@@ -148,18 +107,17 @@ function setupGracefulShutdownHandlers(app: INestApplicationContext | INestAppli
 /**
  * Performs graceful shutdown of the application.
  */
-async function gracefulShutdown(app: INestApplicationContext | INestApplication, logger: NestLogger) {
-  logger.log('Graceful shutdown initiated...', 'Bootstrap');
+async function gracefulShutdown(app: INestApplicationContext, logger: AppLogger) {
+  logger.info('Graceful shutdown initiated...');
   setTimeout(async () => {
     try {
-      logger.log('Closing application...', 'Bootstrap');
+      logger.info('Closing application...');
       await app.close();
-    } catch (error) {
-      logger.error('Error during shutdown', '', 'Bootstrap');
-      process.exit(1);
-    } finally {
-      logger.log('Application closed successfully.', 'Bootstrap');
+      logger.info('Application closed successfully.');
       process.exit(0);
+    } catch (error) {
+      logger.error('Error during shutdown', { args: { error } });
+      process.exit(1);
     }
   }, 0);
 }
@@ -167,10 +125,7 @@ async function gracefulShutdown(app: INestApplicationContext | INestApplication,
 /**
  * Prepares Promises that resolve when specified events are processed by handlers or sagas.
  */
-function setupTestEventSubscribers(
-  app: INestApplicationContext | INestApplication,
-  testing: TestingOptions
-): Promise<void>[] {
+function setupTestEventSubscribers(app: INestApplicationContext, testing: TestingOptions): Promise<void>[] {
   const cqrs: any = app.get(CqrsModule);
   const eventBus = cqrs.eventBus as CustomEventBus;
 

@@ -9,6 +9,10 @@ VERSION="${VERSION:?Error: VERSION must be set (e.g., patch, minor, major)}"
 git config user.name "github-actions"
 git config user.email "github-actions@github.com"
 
+# Fetch the latest commits and tags from main, then merge into current branch
+git fetch origin master --tags
+git merge --no-ff origin/master --no-edit
+
 # ────────────────────────────────────────────────────────────────────────────────
 # generate_changelog
 #
@@ -18,10 +22,6 @@ git config user.email "github-actions@github.com"
 # 3b. Otherwise, generate only the next release section (-r 1).
 # ────────────────────────────────────────────────────────────────────────────────
 generate_changelog() {
-  # Fetch the latest commits and tags from main, then merge into current branch
-  git fetch origin master --tags
-  git merge --no-ff origin/master --no-edit
-
   # Retrieve the latest semantic version tag
   local latest_tag
   latest_tag=$(git tag --list --sort=-version:refname | head -n1)
@@ -51,7 +51,7 @@ if [[ "$VERSION" == "release" ]]; then
   ./node_modules/.bin/lerna version $release_version --exact --yes --no-git-tag-version --no-push --force-publish=\*
 else
   echo "🔄  Bumping version: $VERSION"
-  ./node_modules/.bin/lerna version $version --exact --yes --no-git-tag-version --no-push --force-publish=\*
+  ./node_modules/.bin/lerna version $VERSION --exact --yes --no-git-tag-version --no-push --force-publish=\*
 fi
 
 # Read the new version from lerna.json

@@ -1,6 +1,6 @@
 {
     "name": "integration-crawler",
-    "version": "0.0.10",
+    "version": "0.1.1",
     "description": "",
     "private": true,
     "type": "commonjs",
@@ -17,9 +17,9 @@
     "license": "",
     "packageManager": "yarn@4.5.0",
     "dependencies": {
-        "@easylayer/bitcoin-crawler": "0.0.10",
-        "@easylayer/common": "0.6.12",
-        "@easylayer/transport-sdk": "1.0.15",
+        "@easylayer/bitcoin-crawler": "0.1.1",
+        "@easylayer/common": "0.9.1",
+        "@easylayer/transport-sdk": "1.1.1",
         "dotenv": "16.4.5",
         "sqlite3": "5.1.7",
         "supertest": "7.0.0",

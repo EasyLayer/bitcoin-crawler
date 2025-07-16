@@ -1,9 +1,11 @@
+import type { NetworkConfig } from '@easylayer/bitcoin';
 import { AggregateRoot } from '@easylayer/common/cqrs';
 
 export type ModelType = new () => Model;
 
 interface Parameters {
   block: any;
+  networkConfig: NetworkConfig;
   services?: any;
 }
 

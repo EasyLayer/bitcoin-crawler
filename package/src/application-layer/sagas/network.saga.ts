@@ -1,4 +1,4 @@
-// import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Saga, ICommand, executeWithRetry } from '@easylayer/common/cqrs';
@@ -7,11 +7,28 @@ import {
   BitcoinNetworkInitializedEvent,
   BitcoinNetworkBlocksAddedEvent,
   BitcoinNetworkReorganizedEvent,
+  BitcoinNetworkClearedEvent,
 } from '@easylayer/bitcoin';
+import { NetworkCommandFactoryService } from '../services';
 
 @Injectable()
 export class NetworkSaga {
-  constructor(private readonly blocksQueueService: BlocksQueueService) {}
+  constructor(
+    private readonly blocksQueueService: BlocksQueueService,
+    private readonly networkCommandFactory: NetworkCommandFactoryService
+  ) {}
+
+  @Saga()
+  onBitcoinNetworkClearedEvent(events$: Observable<any>): Observable<ICommand> {
+    return events$.pipe(
+      executeWithRetry({
+        event: BitcoinNetworkClearedEvent,
+        command: async ({ payload }: BitcoinNetworkClearedEvent) => {
+          await this.networkCommandFactory.init({ requestId: uuidv4() });
+        },
+      })
+    );
+  }
 
   @Saga()
   onBitcoinNetworkInitializedEvent(events$: Observable<any>): Observable<ICommand> {
