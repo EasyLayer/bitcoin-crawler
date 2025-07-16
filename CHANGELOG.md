@@ -1,3 +1,8 @@
+## <small>0.1.1 (2025-07-16)</small>
+
+
+
+
 ## <small>0.1.1-alpha.0 (2025-07-16)</small>
 
 * release v0.1.0 ([a56a42e](https://github.com/EasyLayer/bitcoin-crawler/commit/a56a42e))
