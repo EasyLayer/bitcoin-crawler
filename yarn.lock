@@ -703,7 +703,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@easylayer/bitcoin-crawler@npm:0.1.1, @easylayer/bitcoin-crawler@workspace:package":
+"@easylayer/bitcoin-crawler@npm:0.1.2-alpha.0, @easylayer/bitcoin-crawler@workspace:package":
   version: 0.0.0-use.local
   resolution: "@easylayer/bitcoin-crawler@workspace:package"
   dependencies:
@@ -5624,7 +5624,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "e2e-bitcoin-crawler@workspace:e2e-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.1.1"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2-alpha.0"
     "@easylayer/common": "npm:0.9.1"
     "@types/jest": "npm:29.5.11"
     "@types/node": "npm:20.10.4"
@@ -7736,7 +7736,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "integration-crawler@workspace:integration-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.1.1"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2-alpha.0"
     "@easylayer/common": "npm:0.9.1"
     "@easylayer/transport-sdk": "npm:1.1.1"
     "@types/jest": "npm:29.5.11"
