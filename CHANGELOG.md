@@ -1,3 +1,14 @@
+## <small>0.1.2 (2025-07-16)</small>
+
+
+
+
+## <small>0.1.2-alpha.0 (2025-07-16)</small>
+
+* infra: fixed github releases workflows; ([5e8f03a](https://github.com/EasyLayer/bitcoin-crawler/commit/5e8f03a))
+
+
+
 ## <small>0.1.1 (2025-07-16)</small>
 
 
