@@ -86,33 +86,38 @@ jobs:
             END_PATTERN="^## <small>"
           elif grep -q "^## ${VERSION} " CHANGELOG.md; then
             echo "Found prerelease minor/major version format without <small> tags"
-            TAG_HEADER="## ${VERSION} "  
+            TAG_HEADER="## ${VERSION} "
             END_PATTERN="^## "
           else
-            echo "❌ Could not find changelog section for prerelease version ${VERSION}"
-            echo "Available changelog sections:"
-            grep "^## " CHANGELOG.md | head -5
-            exit 1
+            echo "⚠️  Could not find changelog section for prerelease version ${VERSION}"
+            TAG_HEADER=""
+            END_PATTERN=""
           fi
           
           # Extract release notes between current version header and next version header
-          NOTES=$(sed -n "/^${TAG_HEADER}/,/${END_PATTERN}/p" CHANGELOG.md \
-            | sed '1d;$d' \
-            | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-          
-          if [ -z "$NOTES" ]; then
-            echo "❌ Could not extract release notes for prerelease version ${VERSION}"
-            exit 1
+          if [ -n "$TAG_HEADER" ]; then
+            NOTES=$(sed -n "/^${TAG_HEADER}/,/${END_PATTERN}/p" CHANGELOG.md \
+              | sed '1d;$d' \
+              | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          else
+            NOTES=""
           fi
           
-          echo "✅ Successfully extracted prerelease notes"
-          echo "Release notes preview:"
-          echo "$NOTES" | head -3
+          # If it's empty, it's not an error, but a default.
+          if [ -z "$NOTES" ]; then
+            echo "⚠️  No prerelease notes found for $VERSION; proceeding with default body."
+            NOTES="(no changelog for this prerelease)"
+          else
+            echo "✅ Successfully extracted prerelease notes"
+            echo "Release notes preview:"
+            echo "$NOTES" | head -3
+          fi
           
           # Set output for next step
           echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES"    >> $GITHUB_OUTPUT
+          echo "EOF"       >> $GITHUB_OUTPUT
+
       
       - name: Create GitHub Prerelease
         uses: actions/create-release@v1

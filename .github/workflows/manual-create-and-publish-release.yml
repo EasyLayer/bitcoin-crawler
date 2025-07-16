@@ -50,42 +50,44 @@ jobs:
           VERSION="${{ env.VERSION }}"
           echo "Looking for changelog section for version: $VERSION"
           
-          # Check for different header formats in CHANGELOG.md
-          # For patch versions: ## <small>0.6.21 (2025-06-15)</small>
-          # For minor/major versions: ## 0.7.0 (2025-06-15)
+          # Select the header format
           if grep -q "^## <small>${VERSION} " CHANGELOG.md; then
             echo "Found patch version format with <small> tags"
             TAG_HEADER="## <small>${VERSION} "
             END_PATTERN="^## <small>"
           elif grep -q "^## ${VERSION} " CHANGELOG.md; then
             echo "Found minor/major version format without <small> tags"
-            TAG_HEADER="## ${VERSION} "  
+            TAG_HEADER="## ${VERSION} "
             END_PATTERN="^## "
           else
-            echo "❌ Could not find changelog section for version ${VERSION}"
-            echo "Available changelog sections:"
-            grep "^## " CHANGELOG.md | head -5
-            exit 1
+            echo "⚠️  Changelog section for version ${VERSION} not found. Release notes will be empty."
+            TAG_HEADER=""
+            END_PATTERN=""
           fi
           
-          # Extract release notes between current version header and next version header
-          NOTES=$(sed -n "/^${TAG_HEADER}/,/${END_PATTERN}/p" CHANGELOG.md \
-            | sed '1d;$d' \
-            | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          # If we found a title, we try to cut out the block
+          if [ -n "$TAG_HEADER" ]; then
+            NOTES=$(sed -n "/^${TAG_HEADER}/,/${END_PATTERN}/p" CHANGELOG.md \
+              | sed '1d;$d' \
+              | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          else
+            NOTES=""
+          fi
           
+          # If nothing comes out, we warn, but do not fall
           if [ -z "$NOTES" ]; then
-            echo "❌ Could not extract release notes for version ${VERSION}"
-            exit 1
+            echo "⚠️  No release notes found for $VERSION; proceeding with empty body."
+            NOTES="(no changelog for this release)"
+          else
+            echo "✅ Successfully extracted release notes"
+            echo "Preview:"
+            echo "$NOTES" | head -3
           fi
           
-          echo "✅ Successfully extracted release notes"
-          echo "Release notes preview:"
-          echo "$NOTES" | head -3
-          
-          # Set output for next step
           echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES"     >> $GITHUB_OUTPUT
+          echo "EOF"        >> $GITHUB_OUTPUT
+
       
       - name: Publish Release Packages
         id: publish_release_packages
