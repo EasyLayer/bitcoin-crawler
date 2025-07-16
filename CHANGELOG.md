@@ -1,3 +1,11 @@
+## <small>0.1.1-alpha.0 (2025-07-16)</small>
+
+* release v0.1.0 ([a56a42e](https://github.com/EasyLayer/bitcoin-crawler/commit/a56a42e))
+* infra: fixed create releases and prepare scripts; ([5e1dda1](https://github.com/EasyLayer/bitcoin-crawler/commit/5e1dda1))
+* BREAKING: big refactor all components; prepared for beta testing; ([be6597e](https://github.com/EasyLayer/bitcoin-crawler/commit/be6597e))
+
+
+
 ## 0.1.0 (2025-07-16)
 
 * infra: fixed create releases and prepare scripts; ([5e1dda1](https://github.com/EasyLayer/bitcoin-crawler/commit/5e1dda1))
