@@ -1,30 +1,61 @@
 import { Injectable } from '@nestjs/common';
 import { Transform } from 'class-transformer';
-import { IsString, IsOptional, IsArray, IsNumber } from 'class-validator';
+import { IsString, IsNumber } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
 
 @Injectable()
 export class ProvidersConfig {
-  @Transform(({ value }) => (value?.length ? value : ''))
+  @Transform(({ value }) => (value ? value : ''))
   @IsString()
-  @IsOptional()
   @JSONSchema({
-    description: "URL of the user's own Bitcoin node. Format: http://username:password@host:port",
+    description: 'HTTP URL of the Bitcoin-like network provider node',
   })
-  BITCOIN_CRAWLER_NETWORK_PROVIDER_SELF_NODE_URL?: string;
+  BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL!: string;
 
-  @Transform(({ value }) => (value?.length ? value.split('|') : []))
-  @IsArray()
-  @IsOptional()
+  @Transform(({ value }) => (value ? value : 'selfnode'))
+  @IsString()
   @JSONSchema({
-    description: 'Multiple QuickNode node URLs can be entered, separated by commas.',
+    description: 'Type of the network provider (selfnode, quicknode, etc.)',
   })
-  BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS?: string[];
+  BITCOIN_CRAWLER_NETWORK_PROVIDER_TYPE: string = 'selfnode';
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
-    return n === 0 ? 0 : n || 10000;
+    return n === 0 ? 0 : n || 5000;
   })
   @IsNumber()
-  BITCOIN_CRAWLER_NETWORK_PROVIDER_REQUEST_TIMEOUT: number = 10000;
+  @JSONSchema({
+    description: 'Request timeout in milliseconds',
+  })
+  BITCOIN_CRAWLER_NETWORK_PROVIDER_REQUEST_TIMEOUT: number = 5000;
+
+  @Transform(({ value }) => {
+    const n = parseInt(value, 10);
+    return n || 8;
+  })
+  @IsNumber()
+  @JSONSchema({
+    description: 'Maximum concurrent requests',
+  })
+  BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS: number = 1;
+
+  @Transform(({ value }) => {
+    const n = parseInt(value, 10);
+    return n || 15;
+  })
+  @IsNumber()
+  @JSONSchema({
+    description: 'Maximum batch size for parallel requests',
+  })
+  BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE: number = 1000;
+
+  @Transform(({ value }) => {
+    const n = parseInt(value, 10);
+    return n || 100;
+  })
+  @IsNumber()
+  @JSONSchema({
+    description: 'Delay between batches in milliseconds',
+  })
+  BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS: number = 100;
 }

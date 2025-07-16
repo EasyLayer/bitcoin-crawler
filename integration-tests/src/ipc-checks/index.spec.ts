@@ -134,7 +134,7 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
   });
 
   it(`should return the full Network model at the latest block height`, async () => {
-    const { requestId, payload } = await client.request('query', 'reqid-1', {
+    const { requestId, payload } = await client.query('reqid-1', {
       constructorName: 'GetModelsQuery',
       dto: {
         modelIds: ['network'],
@@ -147,7 +147,7 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
     expect(payload).toHaveProperty('version', 4);
     expect(payload).toHaveProperty('blockHeight', 2);
     expect(payload.payload).toBeDefined();
-    const modelPayload = JSON.parse(payload.payload);
+    const modelPayload = payload.payload;
 
     expect(modelPayload.__type).toBeDefined();
     expect(modelPayload.__type).toBe('Network');
@@ -156,7 +156,7 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
   });
 
   it(`should return the Network model from cache`, async () => {
-    const { requestId, payload } = await client.request('query', 'reqid-1', {
+    const { requestId, payload } = await client.query('reqid-1', {
       constructorName: 'GetModelsQuery',
       dto: {
         modelIds: ['network'],
@@ -170,13 +170,13 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
     expect(payload.version).toBe(4);
     expect(payload.blockHeight).toBe(2);
 
-    const modelPayload = JSON.parse(payload.payload);
+    const modelPayload = payload.payload;
     expect(modelPayload.__type).toBe('Network');
     expect(modelPayload.chain.length).toBe(3);
   });
 
   it(`should return all events for Network model`, async () => {
-    const { requestId, payload } = await client.request('query', 'reqid-1', {
+    const { requestId, payload } = await client.query('reqid-1', {
       constructorName: 'FetchEventsQuery',
       dto: {
         modelIds: ['network'],
@@ -227,7 +227,7 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
   });
 
   it('should fetch Network model events with pagination', async () => {
-    const { requestId, payload } = await client.request('query', 'reqid-1', {
+    const { requestId, payload } = await client.query('reqid-1', {
       constructorName: 'FetchEventsQuery',
       dto: {
         modelIds: ['network'],
@@ -247,7 +247,7 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
   });
 
   it(`should return the full BlocksModel at the latest block height`, async () => {
-    const { requestId, payload } = await client.request('query', 'reqid-1', {
+    const { requestId, payload } = await client.query('reqid-1', {
       constructorName: 'GetModelsQuery',
       dto: {
         modelIds: [AGGREGATE_ID],
@@ -260,14 +260,14 @@ describe('/Bitcoin Crawler: IPC Subscription Checks', () => {
     expect(payload.version).toBe(3);
     expect(payload.blockHeight).toBe(2);
 
-    const modelPayload = JSON.parse(payload.payload);
+    const modelPayload = payload.payload;
     expect(modelPayload.__type).toBe('BlocksModel');
     expect(Array.isArray(modelPayload.blocks)).toBe(true);
     expect(modelPayload.blocks).toHaveLength(3);
   });
 
   it('should fetch BlocksModel events with pagination', async () => {
-    const { requestId, payload } = await client.request('query', 'reqid-1', {
+    const { requestId, payload } = await client.query('reqid-1', {
       constructorName: 'FetchEventsQuery',
       dto: {
         modelIds: [AGGREGATE_ID],

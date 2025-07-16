@@ -1,4 +1,4 @@
-import { BlockchainProviderService, BlockParserService } from '@easylayer/bitcoin';
+import { BlockchainProviderService } from '@easylayer/bitcoin';
 import { mockBlocks } from './mocks';
 
 BlockchainProviderService.prototype.getManyBlocksStatsByHeights = async function (
@@ -14,22 +14,14 @@ BlockchainProviderService.prototype.getManyBlocksStatsByHeights = async function
   return result;
 };
 
-// Mock implementation for getting blocks by hashes
-BlockchainProviderService.prototype.getManyBlocksByHashes = async function (hashes: string[]): Promise<any> {
-  const result = hashes.map((hash) => {
-    const blk = mockBlocks.find((b) => b.hash === hash);
+// Mock implementation for getting blocks by heights
+BlockchainProviderService.prototype.getManyBlocksByHeights = async function (heights: any[]): Promise<any> {
+  const result = heights.map((height) => {
+    const blk = mockBlocks.find((b) => b.height === height);
     if (!blk) {
-      throw new Error(`No mock block for hash ${hash}`);
+      throw new Error(`No mock block for height ${height}`);
     }
-    return JSON.stringify(blk);
+    return blk;
   });
   return result;
-};
-
-BlockParserService['parseRawBlock'] = (raw: string, height: number) => {
-  const blk = JSON.parse(raw);
-  if (blk.height !== height) {
-    throw new Error(`Height mismatch: ${blk.height} vs ${height}`);
-  }
-  return blk;
 };

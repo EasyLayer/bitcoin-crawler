@@ -11,7 +11,7 @@ import {
 import { NetworkModelFactoryService } from '../services';
 import { Model, ModelType, ModelFactoryService } from '../../framework';
 import { MetricsService } from '../../metrics.service';
-import { BusinessConfig } from '../../config';
+import { BusinessConfig, ProvidersConfig } from '../../config';
 
 @CommandHandler(AddBlocksBatchCommand)
 export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBatchCommand> {
@@ -25,7 +25,8 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
     private Models: ModelType[],
     @Inject('FrameworModelFactory')
     private readonly modelFactoryService: ModelFactoryService,
-    private readonly businessConfig: BusinessConfig
+    private readonly businessConfig: BusinessConfig,
+    private readonly providersConfig: ProvidersConfig
   ) {}
 
   @RuntimeTracker({ showMemory: false, warningThresholdMs: 1000, errorThresholdMs: 3000 })
@@ -55,7 +56,10 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
           for (const model of models) {
             await model.parseBlock({
               block,
-              services: {},
+              services: {
+                provider: this.blockchainProvider,
+              },
+              networkConfig: this.blockchainProvider.config,
             });
           }
         });
@@ -70,7 +74,8 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
         blocksHeight: batch[batch.length - 1]?.height,
         blocksLength: batch?.length,
         blocksSize:
-          batch.reduce((sum: number, b: any) => sum + b?.size, 0) / this.businessConfig.BITCOIN_CRAWLER_ONE_BLOCK_SIZE,
+          batch.reduce((sum: number, b: any) => sum + b?.size, 0) /
+          this.businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT,
         txLength: batch.reduce((sum: number, b: any) => sum + b?.tx?.length, 0),
         vinLength: batch.reduce(
           (sum: number, b: any) => sum + b?.tx?.reduce((s: number, tx: any) => s + tx?.vin?.length, 0),
@@ -85,7 +90,8 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
         systemEventstoreSaveTotal: this.metricsService.getMetric('system_eventstore_save'),
       };
 
-      this.log.info('Blocks successfull loaded', { args: { ...stats } });
+      this.log.info('Blocks successfull loaded', { args: { blocksHeight: stats.blocksHeight } });
+      this.log.debug('Blocks successfull loaded', { args: { ...stats } });
     } catch (error) {
       if (error instanceof BlockchainValidationError) {
         await networkModel.reorganisation({

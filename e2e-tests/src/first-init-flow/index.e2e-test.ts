@@ -41,6 +41,7 @@ describe('/Bitcoin Crawler: First Initializaton Flow', () => {
 
   afterAll(async () => {
     jest.useRealTimers();
+    jest.restoreAllMocks();
     if (dbService) {
       // eslint-disable-next-line no-console
       await dbService.close().catch(console.error);

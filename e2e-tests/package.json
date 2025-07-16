@@ -18,7 +18,7 @@
     "packageManager": "yarn@4.5.0",
     "dependencies": {
         "@easylayer/bitcoin-crawler": "0.0.10",
-        "@easylayer/common": "0.6.12",
+        "@easylayer/common": "0.9.1",
         "dotenv": "16.4.5",
         "sqlite3": "5.1.7"
     },

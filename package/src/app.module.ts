@@ -1,13 +1,20 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { transformAndValidate } from 'class-transformer-validator';
 import { CqrsModule, EventPublisher } from '@easylayer/common/cqrs';
+import type { IQueryHandler, IEventHandler } from '@easylayer/common/cqrs';
 import { CqrsTransportModule } from '@easylayer/common/cqrs-transport';
 import { AppLogger, LoggerModule } from '@easylayer/common/logger';
 import { ArithmeticService } from '@easylayer/common/arithmetic';
 import { EventStoreModule, EventStoreWriteRepository } from '@easylayer/common/eventstore';
-import { NetworkTransportModule, TransportOptions } from '@easylayer/common/network-transport';
-import { Network, BlockchainProviderModule, BlocksQueueModule } from '@easylayer/bitcoin';
-import { AppController } from './app.controller';
+import { TransportModule, TransportModuleOptions } from '@easylayer/common/network-transport';
+import {
+  Network,
+  BlockchainProviderModule,
+  BlocksQueueModule,
+  NodeProviderTypes,
+  NetworkConfig,
+  RateLimits,
+} from '@easylayer/bitcoin';
 import { AppService } from './app.service';
 import { NetworkSaga } from './application-layer/sagas';
 import {
@@ -15,7 +22,7 @@ import {
   ReadStateExceptionHandlerService,
   CqrsFactoryService,
 } from './application-layer/services';
-import { NetworkModelFactoryService, NETWORK_AGGREGATE_ID } from './domain-layer/services';
+import { NetworkModelFactoryService, ConsolePromptService, NETWORK_AGGREGATE_ID } from './domain-layer/services';
 import { CommandHandlers } from './domain-layer/command-handlers';
 import { EventsHandlers } from './domain-layer/events-handlers';
 import { QueryHandlers } from './domain-layer/query-handlers';
@@ -23,20 +30,23 @@ import { AppConfig, BusinessConfig, EventStoreConfig, BlocksQueueConfig, Provide
 import { ModelType, ModelFactoryService } from './framework';
 import { MetricsService } from './metrics.service';
 
-const appName = `${process?.env?.BITCOIN_CRAWLER_APPLICATION_NAME || 'bitcoin'}`; // TODO: think where to put this
+const appName = `${process?.env?.BITCOIN_CRAWLER_APPLICATION_NAME || 'bitcoin'}`;
 
 export const EVENTSTORE_NAME = `${appName}-eventstore`;
 
 interface AppModuleOptions {
   Models: ModelType[];
-  ws?: boolean;
-  tcp?: boolean;
-  ipc?: boolean;
+  QueryHandlers?: Array<new (...args: any[]) => IQueryHandler>;
+  EventHandlers?: Array<new (...args: any[]) => IEventHandler>;
 }
 
 @Module({})
-export class BitcoinAppModule {
-  static async register({ Models, ws, tcp, ipc }: AppModuleOptions): Promise<DynamicModule> {
+export class AppModule {
+  static async register({
+    Models,
+    QueryHandlers: UserQueryHandlers = [],
+    EventHandlers: UserEventHandlers = [],
+  }: AppModuleOptions): Promise<DynamicModule> {
     const eventstoreConfig = await transformAndValidate(EventStoreConfig, process.env, {
       validator: { whitelist: true },
     });
@@ -53,42 +63,62 @@ export class BitcoinAppModule {
       validator: { whitelist: true },
     });
 
-    const queueIteratorBlocksBatchSize = businessConfig.BITCOIN_CRAWLER_ONE_BLOCK_SIZE * 4; //50;
-    const queueLoaderRequestBlocksBatchSize = businessConfig.BITCOIN_CRAWLER_ONE_BLOCK_SIZE * 2;
-    const maxQueueSize = queueIteratorBlocksBatchSize * 3;
-    const minTransferSize = businessConfig.BITCOIN_CRAWLER_ONE_BLOCK_SIZE - 1;
+    const queueIteratorBlocksBatchSize = businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT * 2;
+    const queueLoaderRequestBlocksBatchSize = businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT * 2;
+    const maxQueueSize = queueIteratorBlocksBatchSize * 8;
+    const minTransferSize = businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_SIZE - 1;
 
     const networkModel = new Network({ aggregateId: NETWORK_AGGREGATE_ID, maxSize: 0 });
-    // IMPORTANT: We create instances of models not through the factory (without merging)
-    // because we are allowed to get only basic instances here without publications
+    // Create instances of models without merging for basic instances
     const userModels = Models.map((ModelCtr) => new ModelCtr());
 
-    const transports: TransportOptions[] = [];
+    // Smart transport detection using helper methods
+    const transports = appConfig.getEnabledTransports();
 
-    if (ws) {
-      transports.push({ type: 'ws', port: appConfig.HTTP_PORT });
-    }
-    if (tcp) {
-      transports.push({ type: 'tcp', host: appConfig.TCP_HOST, port: appConfig.TCP_PORT });
-    }
-    if (ipc) {
-      transports.push({ type: 'ipc', isEnable: true });
-    }
+    // Network configuration
+    const network: NetworkConfig = {
+      network: businessConfig.BITCOIN_CRAWLER_NETWORK_TYPE as NetworkConfig['network'],
+      nativeCurrencySymbol: businessConfig.BITCOIN_CRAWLER_NETWORK_NATIVE_CURRENCY_SYMBOL,
+      nativeCurrencyDecimals: businessConfig.BITCOIN_CRAWLER_NETWORK_NATIVE_CURRENCY_DECIMALS,
+      hasSegWit: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_SEGWIT,
+      hasTaproot: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_TAPROOT,
+      hasRBF: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_RBF,
+      hasCSV: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_CSV,
+      hasCLTV: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_CLTV,
+      maxBlockSize: businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_SIZE,
+      maxBlockWeight: businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT,
+      difficultyAdjustmentInterval: businessConfig.BITCOIN_CRAWLER_NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL,
+      targetBlockTime: businessConfig.BITCOIN_CRAWLER_NETWORK_TARGET_BLOCK_TIME,
+    };
+
+    const rateLimits: RateLimits = {
+      maxConcurrentRequests: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS,
+      maxBatchSize: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE,
+      requestDelayMs: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS,
+    };
 
     return {
-      module: BitcoinAppModule,
-      controllers: [AppController],
+      module: AppModule,
+      controllers: [],
       imports: [
         LoggerModule.forRoot({ componentName: appName }),
-        // IMPORTANT: Set main modules as global;
+        // Set main modules as global
         CqrsTransportModule.forRoot({ isGlobal: true }),
         CqrsModule.forRoot({ isGlobal: true }),
-        NetworkTransportModule.forRoot({ isGlobal: true, transports }),
+        TransportModule.forRoot({ isGlobal: true, transports }),
         BlockchainProviderModule.forRootAsync({
           isGlobal: true,
-          quickNodesUrls: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_QUICK_NODE_URLS,
-          selfNodesUrl: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_SELF_NODE_URL,
-          responseTimeout: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_REQUEST_TIMEOUT,
+          network,
+          rateLimits,
+          providers: [
+            {
+              connection: {
+                type: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_TYPE as NodeProviderTypes,
+                baseUrl: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL,
+                responseTimeout: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_REQUEST_TIMEOUT,
+              },
+            },
+          ],
         }),
         EventStoreModule.forRootAsync({
           name: EVENTSTORE_NAME,
@@ -115,9 +145,8 @@ export class BitcoinAppModule {
           blocksCommandExecutor: NetworkCommandFactoryService,
           maxBlockHeight: businessConfig.BITCOIN_CRAWLER_MAX_BLOCK_HEIGHT,
           queueLoaderStrategyName: blocksQueueConfig.BITCOIN_CRAWLER_BLOCKS_QUEUE_LOADER_STRATEGY_NAME,
-          queueLoaderConcurrency: blocksQueueConfig.BITCOIN_CRAWLER_BLOCKS_QUEUE_LOADER_CONCURRENCY_COUNT,
           basePreloadCount: blocksQueueConfig.BITCOIN_CRAWLER_BLOCKS_QUEUE_LOADER_PRELOADER_BASE_COUNT,
-          blockSize: businessConfig.BITCOIN_CRAWLER_ONE_BLOCK_SIZE,
+          blockSize: businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT,
           queueLoaderRequestBlocksBatchSize,
           queueIteratorBlocksBatchSize,
           maxQueueSize,
@@ -142,6 +171,10 @@ export class BitcoinAppModule {
           useValue: eventstoreConfig,
         },
         {
+          provide: ProvidersConfig,
+          useValue: providersConfig,
+        },
+        {
           provide: 'FrameworkModelsConstructors',
           useValue: Models,
         },
@@ -159,9 +192,12 @@ export class BitcoinAppModule {
         NetworkModelFactoryService,
         ReadStateExceptionHandlerService,
         CqrsFactoryService,
+        ConsolePromptService,
         ...CommandHandlers,
         ...EventsHandlers,
         ...QueryHandlers,
+        ...UserQueryHandlers,
+        ...UserEventHandlers,
       ],
       exports: [],
     };

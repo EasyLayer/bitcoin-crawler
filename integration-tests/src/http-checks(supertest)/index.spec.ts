@@ -79,7 +79,6 @@ describe('/Bitcoin Crawler: HTTP Transport Checks(supertest)', () => {
 
     const appContext = await bootstrap({
       Models: [BlockModel],
-      rpc: true,
     });
 
     if (appContext) {
@@ -123,7 +122,7 @@ describe('/Bitcoin Crawler: HTTP Transport Checks(supertest)', () => {
     expect(model.version).toBe(3);
     expect(model.blockHeight).toBe(2);
     expect(model.payload).toBeDefined();
-    const payload = JSON.parse(model.payload);
+    const payload = model.payload;
 
     expect(payload.__type).toBeDefined();
     expect(payload.__type).toBe('Network');
@@ -154,8 +153,8 @@ describe('/Bitcoin Crawler: HTTP Transport Checks(supertest)', () => {
     expect(model.aggregateId).toBe('network');
     expect(model.version).toBe(3);
     expect(model.blockHeight).toBe(2);
-    expect(typeof model.payload).toBe('string');
-    const payload = JSON.parse(model.payload);
+    expect(typeof model.payload).toBe('object');
+    const payload = model.payload;
 
     expect(payload.__type).toBe('Network');
     expect(Array.isArray(payload.chain)).toBe(true);
@@ -272,8 +271,8 @@ describe('/Bitcoin Crawler: HTTP Transport Checks(supertest)', () => {
     expect(model.aggregateId).toBe(AGGREGATE_ID);
     expect(model.version).toBe(3);
     expect(model.blockHeight).toBe(2);
-    expect(typeof model.payload).toBe('string');
-    const payload = JSON.parse(model.payload);
+    expect(typeof model.payload).toBe('object');
+    const payload = model.payload;
 
     expect(payload.__type).toBe('BlocksModel');
     expect(Array.isArray(payload.blocks)).toBe(true);

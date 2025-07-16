@@ -9,7 +9,7 @@
   "type": "commonjs",
   "workspaces": {
     "packages": [
-      "examples/*",
+      "examples/**",
       "package",
       "e2e-tests",
       "integration-tests"
@@ -22,7 +22,6 @@
     "build:cjs": "tsc -b package/tsconfig.cjs.json",
     "build:esm": "lerna run build:esm --stream",
     "build": "yarn build:cjs && yarn build:esm",
-    "start:example:bitcoin-one-address-balance": "cd ./examples/bitcoin-one-address-balance && yarn start",
     "test:unit": "lerna run test:unit --stream --",
     "test:e2e": "lerna run test:e2e --stream",
     "test:integration": "lerna run test:integration --stream",
