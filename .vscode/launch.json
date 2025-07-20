@@ -15,7 +15,8 @@
             "--runInBand",
             "--config",
             "./jest.config.mjs",
-            "--detectOpenHandles"
+            "--detectOpenHandles",
+            "--forceExit"
           ],
           "console": "integratedTerminal",
           "internalConsoleOptions": "neverOpen",

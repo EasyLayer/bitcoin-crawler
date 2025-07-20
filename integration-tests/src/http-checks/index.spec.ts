@@ -32,7 +32,7 @@ describe('/Bitcoin Crawler: HTTP Transport Checks', () => {
     await cleanDataFolder('eventstore');
 
     // Initialize the write database
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/data.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
     await dbService.exec(networkTableSQL);
@@ -78,13 +78,9 @@ describe('/Bitcoin Crawler: HTTP Transport Checks', () => {
     // Close the write database connection after inserting events
     await dbService.close();
 
-    const appContext = await bootstrap({
+    app = await bootstrap({
       Models: [BlockModel],
     });
-
-    if (appContext) {
-      app = appContext;
-    }
 
     client = new Client({
       transport: {
@@ -105,9 +101,6 @@ describe('/Bitcoin Crawler: HTTP Transport Checks', () => {
 
     // eslint-disable-next-line no-console
     await client?.destroy().catch(console.error);
-
-    // Give time for cleanup
-    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   it(`should return the full Network model at the latest block height`, async () => {
