@@ -677,7 +677,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@easylayer/bitcoin-crawler@npm:0.0.10, @easylayer/bitcoin-crawler@workspace:package":
+"@easylayer/bitcoin-crawler@npm:0.1.2, @easylayer/bitcoin-crawler@workspace:package":
   version: 0.0.0-use.local
   resolution: "@easylayer/bitcoin-crawler@workspace:package"
   dependencies:
@@ -1508,8 +1508,8 @@ __metadata:
   linkType: hard
 
 "@modelcontextprotocol/sdk@npm:^1.8.0":
-  version: 1.15.1
-  resolution: "@modelcontextprotocol/sdk@npm:1.15.1"
+  version: 1.16.0
+  resolution: "@modelcontextprotocol/sdk@npm:1.16.0"
   dependencies:
     ajv: "npm:^6.12.6"
     content-type: "npm:^1.0.5"
@@ -1523,7 +1523,7 @@ __metadata:
     raw-body: "npm:^3.0.0"
     zod: "npm:^3.23.8"
     zod-to-json-schema: "npm:^3.24.1"
-  checksum: 10/997069ced0108428d75e1c804a48ed9a889e9331e9ebdb71850a5c1da3058534c41263e25a3c753542c807d4da0d28d41b1715b5f6602233e6bfdcde55d7a718
+  checksum: 10/2f462fc1fc1f06c6c4b1e01e403f01e41ba5aaaaebd298381ccf70242d1c73423c9c4a2b7717b19c190e65a098979ccebf2f50b159c55870f5f3977d5b24e269
   languageName: node
   linkType: hard
 
@@ -2213,10 +2213,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pkgr/core@npm:^0.2.4":
-  version: 0.2.7
-  resolution: "@pkgr/core@npm:0.2.7"
-  checksum: 10/b16959878940f3d3016b79a4b2c23fd518aaec6b47295baa3154fbcf6574fee644c51023bb69069fa3ea9cdcaca40432818f54695f11acc0ae326cf56676e4d1
+"@pkgr/core@npm:^0.2.9":
+  version: 0.2.9
+  resolution: "@pkgr/core@npm:0.2.9"
+  checksum: 10/bb2fb86977d63f836f8f5b09015d74e6af6488f7a411dcd2bfdca79d76b5a681a9112f41c45bdf88a9069f049718efc6f3900d7f1de66a2ec966068308ae517f
   languageName: node
   linkType: hard
 
@@ -2762,11 +2762,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*, @types/node@npm:>=10.0.0":
-  version: 24.0.14
-  resolution: "@types/node@npm:24.0.14"
+  version: 24.0.15
+  resolution: "@types/node@npm:24.0.15"
   dependencies:
     undici-types: "npm:~7.8.0"
-  checksum: 10/60e546f905734ab37f02f5c30eeb98e350c97837c96e2191972fba0638aa0d414489fad989245a9f106b0a0405410e56fab769fdcfb6504341fc2286d9e1f496
+  checksum: 10/0c55b7f4b0cd4f47e43e587e54545c4f188521678328411033595a6f49f81ed54ec3729ce5025936c51250e31504a32a7f20b520ed9dd71f3ab1530f809975e9
   languageName: node
   linkType: hard
 
@@ -3556,7 +3556,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "balances-monitoring@workspace:examples/real-time-data/balances-monitoring"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2"
     "@easylayer/common": "npm:0.9.2"
     "@easylayer/transport-sdk": "npm:1.1.1"
     "@types/node": "npm:20.10.4"
@@ -5537,8 +5537,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "e2e-bitcoin-crawler@workspace:e2e-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
-    "@easylayer/common": "npm:0.9.2"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2"
     "@types/jest": "npm:29.5.11"
     "@types/node": "npm:20.10.4"
     dotenv: "npm:16.4.5"
@@ -5598,9 +5597,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.173":
-  version: 1.5.185
-  resolution: "electron-to-chromium@npm:1.5.185"
-  checksum: 10/12f54ce7b814e0077dc30e7af3a4c81b103968c88b3157f9db1107cd76e06f8d702d2f9c1b3d07c40da05e8734119ae66d7d170e5a9679f0c34c0fb9e59f070d
+  version: 1.5.187
+  resolution: "electron-to-chromium@npm:1.5.187"
+  checksum: 10/36631d375536be3f0e22a8de771d0069cbac381629308c34a75c82b129bd48d76f97b4a16db934b33483e78696cf52522632d96f15c21979dbc62606196d5b4b
   languageName: node
   linkType: hard
 
@@ -6599,15 +6598,15 @@ __metadata:
   linkType: hard
 
 "form-data@npm:^4.0.0":
-  version: 4.0.3
-  resolution: "form-data@npm:4.0.3"
+  version: 4.0.4
+  resolution: "form-data@npm:4.0.4"
   dependencies:
     asynckit: "npm:^0.4.0"
     combined-stream: "npm:^1.0.8"
     es-set-tostringtag: "npm:^2.1.0"
     hasown: "npm:^2.0.2"
     mime-types: "npm:^2.1.12"
-  checksum: 10/22f6e55e6f32a5797a500ed7ca5aa9d690c4de6e1b3308f25f0d83a27d08d91a265ab59a190db2305b15144f8f07df08e8117bad6a93fc93de1baa838bfcc0b5
+  checksum: 10/a4b62e21932f48702bc468cc26fb276d186e6b07b557e3dd7cc455872bdbb82db7db066844a64ad3cf40eaf3a753c830538183570462d3649fdfd705601cbcfb
   languageName: node
   linkType: hard
 
@@ -7649,7 +7648,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "integration-crawler@workspace:integration-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2"
     "@easylayer/common": "npm:0.9.2"
     "@easylayer/transport-sdk": "npm:1.1.1"
     "@types/jest": "npm:29.5.11"
@@ -9864,7 +9863,7 @@ __metadata:
   resolution: "network-fee-analytics@workspace:examples/historical-data/network-fee-analytics"
   dependencies:
     "@easylayer/bitcoin": "npm:0.9.2"
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2"
     "@easylayer/common": "npm:0.9.2"
     "@types/node": "npm:20.10.4"
     rimraf: "npm:5.0.5"
@@ -12719,11 +12718,11 @@ __metadata:
   linkType: hard
 
 "synckit@npm:^0.11.0":
-  version: 0.11.8
-  resolution: "synckit@npm:0.11.8"
+  version: 0.11.11
+  resolution: "synckit@npm:0.11.11"
   dependencies:
-    "@pkgr/core": "npm:^0.2.4"
-  checksum: 10/9bb2cf11edaf31ba781f1c719dd58087323201bda6392254538aef4dea216aa02a32e25f06643bcfa1c1a2c95e0d84186d82cfb66f9a0ab3a2be4816c696a8a3
+    "@pkgr/core": "npm:^0.2.9"
+  checksum: 10/6ecd88212b5be80004376b6ea74babcba284566ff59a50d8803afcaa78c165b5d268635c1dd84532ee3f690a979409e1eda225a8a35bed2d135ffdcea06ce7b0
   languageName: node
   linkType: hard
 
@@ -12959,7 +12958,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "top-addresses-by-balance@workspace:examples/historical-data/top-addresses-by-balance"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2"
     "@easylayer/common": "npm:0.9.2"
     "@easylayer/transport-sdk": "npm:1.1.1"
     "@types/node": "npm:20.10.4"

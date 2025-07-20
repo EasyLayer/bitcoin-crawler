@@ -1,3 +1,34 @@
+## <small>0.1.2 (2025-07-16)</small>
+
+
+
+
+## <small>0.1.2-alpha.0 (2025-07-16)</small>
+
+* infra: fixed github releases workflows; ([5e8f03a](https://github.com/EasyLayer/bitcoin-crawler/commit/5e8f03a))
+
+
+
+## <small>0.1.1 (2025-07-16)</small>
+
+
+
+
+## <small>0.1.1-alpha.0 (2025-07-16)</small>
+
+* release v0.1.0 ([a56a42e](https://github.com/EasyLayer/bitcoin-crawler/commit/a56a42e))
+* infra: fixed create releases and prepare scripts; ([5e1dda1](https://github.com/EasyLayer/bitcoin-crawler/commit/5e1dda1))
+* BREAKING: big refactor all components; prepared for beta testing; ([be6597e](https://github.com/EasyLayer/bitcoin-crawler/commit/be6597e))
+
+
+
+## 0.1.0 (2025-07-16)
+
+* infra: fixed create releases and prepare scripts; ([5e1dda1](https://github.com/EasyLayer/bitcoin-crawler/commit/5e1dda1))
+* BREAKING: big refactor all components; prepared for beta testing; ([be6597e](https://github.com/EasyLayer/bitcoin-crawler/commit/be6597e))
+
+
+
 ## <small>0.0.10 (2025-05-24)</small>
 
 * refactor: added license into root folder; ([c05b4ad](https://github.com/EasyLayer/bitcoin-crawler/commit/c05b4ad))
