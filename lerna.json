@@ -1,6 +1,6 @@
 {
   "packages": [
-    "examples/*",
+    "examples/**",
     "package",
     "e2e-tests",
     "integration-tests"
