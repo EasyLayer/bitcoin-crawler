@@ -1,3 +1,9 @@
+## <small>0.1.3 (2025-07-20)</small>
+
+* refactor: fixed tests; updated easylayer libs; ([9fd0c8c](https://github.com/EasyLayer/bitcoin-crawler/commit/9fd0c8c))
+
+
+
 ## <small>0.1.2 (2025-07-16)</small>
 
 
