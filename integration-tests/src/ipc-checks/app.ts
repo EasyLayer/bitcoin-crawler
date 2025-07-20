@@ -4,7 +4,6 @@ import BlockModel, { AGGREGATE_ID } from './blocks.model';
 async function start() {
   await bootstrap({
     Models: [BlockModel],
-    ipc: true,
   });
 }
 

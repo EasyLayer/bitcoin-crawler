@@ -16,9 +16,9 @@ export class EventStoreConfig {
     default: `resolve(process.cwd(), 'eventstore`,
   })
   @Transform(({ value }) =>
-    typeof value === 'string' && value.length ? value : resolve(process.cwd(), 'eventstore/data.db')
+    typeof value === 'string' && value.length ? value : resolve(process.cwd(), 'eventstore/bitcoin.db')
   )
-  BITCOIN_CRAWLER_EVENTSTORE_DB_NAME: string = resolve(process.cwd(), 'eventstore/data.db');
+  BITCOIN_CRAWLER_EVENTSTORE_DB_NAME: string = resolve(process.cwd(), 'eventstore/bitcoin.db');
 
   @Transform(({ value }) => (value?.length ? value : 'sqlite'))
   @IsString()

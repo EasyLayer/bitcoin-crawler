@@ -95,14 +95,16 @@ cp .env.example .env
 ```
 
 - **Configure environment:**
+- TODO
+- Navigate to `examples` folder
 - Open `.env` file and set the required parameters
 - For additional configuration options, refer to the documentation in the `docs/` directory
 
 - **Run an example:**
 ```bash
-yarn start:example:bitcoin-one-address-balance
+yarn start
 ```
-
+TODO
 > **Note:** You can explore more examples in the `examples/` directory or check available commands in the root `package.json`.
 
 ## Contributing
