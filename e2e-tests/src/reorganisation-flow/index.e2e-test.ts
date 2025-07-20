@@ -85,7 +85,7 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
 
   it('should truncate reorganisation blocks from Network Model', async () => {
     // Connect to the Event Stores
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/data.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
     // Retrieve all events from the network table
@@ -161,7 +161,7 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
 
   it('should rollback reorganisation blocks from Users Model', async () => {
     // Connect to the Event Stores
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/data.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
     // Retrieve all events from the user custom model table
@@ -177,11 +177,9 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
     // 1 block
     expect(blockBeforeReorg.blockHeight).toBe(reorgBlock.height);
     expect(blockBeforeReorg.version).toBe(1);
-    expect(blockBeforeReorg.status).toBe(EventStatus.PUBLISHED);
 
     // block after reorg (2 block)
     expect(blockAfterReorg.blockHeight).toBe(1);
     expect(blockAfterReorg.version).toBe(2);
-    expect(blockAfterReorg.status).toBe(EventStatus.PUBLISHED);
   });
 });

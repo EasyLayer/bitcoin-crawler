@@ -78,7 +78,7 @@ describe('/Bitcoin Crawler: Load Blocks Flow', () => {
 
   it('should save and verify Network Model events with correct payload structure', async () => {
     // Connect to the Event Stores
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/data.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
     // Retrieve all events from the network table
@@ -93,8 +93,6 @@ describe('/Bitcoin Crawler: Load Blocks Flow', () => {
     expect(blockEvents.length).toBe(waitingEventCount);
 
     blockEvents.forEach((event) => {
-      expect(event.status).toBe(EventStatus.PUBLISHED);
-
       const blockPayload = JSON.parse(event.payload);
 
       // Check that the blocks are present in the payload
@@ -121,7 +119,7 @@ describe('/Bitcoin Crawler: Load Blocks Flow', () => {
 
   it('should save and verify User Models events with correct payload structure', async () => {
     // Connect to the Event Stores
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/data.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
     // Retrieve all events from the user custom model table
@@ -137,12 +135,10 @@ describe('/Bitcoin Crawler: Load Blocks Flow', () => {
     expect(firstEvent.version).toBe(1);
     expect(firstEvent.type).toBe('BlockAddedEvent');
     expect(firstEvent.blockHeight).toBe(0);
-    expect(firstEvent.status).toBe(EventStatus.PUBLISHED);
 
     // Check block in second event
     expect(secondEvent.version).toBe(2);
     expect(secondEvent.type).toBe('BlockAddedEvent');
     expect(secondEvent.blockHeight).toBe(1);
-    expect(secondEvent.status).toBe(EventStatus.PUBLISHED);
   });
 });

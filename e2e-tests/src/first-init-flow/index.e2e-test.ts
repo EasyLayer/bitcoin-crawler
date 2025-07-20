@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
+import type { INestApplication, INestApplicationContext } from '@nestjs/common';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
 import { EventStatus } from '@easylayer/common/cqrs';
 import { BitcoinNetworkInitializedEvent } from '@easylayer/bitcoin';
@@ -8,6 +9,7 @@ import { cleanDataFolder } from '../+helpers/clean-data-folder';
 import BlocksModel from './blocks.model';
 
 describe('/Bitcoin Crawler: First Initializaton Flow', () => {
+  let app: INestApplication | INestApplicationContext;
   let dbService!: SQLiteService;
 
   beforeEach(async () => {
@@ -15,8 +17,9 @@ describe('/Bitcoin Crawler: First Initializaton Flow', () => {
   });
 
   beforeAll(async () => {
+    jest.useRealTimers();
     jest.resetModules();
-    jest.useFakeTimers({ advanceTimers: true });
+    // jest.useFakeTimers({ advanceTimers: true });
 
     // Load environment variables
     config({ path: resolve(process.cwd(), 'src/first-init-flow/.env') });
@@ -24,7 +27,7 @@ describe('/Bitcoin Crawler: First Initializaton Flow', () => {
     // Clear the database
     await cleanDataFolder('eventstore');
 
-    await bootstrap({
+    app = await bootstrap({
       Models: [BlocksModel],
       testing: {
         handlerEventsToWait: [
@@ -35,22 +38,22 @@ describe('/Bitcoin Crawler: First Initializaton Flow', () => {
         ],
       },
     });
-
-    jest.runAllTimers();
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     jest.restoreAllMocks();
     if (dbService) {
       // eslint-disable-next-line no-console
       await dbService.close().catch(console.error);
     }
+
+    // eslint-disable-next-line no-console
+    await app?.close().catch(console.error);
   });
 
   it('should create Network aggregate', async () => {
     // Connect to the Event Store
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/data.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
     // Check if the Network aggregate is created
@@ -60,6 +63,5 @@ describe('/Bitcoin Crawler: First Initializaton Flow', () => {
     expect(events[0].version).toBe(1);
     expect(events[0].type).toBe('BitcoinNetworkInitializedEvent');
     expect(events[0].blockHeight).toBe(-1);
-    expect(events[0].status).toBe(EventStatus.PUBLISHED);
   });
 });

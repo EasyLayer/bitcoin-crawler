@@ -677,15 +677,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@easylayer/bitcoin-crawler@npm:0.0.10":
-  version: 0.0.10
-  resolution: "@easylayer/bitcoin-crawler@npm:0.0.10"
+"@easylayer/bitcoin-crawler@npm:0.1.2":
+  version: 0.1.2
+  resolution: "@easylayer/bitcoin-crawler@npm:0.1.2"
   dependencies:
-    "@easylayer/bitcoin": "npm:0.6.12"
-    "@easylayer/common": "npm:0.6.12"
+    "@easylayer/bitcoin": "npm:0.9.1"
+    "@easylayer/common": "npm:0.9.1"
     "@nestjs/common": "npm:10.2.10"
     "@nestjs/core": "npm:10.2.10"
-    "@nestjs/microservices": "npm:10.2.10"
     "@nestjs/platform-express": "npm:10.2.10"
     check-node-version: "npm:4.2.1"
     class-transformer: "npm:0.5.1"
@@ -699,16 +698,16 @@ __metadata:
     reflect-metadata: "npm:0.1.14"
     rxjs: "npm:7.8.1"
     uuid: "npm:9.0.1"
-  checksum: 10/9b01846d151dd173645a38417e9b6e6e81f04d531c107fbe8f0752606a505913945471f71b1c133af2a3867f84eac59419e1d68333e594c45f7ce612242a0212
+  checksum: 10/8253f0658c80018c83931cf61f3e6151916ce8dc50d0e1e205e272c3815e6cd3a3cadf34b4d063d5e0c1c14f06ddda5c39ee53474664de3164c7c35d719389a9
   languageName: node
   linkType: hard
 
-"@easylayer/bitcoin-crawler@npm:0.1.2, @easylayer/bitcoin-crawler@workspace:package":
+"@easylayer/bitcoin-crawler@npm:0.1.3, @easylayer/bitcoin-crawler@workspace:package":
   version: 0.0.0-use.local
   resolution: "@easylayer/bitcoin-crawler@workspace:package"
   dependencies:
-    "@easylayer/bitcoin": "npm:0.9.1"
-    "@easylayer/common": "npm:0.9.1"
+    "@easylayer/bitcoin": "npm:0.9.2"
+    "@easylayer/common": "npm:0.9.2"
     "@nestjs/common": "npm:10.2.10"
     "@nestjs/core": "npm:10.2.10"
     "@nestjs/platform-express": "npm:10.2.10"
@@ -742,31 +741,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@easylayer/bitcoin@npm:0.6.12":
-  version: 0.6.12
-  resolution: "@easylayer/bitcoin@npm:0.6.12"
-  dependencies:
-    "@easylayer/common": "npm:0.6.12"
-    "@nestjs/common": "npm:10.2.10"
-    "@nestjs/core": "npm:10.2.10"
-    "@nestjs/swagger": "npm:7.1.17"
-    async-mutex: "npm:0.5.0"
-    bip32: "npm:4.0.0"
-    bip39: "npm:3.1.0"
-    bitcoin-core: "npm:4.1.0"
-    bitcoinjs-lib: "npm:6.1.6"
-    ecpair: "npm:2.1.0"
-    lodash: "npm:4.17.21"
-    piscina: "npm:4.1.0"
-    reflect-metadata: "npm:0.1.14"
-    rxjs: "npm:7.8.1"
-    stream-json: "npm:1.8.0"
-    tiny-secp256k1: "npm:2.2.3"
-    uuid: "npm:9.0.1"
-  checksum: 10/10744b1733cf1c57011579c4bc0c221a02369d0cf1f3273f1c3e48ef77457a64abe3fe1d6d5eb0bdeaed148feb0997945ac57551192296f6afd70604f1972e3b
-  languageName: node
-  linkType: hard
-
 "@easylayer/bitcoin@npm:0.9.1":
   version: 0.9.1
   resolution: "@easylayer/bitcoin@npm:0.9.1"
@@ -793,39 +767,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@easylayer/common@npm:0.6.12":
-  version: 0.6.12
-  resolution: "@easylayer/common@npm:0.6.12"
+"@easylayer/bitcoin@npm:0.9.2":
+  version: 0.9.2
+  resolution: "@easylayer/bitcoin@npm:0.9.2"
   dependencies:
+    "@easylayer/common": "npm:0.9.2"
     "@nestjs/common": "npm:10.2.10"
     "@nestjs/core": "npm:10.2.10"
-    "@nestjs/cqrs": "npm:10.2.6"
-    "@nestjs/microservices": "npm:10.2.10"
     "@nestjs/swagger": "npm:7.1.17"
-    "@nestjs/typeorm": "npm:10.0.2"
-    "@nestjs/websockets": "npm:10.2.10"
-    better-sqlite3: "npm:11.2.1"
-    better-sqlite3-multiple-ciphers: "npm:11.1.2"
-    bignumber.js: "npm:9.1.2"
-    bn.js: "npm:5.2.1"
-    bunyan: "npm:1.8.15"
-    chalk: "npm:4.1.2"
+    async-mutex: "npm:0.5.0"
+    bip32: "npm:4.0.0"
+    bip39: "npm:3.1.0"
+    bitcoin-core: "npm:4.1.0"
+    bitcoinjs-lib: "npm:6.1.6"
+    bottleneck: "npm:2.19.5"
+    ecpair: "npm:2.1.0"
     lodash: "npm:4.17.21"
-    p-queue: "npm:6.6.2"
-    pg: "npm:8.12.0"
-    pg-copy-streams: "npm:6.0.6"
-    pg-error-enum: "npm:0.7.1"
-    pg-query-stream: "npm:4.9.6"
     piscina: "npm:4.1.0"
     reflect-metadata: "npm:0.1.14"
     rxjs: "npm:7.8.1"
-    socket.io: "npm:4.8.1"
-    sqlite3: "npm:5.1.7"
     stream-json: "npm:1.8.0"
-    typeorm: "npm:0.3.20"
-    typeorm-transactional: "npm:0.5.0"
+    tiny-secp256k1: "npm:2.2.3"
     uuid: "npm:9.0.1"
-  checksum: 10/4eab6f058450f8c632c0857c1378d38649618c97a893dfc13a76409353f99be46ab4d9990ae7658e46929a3e62b7b01662700d9ca31296edcbe72e212d3268b4
+  checksum: 10/b2754f31c9f7f2e297fd53ec24661c1901f24ff6a5aeb165a4b5ae5a8cd87a625219eab4e2cfbca5cda5f75f4f0e983afac90bcf05aecaf308684a1a7814d79e
   languageName: node
   linkType: hard
 
@@ -863,6 +827,43 @@ __metadata:
     typeorm-transactional: "npm:0.5.0"
     uuid: "npm:9.0.1"
   checksum: 10/dbddb46ffd0dc818e9f581a1352c26df739b9321987ebeb42c329d905483dc5016b0684dc93808ad3c477d0f184eda77006d4e98a3c0eb0d40526c8301c83534
+  languageName: node
+  linkType: hard
+
+"@easylayer/common@npm:0.9.2":
+  version: 0.9.2
+  resolution: "@easylayer/common@npm:0.9.2"
+  dependencies:
+    "@nestjs/common": "npm:10.2.10"
+    "@nestjs/core": "npm:10.2.10"
+    "@nestjs/cqrs": "npm:10.2.6"
+    "@nestjs/microservices": "npm:10.2.10"
+    "@nestjs/platform-socket.io": "npm:10.2.10"
+    "@nestjs/swagger": "npm:7.1.17"
+    "@nestjs/typeorm": "npm:10.0.2"
+    "@nestjs/websockets": "npm:10.2.10"
+    better-sqlite3: "npm:11.2.1"
+    better-sqlite3-multiple-ciphers: "npm:11.1.2"
+    bignumber.js: "npm:9.1.2"
+    bn.js: "npm:5.2.1"
+    bunyan: "npm:1.8.15"
+    chalk: "npm:4.1.2"
+    lodash: "npm:4.17.21"
+    p-queue: "npm:6.6.2"
+    pg: "npm:8.12.0"
+    pg-copy-streams: "npm:6.0.6"
+    pg-error-enum: "npm:0.7.1"
+    pg-query-stream: "npm:4.9.6"
+    piscina: "npm:4.1.0"
+    reflect-metadata: "npm:0.1.14"
+    rxjs: "npm:7.8.1"
+    socket.io: "npm:4.8.1"
+    sqlite3: "npm:5.1.7"
+    stream-json: "npm:1.8.0"
+    typeorm: "npm:0.3.20"
+    typeorm-transactional: "npm:0.5.0"
+    uuid: "npm:9.0.1"
+  checksum: 10/170a2ec2c68ef3d0120f9fe072b2e3171f19fdbef5de99aef8776b20574e5670461da45d83dea2904825d090251ce22407e817cf23d4ccb8aecffa6edca7cdbc
   languageName: node
   linkType: hard
 
@@ -1595,8 +1596,8 @@ __metadata:
   linkType: hard
 
 "@modelcontextprotocol/sdk@npm:^1.8.0":
-  version: 1.15.1
-  resolution: "@modelcontextprotocol/sdk@npm:1.15.1"
+  version: 1.16.0
+  resolution: "@modelcontextprotocol/sdk@npm:1.16.0"
   dependencies:
     ajv: "npm:^6.12.6"
     content-type: "npm:^1.0.5"
@@ -1610,7 +1611,7 @@ __metadata:
     raw-body: "npm:^3.0.0"
     zod: "npm:^3.23.8"
     zod-to-json-schema: "npm:^3.24.1"
-  checksum: 10/997069ced0108428d75e1c804a48ed9a889e9331e9ebdb71850a5c1da3058534c41263e25a3c753542c807d4da0d28d41b1715b5f6602233e6bfdcde55d7a718
+  checksum: 10/2f462fc1fc1f06c6c4b1e01e403f01e41ba5aaaaebd298381ccf70242d1c73423c9c4a2b7717b19c190e65a098979ccebf2f50b159c55870f5f3977d5b24e269
   languageName: node
   linkType: hard
 
@@ -2300,10 +2301,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pkgr/core@npm:^0.2.4":
-  version: 0.2.7
-  resolution: "@pkgr/core@npm:0.2.7"
-  checksum: 10/b16959878940f3d3016b79a4b2c23fd518aaec6b47295baa3154fbcf6574fee644c51023bb69069fa3ea9cdcaca40432818f54695f11acc0ae326cf56676e4d1
+"@pkgr/core@npm:^0.2.9":
+  version: 0.2.9
+  resolution: "@pkgr/core@npm:0.2.9"
+  checksum: 10/bb2fb86977d63f836f8f5b09015d74e6af6488f7a411dcd2bfdca79d76b5a681a9112f41c45bdf88a9069f049718efc6f3900d7f1de66a2ec966068308ae517f
   languageName: node
   linkType: hard
 
@@ -2849,11 +2850,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*, @types/node@npm:>=10.0.0":
-  version: 24.0.14
-  resolution: "@types/node@npm:24.0.14"
+  version: 24.0.15
+  resolution: "@types/node@npm:24.0.15"
   dependencies:
     undici-types: "npm:~7.8.0"
-  checksum: 10/60e546f905734ab37f02f5c30eeb98e350c97837c96e2191972fba0638aa0d414489fad989245a9f106b0a0405410e56fab769fdcfb6504341fc2286d9e1f496
+  checksum: 10/0c55b7f4b0cd4f47e43e587e54545c4f188521678328411033595a6f49f81ed54ec3729ce5025936c51250e31504a32a7f20b520ed9dd71f3ab1530f809975e9
   languageName: node
   linkType: hard
 
@@ -3643,8 +3644,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "balances-monitoring@workspace:examples/real-time-data/balances-monitoring"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
-    "@easylayer/common": "npm:0.9.1"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2"
+    "@easylayer/common": "npm:0.9.2"
     "@easylayer/transport-sdk": "npm:1.1.1"
     "@types/node": "npm:20.10.4"
     concurrently: "npm:9.2.0"
@@ -5624,8 +5625,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "e2e-bitcoin-crawler@workspace:e2e-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.1.2"
-    "@easylayer/common": "npm:0.9.1"
+    "@easylayer/bitcoin-crawler": "npm:0.1.3"
     "@types/jest": "npm:29.5.11"
     "@types/node": "npm:20.10.4"
     dotenv: "npm:16.4.5"
@@ -5685,9 +5685,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.173":
-  version: 1.5.185
-  resolution: "electron-to-chromium@npm:1.5.185"
-  checksum: 10/12f54ce7b814e0077dc30e7af3a4c81b103968c88b3157f9db1107cd76e06f8d702d2f9c1b3d07c40da05e8734119ae66d7d170e5a9679f0c34c0fb9e59f070d
+  version: 1.5.187
+  resolution: "electron-to-chromium@npm:1.5.187"
+  checksum: 10/36631d375536be3f0e22a8de771d0069cbac381629308c34a75c82b129bd48d76f97b4a16db934b33483e78696cf52522632d96f15c21979dbc62606196d5b4b
   languageName: node
   linkType: hard
 
@@ -6686,15 +6686,15 @@ __metadata:
   linkType: hard
 
 "form-data@npm:^4.0.0":
-  version: 4.0.3
-  resolution: "form-data@npm:4.0.3"
+  version: 4.0.4
+  resolution: "form-data@npm:4.0.4"
   dependencies:
     asynckit: "npm:^0.4.0"
     combined-stream: "npm:^1.0.8"
     es-set-tostringtag: "npm:^2.1.0"
     hasown: "npm:^2.0.2"
     mime-types: "npm:^2.1.12"
-  checksum: 10/22f6e55e6f32a5797a500ed7ca5aa9d690c4de6e1b3308f25f0d83a27d08d91a265ab59a190db2305b15144f8f07df08e8117bad6a93fc93de1baa838bfcc0b5
+  checksum: 10/a4b62e21932f48702bc468cc26fb276d186e6b07b557e3dd7cc455872bdbb82db7db066844a64ad3cf40eaf3a753c830538183570462d3649fdfd705601cbcfb
   languageName: node
   linkType: hard
 
@@ -7736,8 +7736,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "integration-crawler@workspace:integration-tests"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.1.2"
-    "@easylayer/common": "npm:0.9.1"
+    "@easylayer/bitcoin-crawler": "npm:0.1.3"
+    "@easylayer/common": "npm:0.9.2"
     "@easylayer/transport-sdk": "npm:1.1.1"
     "@types/jest": "npm:29.5.11"
     "@types/node": "npm:20.10.4"
@@ -9950,9 +9950,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "network-fee-analytics@workspace:examples/historical-data/network-fee-analytics"
   dependencies:
-    "@easylayer/bitcoin": "npm:0.9.1"
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
-    "@easylayer/common": "npm:0.9.1"
+    "@easylayer/bitcoin": "npm:0.9.2"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2"
+    "@easylayer/common": "npm:0.9.2"
     "@types/node": "npm:20.10.4"
     rimraf: "npm:5.0.5"
     ts-node: "npm:10.9.2"
@@ -12806,11 +12806,11 @@ __metadata:
   linkType: hard
 
 "synckit@npm:^0.11.0":
-  version: 0.11.8
-  resolution: "synckit@npm:0.11.8"
+  version: 0.11.11
+  resolution: "synckit@npm:0.11.11"
   dependencies:
-    "@pkgr/core": "npm:^0.2.4"
-  checksum: 10/9bb2cf11edaf31ba781f1c719dd58087323201bda6392254538aef4dea216aa02a32e25f06643bcfa1c1a2c95e0d84186d82cfb66f9a0ab3a2be4816c696a8a3
+    "@pkgr/core": "npm:^0.2.9"
+  checksum: 10/6ecd88212b5be80004376b6ea74babcba284566ff59a50d8803afcaa78c165b5d268635c1dd84532ee3f690a979409e1eda225a8a35bed2d135ffdcea06ce7b0
   languageName: node
   linkType: hard
 
@@ -13046,8 +13046,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "top-addresses-by-balance@workspace:examples/historical-data/top-addresses-by-balance"
   dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.0.10"
-    "@easylayer/common": "npm:0.9.1"
+    "@easylayer/bitcoin-crawler": "npm:0.1.2"
+    "@easylayer/common": "npm:0.9.2"
     "@easylayer/transport-sdk": "npm:1.1.1"
     "@types/node": "npm:20.10.4"
     rimraf: "npm:5.0.5"

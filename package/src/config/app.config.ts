@@ -1,8 +1,8 @@
+import { readFileSync } from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { Transform } from 'class-transformer';
 import { IsString, IsNumber, Min, Max, IsOptional, IsBoolean, IsArray } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
-import { readFileSync } from 'fs';
 
 @Injectable()
 export class AppConfig {

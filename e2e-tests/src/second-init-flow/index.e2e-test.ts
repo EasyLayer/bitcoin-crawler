@@ -26,7 +26,7 @@ describe('/Bitcoin Crawler: Second Initializaton Flow', () => {
     await cleanDataFolder('eventstore');
 
     // Initialize the write database
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/data.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
     await dbService.exec(networkTableSQL);
 
@@ -78,7 +78,7 @@ describe('/Bitcoin Crawler: Second Initializaton Flow', () => {
 
   it('should init exists Network aggregate with correct height', async () => {
     // Connect to the Event Store
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/data.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
     // Check if the Network aggregate is created
