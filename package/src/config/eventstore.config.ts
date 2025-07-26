@@ -18,7 +18,7 @@ export class EventStoreConfig {
   @Transform(({ value }) =>
     typeof value === 'string' && value.length ? value : resolve(process.cwd(), 'eventstore/bitcoin.db')
   )
-  BITCOIN_CRAWLER_EVENTSTORE_DB_NAME: string = resolve(process.cwd(), 'eventstore/bitcoin.db');
+  EVENTSTORE_DB_NAME: string = resolve(process.cwd(), 'eventstore/bitcoin.db');
 
   @Transform(({ value }) => (value?.length ? value : 'sqlite'))
   @IsString()
@@ -27,7 +27,7 @@ export class EventStoreConfig {
     default: 'sqlite',
     enum: ['sqlite', 'postgres'],
   })
-  BITCOIN_CRAWLER_EVENTSTORE_DB_TYPE: DatabaseTypes = 'sqlite';
+  EVENTSTORE_DB_TYPE: DatabaseTypes = 'sqlite';
 
   // @Transform(({ value }) => (value?.length ? value : 'sqlite'))
 
@@ -36,7 +36,7 @@ export class EventStoreConfig {
     description: 'Automatic synchronization that creates or updates tables and columns. Use with caution.',
     default: true,
   })
-  BITCOIN_CRAWLER_EVENTSTORE_DB_SYNCHRONIZE: boolean = true;
+  EVENTSTORE_DB_SYNCHRONIZE: boolean = true;
 
   @Transform(({ value }) => (value?.length ? value : 'localhost'))
   @IsString()
@@ -44,7 +44,7 @@ export class EventStoreConfig {
   @JSONSchema({
     description: 'Host for the eventstore database connection.',
   })
-  BITCOIN_CRAWLER_EVENTSTORE_DB_HOST?: string;
+  EVENTSTORE_DB_HOST?: string;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -55,7 +55,7 @@ export class EventStoreConfig {
   @JSONSchema({
     description: 'Port for the eventstore database connection.',
   })
-  BITCOIN_CRAWLER_EVENTSTORE_DB_PORT?: number;
+  EVENTSTORE_DB_PORT?: number;
 
   @Transform(({ value }) => (value?.length ? value : ''))
   @IsString()
@@ -63,7 +63,7 @@ export class EventStoreConfig {
   @JSONSchema({
     description: 'Username for the eventstore database connection.',
   })
-  BITCOIN_CRAWLER_EVENTSTORE_DB_USERNAME?: string;
+  EVENTSTORE_DB_USERNAME?: string;
 
   @Transform(({ value }) => (value?.length ? value : ''))
   @IsString()
@@ -71,21 +71,21 @@ export class EventStoreConfig {
   @JSONSchema({
     description: 'Password for the eventstore database connection.',
   })
-  BITCOIN_CRAWLER_EVENTSTORE_DB_PASSWORD?: string;
+  EVENTSTORE_DB_PASSWORD?: string;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
     return n === 0 ? 0 : n || 1000;
   })
   @IsNumber()
-  BITCOIN_CRAWLER_EVENTSTORE_SNAPSHOT_INTERVAL: number = 1000;
+  EVENTSTORE_SNAPSHOT_INTERVAL: number = 1000;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
     return n === 0 ? 0 : n || 999;
   })
   @IsNumber()
-  BITCOIN_CRAWLER_EVENTSTORE_INSERT_BATCH_SIZE: number = 999;
+  EVENTSTORE_INSERT_BATCH_SIZE: number = 999;
 
   isLogging(): boolean {
     return process?.env?.DB_DEBUG === '1';

@@ -10,14 +10,14 @@ export class ProvidersConfig {
   @JSONSchema({
     description: 'HTTP URL of the Bitcoin-like network provider node',
   })
-  BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL!: string;
+  NETWORK_PROVIDER_NODE_HTTP_URL!: string;
 
   @Transform(({ value }) => (value ? value : 'selfnode'))
   @IsString()
   @JSONSchema({
     description: 'Type of the network provider (selfnode, quicknode, etc.)',
   })
-  BITCOIN_CRAWLER_NETWORK_PROVIDER_TYPE: string = 'selfnode';
+  NETWORK_PROVIDER_TYPE: string = 'selfnode';
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -27,7 +27,7 @@ export class ProvidersConfig {
   @JSONSchema({
     description: 'Request timeout in milliseconds',
   })
-  BITCOIN_CRAWLER_NETWORK_PROVIDER_REQUEST_TIMEOUT: number = 5000;
+  NETWORK_PROVIDER_REQUEST_TIMEOUT: number = 5000;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -37,7 +37,7 @@ export class ProvidersConfig {
   @JSONSchema({
     description: 'Maximum concurrent requests',
   })
-  BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS: number = 1;
+  NETWORK_PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS: number = 1;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -47,7 +47,7 @@ export class ProvidersConfig {
   @JSONSchema({
     description: 'Maximum batch size for parallel requests',
   })
-  BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE: number = 1000;
+  NETWORK_PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE: number = 1000;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -57,5 +57,5 @@ export class ProvidersConfig {
   @JSONSchema({
     description: 'Delay between batches in milliseconds',
   })
-  BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS: number = 100;
+  NETWORK_PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS: number = 100;
 }
