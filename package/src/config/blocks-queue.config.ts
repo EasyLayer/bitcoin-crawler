@@ -16,12 +16,12 @@ export class BlocksQueueConfig {
     default: BlocksQueueStrategy.PULL_NETWORK_PROVIDER,
     enum: Object.values(BlocksQueueStrategy),
   })
-  BITCOIN_CRAWLER_BLOCKS_QUEUE_LOADER_STRATEGY_NAME: BlocksQueueStrategy = BlocksQueueStrategy.PULL_NETWORK_PROVIDER;
+  BLOCKS_QUEUE_LOADER_STRATEGY_NAME: BlocksQueueStrategy = BlocksQueueStrategy.PULL_NETWORK_PROVIDER;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
     return n === 0 ? 0 : n || 1;
   })
   @IsNumber()
-  BITCOIN_CRAWLER_BLOCKS_QUEUE_LOADER_PRELOADER_BASE_COUNT: number = 1;
+  BLOCKS_QUEUE_LOADER_PRELOADER_BASE_COUNT: number = 1;
 }

@@ -1,4 +1,4 @@
-import { Module, DynamicModule } from '@nestjs/common';
+import { Module, DynamicModule, Provider } from '@nestjs/common';
 import { transformAndValidate } from 'class-transformer-validator';
 import { CqrsModule, EventPublisher } from '@easylayer/common/cqrs';
 import type { IQueryHandler, IEventHandler } from '@easylayer/common/cqrs';
@@ -30,22 +30,24 @@ import { AppConfig, BusinessConfig, EventStoreConfig, BlocksQueueConfig, Provide
 import { ModelType, ModelFactoryService } from './framework';
 import { MetricsService } from './metrics.service';
 
-const appName = `${process?.env?.BITCOIN_CRAWLER_APPLICATION_NAME || 'bitcoin'}`;
+const appName = `${process?.env?.APPLICATION_NAME || 'bitcoin'}`;
 
 export const EVENTSTORE_NAME = `${appName}-eventstore`;
 
-interface AppModuleOptions {
-  Models: ModelType[];
+export interface AppModuleOptions {
+  Models?: ModelType[];
   QueryHandlers?: Array<new (...args: any[]) => IQueryHandler>;
   EventHandlers?: Array<new (...args: any[]) => IEventHandler>;
+  Providers?: Array<new (...args: any[]) => Provider>;
 }
 
 @Module({})
 export class AppModule {
   static async register({
-    Models,
+    Models = [],
     QueryHandlers: UserQueryHandlers = [],
     EventHandlers: UserEventHandlers = [],
+    Providers = [],
   }: AppModuleOptions): Promise<DynamicModule> {
     const eventstoreConfig = await transformAndValidate(EventStoreConfig, process.env, {
       validator: { whitelist: true },
@@ -63,10 +65,10 @@ export class AppModule {
       validator: { whitelist: true },
     });
 
-    const queueIteratorBlocksBatchSize = businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT * 2;
-    const queueLoaderRequestBlocksBatchSize = businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT * 2;
+    const queueIteratorBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
+    const queueLoaderRequestBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
     const maxQueueSize = queueIteratorBlocksBatchSize * 8;
-    const minTransferSize = businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_SIZE - 1;
+    const minTransferSize = businessConfig.NETWORK_MAX_BLOCK_SIZE - 1;
 
     const networkModel = new Network({ aggregateId: NETWORK_AGGREGATE_ID, maxSize: 0 });
     // Create instances of models without merging for basic instances
@@ -77,24 +79,24 @@ export class AppModule {
 
     // Network configuration
     const network: NetworkConfig = {
-      network: businessConfig.BITCOIN_CRAWLER_NETWORK_TYPE as NetworkConfig['network'],
-      nativeCurrencySymbol: businessConfig.BITCOIN_CRAWLER_NETWORK_NATIVE_CURRENCY_SYMBOL,
-      nativeCurrencyDecimals: businessConfig.BITCOIN_CRAWLER_NETWORK_NATIVE_CURRENCY_DECIMALS,
-      hasSegWit: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_SEGWIT,
-      hasTaproot: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_TAPROOT,
-      hasRBF: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_RBF,
-      hasCSV: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_CSV,
-      hasCLTV: businessConfig.BITCOIN_CRAWLER_NETWORK_HAS_CLTV,
-      maxBlockSize: businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_SIZE,
-      maxBlockWeight: businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT,
-      difficultyAdjustmentInterval: businessConfig.BITCOIN_CRAWLER_NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL,
-      targetBlockTime: businessConfig.BITCOIN_CRAWLER_NETWORK_TARGET_BLOCK_TIME,
+      network: businessConfig.NETWORK_TYPE as NetworkConfig['network'],
+      nativeCurrencySymbol: businessConfig.NETWORK_NATIVE_CURRENCY_SYMBOL,
+      nativeCurrencyDecimals: businessConfig.NETWORK_NATIVE_CURRENCY_DECIMALS,
+      hasSegWit: businessConfig.NETWORK_HAS_SEGWIT,
+      hasTaproot: businessConfig.NETWORK_HAS_TAPROOT,
+      hasRBF: businessConfig.NETWORK_HAS_RBF,
+      hasCSV: businessConfig.NETWORK_HAS_CSV,
+      hasCLTV: businessConfig.NETWORK_HAS_CLTV,
+      maxBlockSize: businessConfig.NETWORK_MAX_BLOCK_SIZE,
+      maxBlockWeight: businessConfig.NETWORK_MAX_BLOCK_WEIGHT,
+      difficultyAdjustmentInterval: businessConfig.NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL,
+      targetBlockTime: businessConfig.NETWORK_TARGET_BLOCK_TIME,
     };
 
     const rateLimits: RateLimits = {
-      maxConcurrentRequests: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS,
-      maxBatchSize: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE,
-      requestDelayMs: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS,
+      maxConcurrentRequests: providersConfig.NETWORK_PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS,
+      maxBatchSize: providersConfig.NETWORK_PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE,
+      requestDelayMs: providersConfig.NETWORK_PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS,
     };
 
     return {
@@ -113,9 +115,9 @@ export class AppModule {
           providers: [
             {
               connection: {
-                type: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_TYPE as NodeProviderTypes,
-                baseUrl: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL,
-                responseTimeout: providersConfig.BITCOIN_CRAWLER_NETWORK_PROVIDER_REQUEST_TIMEOUT,
+                type: providersConfig.NETWORK_PROVIDER_TYPE as NodeProviderTypes,
+                baseUrl: providersConfig.NETWORK_PROVIDER_NODE_HTTP_URL,
+                responseTimeout: providersConfig.NETWORK_PROVIDER_REQUEST_TIMEOUT,
               },
             },
           ],
@@ -124,29 +126,29 @@ export class AppModule {
           name: EVENTSTORE_NAME,
           aggregates: [...userModels, networkModel],
           logging: eventstoreConfig.isLogging(),
-          snapshotInterval: eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_SNAPSHOT_INTERVAL,
-          sqliteBatchSize: eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_INSERT_BATCH_SIZE,
-          type: eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_TYPE,
-          database: eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_NAME,
-          ...(eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_HOST && {
-            host: eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_HOST,
+          snapshotInterval: eventstoreConfig.EVENTSTORE_SNAPSHOT_INTERVAL,
+          sqliteBatchSize: eventstoreConfig.EVENTSTORE_INSERT_BATCH_SIZE,
+          type: eventstoreConfig.EVENTSTORE_DB_TYPE,
+          database: eventstoreConfig.EVENTSTORE_DB_NAME,
+          ...(eventstoreConfig.EVENTSTORE_DB_HOST && {
+            host: eventstoreConfig.EVENTSTORE_DB_HOST,
           }),
-          ...(eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_PORT && {
-            port: eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_PORT,
+          ...(eventstoreConfig.EVENTSTORE_DB_PORT && {
+            port: eventstoreConfig.EVENTSTORE_DB_PORT,
           }),
-          ...(eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_USERNAME && {
-            username: eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_USERNAME,
+          ...(eventstoreConfig.EVENTSTORE_DB_USERNAME && {
+            username: eventstoreConfig.EVENTSTORE_DB_USERNAME,
           }),
-          ...(eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_PASSWORD && {
-            password: eventstoreConfig.BITCOIN_CRAWLER_EVENTSTORE_DB_PASSWORD,
+          ...(eventstoreConfig.EVENTSTORE_DB_PASSWORD && {
+            password: eventstoreConfig.EVENTSTORE_DB_PASSWORD,
           }),
         }),
         BlocksQueueModule.forRootAsync({
           blocksCommandExecutor: NetworkCommandFactoryService,
-          maxBlockHeight: businessConfig.BITCOIN_CRAWLER_MAX_BLOCK_HEIGHT,
-          queueLoaderStrategyName: blocksQueueConfig.BITCOIN_CRAWLER_BLOCKS_QUEUE_LOADER_STRATEGY_NAME,
-          basePreloadCount: blocksQueueConfig.BITCOIN_CRAWLER_BLOCKS_QUEUE_LOADER_PRELOADER_BASE_COUNT,
-          blockSize: businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT,
+          maxBlockHeight: businessConfig.MAX_BLOCK_HEIGHT,
+          queueLoaderStrategyName: blocksQueueConfig.BLOCKS_QUEUE_LOADER_STRATEGY_NAME,
+          basePreloadCount: blocksQueueConfig.BLOCKS_QUEUE_LOADER_PRELOADER_BASE_COUNT,
+          blockSize: businessConfig.NETWORK_MAX_BLOCK_WEIGHT,
           queueLoaderRequestBlocksBatchSize,
           queueIteratorBlocksBatchSize,
           maxQueueSize,
@@ -198,6 +200,7 @@ export class AppModule {
         ...QueryHandlers,
         ...UserQueryHandlers,
         ...UserEventHandlers,
+        ...Providers,
       ],
       exports: [],
     };

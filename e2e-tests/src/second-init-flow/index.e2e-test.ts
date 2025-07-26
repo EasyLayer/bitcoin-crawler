@@ -4,7 +4,6 @@ import { bootstrap } from '@easylayer/bitcoin-crawler';
 import { BitcoinNetworkInitializedEvent } from '@easylayer/bitcoin';
 import { SQLiteService } from '../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../+helpers/clean-data-folder';
-import BlocksModel from '../first-init-flow/blocks.model';
 import type { NetworkRecord } from './mocks';
 import { networkTableSQL, mockNetworks } from './mocks';
 
@@ -53,7 +52,6 @@ describe('/Bitcoin Crawler: Second Initializaton Flow', () => {
     await dbService.close();
 
     await bootstrap({
-      Models: [BlocksModel],
       testing: {
         handlerEventsToWait: [
           {

@@ -47,22 +47,22 @@ jobs:
       - name: Set environment variables
         run: |
           # Define the environment variables using GitHub Secrets
-          BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL="${{ secrets.BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL }}"
+          NETWORK_PROVIDER_NODE_HTTP_URL="${{ secrets.NETWORK_PROVIDER_NODE_HTTP_URL }}"
           # Add more variables here if needed
 
           # Find all .env files within the ./e2e-tests directory and its subdirectories
           find ./e2e-tests -type f -name ".env" | while read env_file; do
             echo "Processing $env_file"
 
-            # Update BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL
-            if grep -q "^BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL=" "$env_file"; then
+            # Update NETWORK_PROVIDER_NODE_HTTP_URL
+            if grep -q "^NETWORK_PROVIDER_NODE_HTTP_URL=" "$env_file"; then
               # Replace the existing value of the variable
-              sed -i "s|^BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL=.*|BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL=${BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL}|" "$env_file"
-              echo "Updated BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL in $env_file"
+              sed -i "s|^NETWORK_PROVIDER_NODE_HTTP_URL=.*|NETWORK_PROVIDER_NODE_HTTP_URL=${NETWORK_PROVIDER_NODE_HTTP_URL}|" "$env_file"
+              echo "Updated NETWORK_PROVIDER_NODE_HTTP_URL in $env_file"
             else
               # Add the variable if it does not exist
-              echo "BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL=${BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL}" >> "$env_file"
-              echo "Added BITCOIN_CRAWLER_NETWORK_PROVIDER_NODE_HTTP_URL to $env_file"
+              echo "NETWORK_PROVIDER_NODE_HTTP_URL=${NETWORK_PROVIDER_NODE_HTTP_URL}" >> "$env_file"
+              echo "Added NETWORK_PROVIDER_NODE_HTTP_URL to $env_file"
             fi
 
             # Add more variables here following the same pattern if needed

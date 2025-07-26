@@ -74,8 +74,7 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
         blocksHeight: batch[batch.length - 1]?.height,
         blocksLength: batch?.length,
         blocksSize:
-          batch.reduce((sum: number, b: any) => sum + b?.size, 0) /
-          this.businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT,
+          batch.reduce((sum: number, b: any) => sum + b?.size, 0) / this.businessConfig.NETWORK_MAX_BLOCK_WEIGHT,
         txLength: batch.reduce((sum: number, b: any) => sum + b?.tx?.length, 0),
         vinLength: batch.reduce(
           (sum: number, b: any) => sum + b?.tx?.reduce((s: number, tx: any) => s + tx?.vin?.length, 0),

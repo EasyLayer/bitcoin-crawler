@@ -2,11 +2,9 @@ import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import type { INestApplication, INestApplicationContext } from '@nestjs/common';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import { EventStatus } from '@easylayer/common/cqrs';
 import { BitcoinNetworkInitializedEvent } from '@easylayer/bitcoin';
 import { SQLiteService } from '../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../+helpers/clean-data-folder';
-import BlocksModel from './blocks.model';
 
 describe('/Bitcoin Crawler: First Initializaton Flow', () => {
   let app: INestApplication | INestApplicationContext;
@@ -28,7 +26,6 @@ describe('/Bitcoin Crawler: First Initializaton Flow', () => {
     await cleanDataFolder('eventstore');
 
     app = await bootstrap({
-      Models: [BlocksModel],
       testing: {
         handlerEventsToWait: [
           {

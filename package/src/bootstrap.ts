@@ -7,15 +7,12 @@ import { filter } from 'rxjs/operators';
 import { NestFactory } from '@nestjs/core';
 import type { INestApplication, INestApplicationContext } from '@nestjs/common';
 import { NestLogger, AppLogger } from '@easylayer/common/logger';
-import type { CustomEventBus, IQueryHandler, IEventHandler } from '@easylayer/common/cqrs';
+import type { CustomEventBus } from '@easylayer/common/cqrs';
 import { CqrsModule } from '@easylayer/common/cqrs';
+import type { AppModuleOptions } from './app.module';
 import { AppModule } from './app.module';
-import type { ModelType } from './framework';
 
-interface BootstrapOptions {
-  Models: ModelType[];
-  QueryHandlers?: Array<new (...args: any[]) => IQueryHandler>;
-  EventHandlers?: Array<new (...args: any[]) => IEventHandler>;
+interface BootstrapOptions extends AppModuleOptions {
   testing?: TestingOptions;
 }
 
@@ -33,6 +30,7 @@ export const bootstrap = async ({
   Models,
   QueryHandlers,
   EventHandlers,
+  Providers,
   testing = {},
 }: BootstrapOptions): Promise<INestApplicationContext | INestApplication> => {
   // Load environment variables globally
@@ -42,7 +40,7 @@ export const bootstrap = async ({
 
   try {
     // Register root application module with transport configurations
-    const rootModule = await AppModule.register({ Models, QueryHandlers, EventHandlers });
+    const rootModule = await AppModule.register({ Models, QueryHandlers, EventHandlers, Providers });
 
     let appContext: INestApplicationContext | INestApplication;
     const httpPort = Number(process.env.HTTP_PORT ?? '0');

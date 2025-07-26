@@ -32,7 +32,7 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
     const networkModel: Network = await this.networkModelFactory.initModel();
 
     // Get configured start height (can be undefined)
-    const configStartHeight = this.businessConfig.BITCOIN_CRAWLER_START_BLOCK_HEIGHT;
+    const configStartHeight = this.businessConfig.START_BLOCK_HEIGHT;
 
     // Get current block height from the model (last processed block or undefined if empty)
     const currentDbHeight = networkModel.currentBlockHeight;
