@@ -2,7 +2,7 @@ import { Inject } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@easylayer/common/cqrs';
 import { EventStoreReadRepository } from '@easylayer/common/eventstore';
 import { GetModelsQuery } from '@easylayer/bitcoin';
-import { ModelType, ModelFactoryService } from '../../framework';
+import { ModelType, ModelFactoryService } from '../framework';
 import { NetworkModelFactoryService } from '../services';
 
 @QueryHandler(GetModelsQuery)
@@ -11,7 +11,6 @@ export class GetModelsQueryHandler implements IQueryHandler<GetModelsQuery> {
     private readonly eventStoreReadRepository: EventStoreReadRepository,
     @Inject('FrameworkModelsConstructors')
     private Models: ModelType[],
-    @Inject('FrameworModelFactory')
     private readonly modelFactoryService: ModelFactoryService,
     private readonly networkModelFactory: NetworkModelFactoryService
   ) {}

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "description": "",
   "author": "Yaroslav Pavliuk",
-  "license": "MIT with restrictions - see LICENSE file for details",
+  "license": "AGPL-3.0-only",
   "private": true,
   "packageManager": "yarn@4.5.0",
   "type": "commonjs",

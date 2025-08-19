@@ -55,13 +55,13 @@ export class BusinessConfig {
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
-    return n || 600; // 10 minutes for Bitcoin
+    return n || 600000;
   })
   @IsNumber()
   @JSONSchema({
-    description: 'Target block time in seconds (600=Bitcoin, 150=Litecoin, 60=Dogecoin)',
+    description: 'Target block time in milliseconds',
   })
-  NETWORK_TARGET_BLOCK_TIME: number = 600;
+  NETWORK_TARGET_BLOCK_TIME: number = 600000;
 
   @Transform(({ value }) => value !== 'false')
   @IsBoolean()
@@ -127,4 +127,14 @@ export class BusinessConfig {
     description: 'Difficulty adjustment interval in blocks',
   })
   NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL: number = 2016;
+
+  @Transform(({ value }) => {
+    const n = parseInt(value, 10);
+    return n || 1;
+  })
+  @IsNumber()
+  @JSONSchema({
+    description: 'Minimum fee rate for caching transactions in sat/vB',
+  })
+  MEMPOOL_MIN_FEE_RATE: number = 1;
 }

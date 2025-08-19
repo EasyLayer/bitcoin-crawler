@@ -8,6 +8,7 @@ import {
   BitcoinNetworkBlocksAddedEvent,
   BitcoinNetworkReorganizedEvent,
   BitcoinNetworkClearedEvent,
+  BitcoinMempoolSynchronizedEvent,
 } from '@easylayer/bitcoin';
 import { NetworkCommandFactoryService } from '../services';
 
@@ -17,6 +18,18 @@ export class NetworkSaga {
     private readonly blocksQueueService: BlocksQueueService,
     private readonly networkCommandFactory: NetworkCommandFactoryService
   ) {}
+
+  @Saga()
+  onBitcoinMempoolSynchronizedEvent(events$: Observable<any>): Observable<ICommand> {
+    return events$.pipe(
+      executeWithRetry({
+        event: BitcoinMempoolSynchronizedEvent,
+        command: async ({ payload }: BitcoinMempoolSynchronizedEvent) => {
+          await this.networkCommandFactory.init({ requestId: uuidv4() });
+        },
+      })
+    );
+  }
 
   @Saga()
   onBitcoinNetworkClearedEvent(events$: Observable<any>): Observable<ICommand> {

@@ -6,7 +6,7 @@ import { InitNetworkCommand, Network, BlockchainProviderService } from '@easylay
 import { NetworkModelFactoryService } from '../services';
 import { BusinessConfig } from '../../config';
 import { ConsolePromptService } from '../services/console-prompt.service';
-import { ModelFactoryService, ModelType } from '../../framework';
+import { ModelFactoryService, ModelType } from '../framework';
 
 @CommandHandler(InitNetworkCommand)
 export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCommand> {
@@ -19,7 +19,6 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
     private readonly consolePromptService: ConsolePromptService,
     @Inject('FrameworkModelsConstructors')
     private Models: ModelType[],
-    @Inject('FrameworModelFactory')
     private readonly modelFactoryService: ModelFactoryService
   ) {}
 
@@ -27,7 +26,7 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
     const { requestId } = payload;
 
     // Get current network height for listen strategy
-    const currentNetworkHeight = await this.blockchainProviderService.getCurrentBlockHeight();
+    const currentNetworkHeight = await this.blockchainProviderService.getCurrentBlockHeightFromNetwork();
 
     const networkModel: Network = await this.networkModelFactory.initModel();
 

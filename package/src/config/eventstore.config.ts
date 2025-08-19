@@ -75,10 +75,10 @@ export class EventStoreConfig {
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
-    return n === 0 ? 0 : n || 1000;
+    return n === 0 ? 0 : n || 10000;
   })
   @IsNumber()
-  EVENTSTORE_SNAPSHOT_INTERVAL: number = 1000;
+  EVENTSTORE_SNAPSHOT_INTERVAL: number = 10000;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -86,6 +86,51 @@ export class EventStoreConfig {
   })
   @IsNumber()
   EVENTSTORE_INSERT_BATCH_SIZE: number = 999;
+
+  @Transform(({ value }) => {
+    if (!value || !value.length) return undefined;
+    const n = parseInt(value, 10);
+    return isNaN(n) ? undefined : n;
+  })
+  @IsNumber()
+  @IsOptional()
+  EVENTSTORE_PG_POOL_MAX?: number;
+
+  @Transform(({ value }) => {
+    if (!value || !value.length) return undefined;
+    const n = parseInt(value, 10);
+    return isNaN(n) ? undefined : n;
+  })
+  @IsNumber()
+  @IsOptional()
+  EVENTSTORE_PG_POOL_MIN?: number;
+
+  @Transform(({ value }) => {
+    if (!value || !value.length) return undefined;
+    const n = parseInt(value, 10);
+    return isNaN(n) ? undefined : n;
+  })
+  @IsNumber()
+  @IsOptional()
+  EVENTSTORE_PG_IDLE_TIMEOUT?: number;
+
+  @Transform(({ value }) => {
+    if (!value || !value.length) return undefined;
+    const n = parseInt(value, 10);
+    return isNaN(n) ? undefined : n;
+  })
+  @IsNumber()
+  @IsOptional()
+  EVENTSTORE_PG_CONNECTION_TIMEOUT?: number;
+
+  @Transform(({ value }) => {
+    if (!value || !value.length) return undefined;
+    const n = parseInt(value, 10);
+    return isNaN(n) ? undefined : n;
+  })
+  @IsNumber()
+  @IsOptional()
+  EVENTSTORE_PG_QUERY_TIMEOUT?: number;
 
   isLogging(): boolean {
     return process?.env?.DB_DEBUG === '1';

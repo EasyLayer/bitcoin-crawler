@@ -7,9 +7,11 @@ import {
   Network,
   BlockchainProviderService,
   BlockchainValidationError,
+  Block,
+  LightBlock,
 } from '@easylayer/bitcoin';
-import { NetworkModelFactoryService } from '../services';
-import { Model, ModelType, ModelFactoryService } from '../../framework';
+import { NetworkModelFactoryService, MempoolModelFactoryService } from '../services';
+import { Model, ModelType, ModelFactoryService, ExecutionContext } from '../framework';
 import { MetricsService } from '../../metrics.service';
 import { BusinessConfig, ProvidersConfig } from '../../config';
 
@@ -18,58 +20,74 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
   constructor(
     private readonly log: AppLogger,
     private readonly networkModelFactory: NetworkModelFactoryService,
+    private readonly mempoolModelFactory: MempoolModelFactoryService,
     private readonly blockchainProvider: BlockchainProviderService,
     private readonly eventStore: EventStoreWriteRepository,
     private readonly metricsService: MetricsService,
     @Inject('FrameworkModelsConstructors')
     private Models: ModelType[],
-    @Inject('FrameworModelFactory')
     private readonly modelFactoryService: ModelFactoryService,
     private readonly businessConfig: BusinessConfig,
     private readonly providersConfig: ProvidersConfig
   ) {}
 
-  @RuntimeTracker({ showMemory: false, warningThresholdMs: 1000, errorThresholdMs: 3000 })
+  // @RuntimeTracker({ showMemory: false, warningThresholdMs: 1000, errorThresholdMs: 3000 })
   async execute({ payload }: AddBlocksBatchCommand) {
+    // console.timeEnd('TIME_BETWEEN_COMMAND');
     const { batch, requestId } = payload;
 
     const networkModel: Network = await this.networkModelFactory.initModel();
 
     let models = this.Models.map((ModelCtr) => this.modelFactoryService.createNewModel(ModelCtr));
 
-    await this.metricsService.track('framework_restore_models', async () => {
-      const result: Model[] = [];
-      for (const model of models) {
-        result.push(await this.modelFactoryService.restoreModel(model));
-      }
-      models = result;
-    });
+    // await this.metricsService.track('framework_restore_models', async () => {
+    const result: Model[] = [];
+    for (const model of models) {
+      result.push(await this.modelFactoryService.restoreModel(model));
+    }
+    models = result;
+    // });
 
     try {
       await networkModel.addBlocks({
         requestId,
-        blocks: batch,
+        blocks: batch.map(
+          (block: Block) =>
+            ({
+              hash: block.hash,
+              previousblockhash: block.previousblockhash,
+              merkleroot: block.merkleroot,
+              height: block.height,
+              tx: block.tx?.map((item) => item.txid),
+            }) as LightBlock
+        ),
       });
-
+      // console.time('FRAMEWORK');
       for (let block of batch) {
-        await this.metricsService.track('framework_parse_block', async () => {
-          for (const model of models) {
-            await model.parseBlock({
-              block,
-              services: {
-                provider: this.blockchainProvider,
-              },
-              networkConfig: this.blockchainProvider.config,
-            });
-          }
-        });
+        // await this.metricsService.track('framework_parse_block', async () => {
+        for (const model of models) {
+          const context: ExecutionContext = {
+            block,
+            mempool: this.mempoolModelFactory,
+            services: {
+              nodeProvider: this.blockchainProvider,
+              networkModelService: this.networkModelFactory,
+              userModelService: this.modelFactoryService,
+            },
+            networkConfig: this.blockchainProvider.config,
+          };
+          await model.parseBlock(context);
+        }
+        // });
       }
-
-      await this.metricsService.track(
-        'system_eventstore_save',
-        async () => await this.eventStore.save([...models, networkModel])
-      );
-
+      // console.timeEnd('FRAMEWORK');
+      // await this.metricsService.track(
+      //   'system_eventstore_save',
+      //   async () => await this.eventStore.save([...models, networkModel])
+      // );
+      // console.time('DATABASE');
+      await this.eventStore.save([...models, networkModel]);
+      // console.timeEnd('DATABASE');
       const stats = {
         blocksHeight: batch[batch.length - 1]?.height,
         blocksLength: batch?.length,
@@ -84,13 +102,15 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
           (sum: number, b: any) => sum + b?.tx?.reduce((s: number, tx: any) => s + tx?.vout?.length, 0),
           0
         ),
-        frameworkRestoreModels: this.metricsService.getMetric('framework_restore_models'),
-        frameworkParseBlockTotal: this.metricsService.getMetric('framework_parse_block'),
-        systemEventstoreSaveTotal: this.metricsService.getMetric('system_eventstore_save'),
+        // frameworkRestoreModels: this.metricsService.getMetric('framework_restore_models'),
+        // frameworkParseBlockTotal: this.metricsService.getMetric('framework_parse_block'),
+        // systemEventstoreSaveTotal: this.metricsService.getMetric('system_eventstore_save'),
       };
 
       this.log.info('Blocks successfull loaded', { args: { blocksHeight: stats.blocksHeight } });
-      this.log.debug('Blocks successfull loaded', { args: { ...stats } });
+      // this.log.debug('Blocks successfull loaded', { args: { ...stats } });
+
+      // console.time('TIME_BETWEEN_COMMAND');
     } catch (error) {
       if (error instanceof BlockchainValidationError) {
         await networkModel.reorganisation({
