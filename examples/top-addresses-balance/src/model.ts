@@ -63,7 +63,7 @@ interface ScriptCacheEntry {
   lastUsed: number;                   // Block height for LRU eviction
 }
 
-export const UNIQ_MODEL_NAME = 'top-addresses-by-balance';
+export const UNIQ_MODEL_NAME = 'BtcBalances';
 
 /**
  * TopAddressesByBalanceModel - Efficiently tracks Bitcoin's richest addresses
@@ -96,7 +96,7 @@ export const UNIQ_MODEL_NAME = 'top-addresses-by-balance';
  * - addToBalance: O(log N) for sorted array maintenance
  * - limitToTopAddresses: O(1) check + O(removed × UTXOs) cleanup
  */
-export default class TopAddressesByBalanceModel extends Model {
+export class BtcBalances extends Model {
   // Configuration
   private topLimit: number = 1000;                    // Keep top N richest addresses
   private minimumUtxoValue: string = "10000000";      // 0.1 BTC threshold for UTXO storage
@@ -145,62 +145,62 @@ export default class TopAddressesByBalanceModel extends Model {
     super(UNIQ_MODEL_NAME);
   }
 
-  /**
-   * Serialize model state for persistence
-   */
-  protected toJsonPayload(): any {
-    return {
-      topLimit: this.topLimit,
-      minimumUtxoValue: this.minimumUtxoValue,
-      maxScriptCacheSize: this.maxScriptCacheSize,
-      addressStates: Array.from(this.addressStates.entries()),
-      sortedBalances: this.sortedBalances,
-      utxoLookup: Array.from(this.utxoLookup.entries()),
-      addressUtxos: Array.from(this.addressUtxos.entries()),
-      scriptCache: Array.from(this.scriptCache.entries()),
-    };
-  }
+  // /**
+  //  * Serialize model state for persistence
+  //  */
+  // protected toJsonPayload(): any {
+  //   return {
+  //     topLimit: this.topLimit,
+  //     minimumUtxoValue: this.minimumUtxoValue,
+  //     maxScriptCacheSize: this.maxScriptCacheSize,
+  //     addressStates: Array.from(this.addressStates.entries()),
+  //     sortedBalances: this.sortedBalances,
+  //     utxoLookup: Array.from(this.utxoLookup.entries()),
+  //     addressUtxos: Array.from(this.addressUtxos.entries()),
+  //     scriptCache: Array.from(this.scriptCache.entries()),
+  //   };
+  // }
 
-  /**
-   * Deserialize model state from persistence
-   */
-  protected fromSnapshot(state: any): void {
-    // Restore configuration
-    if (state.topLimit !== undefined) this.topLimit = state.topLimit;
-    if (state.minimumUtxoValue !== undefined) this.minimumUtxoValue = state.minimumUtxoValue;
-    if (state.maxScriptCacheSize !== undefined) this.maxScriptCacheSize = state.maxScriptCacheSize;
+  // /**
+  //  * Deserialize model state from persistence
+  //  */
+  // protected fromSnapshot(state: any): void {
+  //   // Restore configuration
+  //   if (state.topLimit !== undefined) this.topLimit = state.topLimit;
+  //   if (state.minimumUtxoValue !== undefined) this.minimumUtxoValue = state.minimumUtxoValue;
+  //   if (state.maxScriptCacheSize !== undefined) this.maxScriptCacheSize = state.maxScriptCacheSize;
     
-    // Restore address states
-    if (state.addressStates && Array.isArray(state.addressStates)) {
-      this.addressStates = new Map(state.addressStates);
-    }
+  //   // Restore address states
+  //   if (state.addressStates && Array.isArray(state.addressStates)) {
+  //     this.addressStates = new Map(state.addressStates);
+  //   }
     
-    // Restore sorted balances array
-    if (state.sortedBalances && Array.isArray(state.sortedBalances)) {
-      this.sortedBalances = state.sortedBalances;
-    } else {
-      this.rebuildSortedBalances();
-    }
+  //   // Restore sorted balances array
+  //   if (state.sortedBalances && Array.isArray(state.sortedBalances)) {
+  //     this.sortedBalances = state.sortedBalances;
+  //   } else {
+  //     this.rebuildSortedBalances();
+  //   }
     
-    // Restore UTXO lookup
-    if (state.utxoLookup && Array.isArray(state.utxoLookup)) {
-      this.utxoLookup = new Map(state.utxoLookup);
-    }
+  //   // Restore UTXO lookup
+  //   if (state.utxoLookup && Array.isArray(state.utxoLookup)) {
+  //     this.utxoLookup = new Map(state.utxoLookup);
+  //   }
     
-    // Restore address to UTXOs mapping
-    if (state.addressUtxos && Array.isArray(state.addressUtxos)) {
-      this.addressUtxos = new Map(state.addressUtxos);
-    } else {
-      this.rebuildAddressUtxos();
-    }
+  //   // Restore address to UTXOs mapping
+  //   if (state.addressUtxos && Array.isArray(state.addressUtxos)) {
+  //     this.addressUtxos = new Map(state.addressUtxos);
+  //   } else {
+  //     this.rebuildAddressUtxos();
+  //   }
     
-    // Restore script cache
-    if (state.scriptCache && Array.isArray(state.scriptCache)) {
-      this.scriptCache = new Map(state.scriptCache);
-    }
+  //   // Restore script cache
+  //   if (state.scriptCache && Array.isArray(state.scriptCache)) {
+  //     this.scriptCache = new Map(state.scriptCache);
+  //   }
     
-    Object.setPrototypeOf(this, TopAddressesByBalanceModel.prototype);
-  }
+  //   Object.setPrototypeOf(this, TopAddressesByBalanceModel.prototype);
+  // }
 
   /**
    * Rebuild sorted balances array from address states
@@ -234,7 +234,7 @@ export default class TopAddressesByBalanceModel extends Model {
    * Parse block and extract address data
    * PERFORMANCE: O(T × O × log N) where T=transactions, O=outputs, N=top addresses
    */
-  async parseBlock({ block, networkConfig }: { block: Block; networkConfig: NetworkConfig }) {
+  async processBlock({ block, networkConfig }: { block: Block; networkConfig: NetworkConfig }) {
     const { tx, height } = block;
 
     const newOutputs: AddressOutput[] = [];
@@ -277,7 +277,8 @@ export default class TopAddressesByBalanceModel extends Model {
         new AddressBalanceChangedEvent({
           aggregateId: this.aggregateId,
           requestId: uuidv4(),
-          blockHeight: height,
+          blockHeight: height
+        }, {
           outputs: newOutputs,
           inputs: spentInputs,
         }),
@@ -392,8 +393,9 @@ export default class TopAddressesByBalanceModel extends Model {
    * Event handler for balance changes with memory management
    * Updates address states and maintains sorted order and top N limit
    */
-  private onAddressBalanceChangedEvent({ payload }: AddressBalanceChangedEvent) {
-    const { outputs, inputs, blockHeight } = payload;
+  private onAddressBalanceChangedEvent(event: AddressBalanceChangedEvent) {
+    const { payload, blockHeight } = event;
+    const { outputs, inputs, } = payload;
 
     // Step 1: Process spent inputs (remove UTXOs, subtract balances)
     for (const input of inputs) {

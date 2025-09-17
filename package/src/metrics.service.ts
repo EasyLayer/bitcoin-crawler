@@ -1,13 +1,13 @@
 import { performance } from 'node:perf_hooks';
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { AppLogger } from '@easylayer/common/logger';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 
 @Injectable()
 export class MetricsService implements OnModuleInit, OnModuleDestroy {
+  log = new Logger(MetricsService.name);
   private readonly startTimes: Map<string, number> = new Map();
   private readonly totals: Map<string, number> = new Map();
 
-  constructor(private readonly log: AppLogger) {}
+  constructor() {}
 
   onModuleInit(): void {
     this.totals.set('app_time', 0);
@@ -60,10 +60,10 @@ export class MetricsService implements OnModuleInit, OnModuleDestroy {
 
   public async logMetrics(): Promise<void> {
     const all = this.getAllMetrics();
-    this.log.info('=== Metrics Totals ===');
+    this.log.log('=== Metrics Totals ===');
     for (const [k, v] of Object.entries(all)) {
-      this.log.info(`  ${k}: ${v.toFixed(2)} ms`);
+      this.log.log(`  ${k}: ${v.toFixed(2)} ms`);
     }
-    this.log.info('======================');
+    this.log.log('======================');
   }
 }

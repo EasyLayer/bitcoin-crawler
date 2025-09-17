@@ -1,12 +1,9 @@
-import { Module, DynamicModule, Provider } from '@nestjs/common';
+import { Global, Module, DynamicModule, Provider } from '@nestjs/common';
 import { transformAndValidate } from 'class-transformer-validator';
-import { CqrsModule, EventPublisher } from '@easylayer/common/cqrs';
-import type { IQueryHandler, IEventHandler } from '@easylayer/common/cqrs';
 import { CqrsTransportModule } from '@easylayer/common/cqrs-transport';
-import { AppLogger, LoggerModule } from '@easylayer/common/logger';
 import { ArithmeticService } from '@easylayer/common/arithmetic';
-import { EventStoreModule, EventStoreWriteRepository } from '@easylayer/common/eventstore';
-import { TransportModule, TransportModuleOptions } from '@easylayer/common/network-transport';
+import { EventStoreModule, EventStoreService } from '@easylayer/common/eventstore';
+import { NetworkTransportModule } from '@easylayer/common/network-transport';
 import {
   Network,
   Mempool,
@@ -16,13 +13,11 @@ import {
   RateLimits,
 } from '@easylayer/bitcoin';
 import { AppService } from './app.service';
-import { NetworkSaga, MempoolSaga } from './application-layer/sagas';
 import {
   NetworkCommandFactoryService,
   ReadStateExceptionHandlerService,
   CqrsFactoryService,
   MempoolCommandFactoryService,
-  MempoolSyncService,
 } from './application-layer/services';
 import {
   NetworkModelFactoryService,
@@ -31,32 +26,21 @@ import {
   NETWORK_AGGREGATE_ID,
   MEMPOOL_AGGREGATE_ID,
 } from './domain-layer/services';
-import { CommandHandlers } from './domain-layer/command-handlers';
-import { EventsHandlers } from './domain-layer/events-handlers';
-import { QueryHandlers } from './domain-layer/query-handlers';
 import { AppConfig, BusinessConfig, EventStoreConfig, BlocksQueueConfig, ProvidersConfig } from './config';
-import { ModelType, ModelFactoryService } from './domain-layer/framework';
+import { ModelInput } from '@easylayer/common/framework';
 import { MetricsService } from './metrics.service';
-
-const appName = `${process?.env?.APPLICATION_NAME || 'bitcoin'}`;
-
-export const EVENTSTORE_NAME = `${appName}-eventstore`;
+import { ModelFactoryService, normalizeModelsBTC } from './domain-layer/framework';
 
 export interface AppModuleOptions {
-  Models?: ModelType[];
-  QueryHandlers?: Array<new (...args: any[]) => IQueryHandler>;
-  EventHandlers?: Array<new (...args: any[]) => IEventHandler>;
+  appName: string;
+  Models?: ModelInput[];
   Providers?: Array<new (...args: any[]) => Provider>;
 }
 
+@Global()
 @Module({})
 export class AppModule {
-  static async register({
-    Models = [],
-    QueryHandlers: UserQueryHandlers = [],
-    EventHandlers: UserEventHandlers = [],
-    Providers = [],
-  }: AppModuleOptions): Promise<DynamicModule> {
+  static async forRootAsync({ appName, Models = [], Providers = [] }: AppModuleOptions): Promise<DynamicModule> {
     const eventstoreConfig = await transformAndValidate(EventStoreConfig, process.env, {
       validator: { whitelist: true },
     });
@@ -82,7 +66,8 @@ export class AppModule {
     const mempoolModel = new Mempool({ aggregateId: MEMPOOL_AGGREGATE_ID, blockHeight: -1 });
 
     // Create instances of models without merging for basic instances
-    const userModels = Models.map((ModelCtr) => new ModelCtr());
+    const NormalizedModels = normalizeModelsBTC(Models);
+    const userModels = NormalizedModels.map((ModelCtr) => new ModelCtr());
 
     // Smart transport detection using helper methods
     const transports = appConfig.getEnabledTransports();
@@ -121,11 +106,9 @@ export class AppModule {
       module: AppModule,
       controllers: [],
       imports: [
-        LoggerModule.forRoot({ componentName: appName }),
         // Set main modules as global
-        CqrsTransportModule.forRoot({ isGlobal: true }),
-        CqrsModule.forRoot({ isGlobal: true }),
-        TransportModule.forRoot({ isGlobal: true, transports }),
+        CqrsTransportModule.forRoot({ isGlobal: true, systemAggregates: [NETWORK_AGGREGATE_ID, MEMPOOL_AGGREGATE_ID] }),
+        NetworkTransportModule.forRoot({ isGlobal: true, transports }),
         BlockchainProviderModule.forRootAsync({
           isGlobal: true,
           network,
@@ -140,11 +123,10 @@ export class AppModule {
           },
         }),
         EventStoreModule.forRootAsync({
-          name: EVENTSTORE_NAME,
+          isGlobal: true,
+          name: `${appName}-eventstore`,
           aggregates: [...userModels, networkModel, mempoolModel],
           logging: eventstoreConfig.isLogging(),
-          snapshotInterval: eventstoreConfig.EVENTSTORE_SNAPSHOT_INTERVAL,
-          sqliteBatchSize: eventstoreConfig.EVENTSTORE_INSERT_BATCH_SIZE,
           type: eventstoreConfig.EVENTSTORE_DB_TYPE,
           database: eventstoreConfig.EVENTSTORE_DB_NAME,
           ...(eventstoreConfig.EVENTSTORE_DB_HOST && {
@@ -169,14 +151,15 @@ export class AppModule {
           ...(eventstoreConfig.EVENTSTORE_PG_QUERY_TIMEOUT && {
             maxQueryExecutionTime: eventstoreConfig.EVENTSTORE_PG_QUERY_TIMEOUT,
           }),
-          ...(eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT && {
-            extra: {
-              idleTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT,
-              ...(eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT && {
-                connectionTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT,
-              }),
-            },
-          }),
+          ...(eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT &&
+            ({
+              extra: {
+                idleTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT,
+                ...(eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT && {
+                  connectionTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT,
+                }),
+              },
+            } as any)),
         }),
         BlocksQueueModule.forRootAsync({
           blocksCommandExecutor: NetworkCommandFactoryService,
@@ -213,18 +196,16 @@ export class AppModule {
         },
         {
           provide: 'FrameworkModelsConstructors',
-          useValue: Models,
+          useValue: NormalizedModels,
         },
         {
           provide: ModelFactoryService,
-          useFactory: (eventStoreWriteRepository: EventStoreWriteRepository, eventPublisher: EventPublisher) =>
-            new ModelFactoryService(eventStoreWriteRepository, eventPublisher),
-          inject: [EventStoreWriteRepository, EventPublisher],
+          useFactory: (eventStoreService: EventStoreService) => new ModelFactoryService(eventStoreService),
+          inject: [EventStoreService],
         },
         AppService,
         MetricsService,
         ArithmeticService,
-        NetworkSaga,
         NetworkCommandFactoryService,
         NetworkModelFactoryService,
         ReadStateExceptionHandlerService,
@@ -232,16 +213,29 @@ export class AppModule {
         ConsolePromptService,
         MempoolCommandFactoryService,
         MempoolModelFactoryService,
-        MempoolSyncService,
-        MempoolSaga,
-        ...CommandHandlers,
-        ...EventsHandlers,
-        ...QueryHandlers,
-        ...UserQueryHandlers,
-        ...UserEventHandlers,
         ...Providers,
       ],
-      exports: [],
+      exports: [
+        AppService,
+        MetricsService,
+        NetworkCommandFactoryService,
+        NetworkModelFactoryService,
+        ReadStateExceptionHandlerService,
+        CqrsFactoryService,
+        ConsolePromptService,
+        MempoolCommandFactoryService,
+        MempoolModelFactoryService,
+        AppConfig,
+        BusinessConfig,
+        EventStoreConfig,
+        BlocksQueueConfig,
+        ProvidersConfig,
+        'FrameworkModelsConstructors',
+        ModelFactoryService,
+        BlocksQueueModule,
+        EventStoreModule,
+        ...Providers,
+      ],
     };
   }
 }

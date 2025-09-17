@@ -1,37 +1,50 @@
-import { Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
-import { EventStoreWriteRepository } from '@easylayer/common/eventstore';
-import { AppLogger, RuntimeTracker } from '@easylayer/common/logger';
+import { EventStoreService } from '@easylayer/common/eventstore';
 import {
   AddBlocksBatchCommand,
   Network,
+  Mempool,
   BlockchainProviderService,
   BlockchainValidationError,
   Block,
   LightBlock,
 } from '@easylayer/bitcoin';
+import { Model, NormalizedModelCtor, ExecutionContext } from '@easylayer/common/framework';
 import { NetworkModelFactoryService, MempoolModelFactoryService } from '../services';
-import { Model, ModelType, ModelFactoryService, ExecutionContext } from '../framework';
 import { MetricsService } from '../../metrics.service';
 import { BusinessConfig, ProvidersConfig } from '../../config';
+import { ModelFactoryService } from '../framework';
 
+function deepFreeze<T>(obj: T): T {
+  Object.getOwnPropertyNames(obj).forEach((name) => {
+    const value = (obj as any)[name];
+
+    if (value && typeof value === 'object') {
+      deepFreeze(value);
+    }
+  });
+
+  return Object.freeze(obj);
+}
+
+@Injectable()
 @CommandHandler(AddBlocksBatchCommand)
 export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBatchCommand> {
+  log = new Logger(AddBlocksBatchCommandHandler.name);
   constructor(
-    private readonly log: AppLogger,
     private readonly networkModelFactory: NetworkModelFactoryService,
     private readonly mempoolModelFactory: MempoolModelFactoryService,
     private readonly blockchainProvider: BlockchainProviderService,
-    private readonly eventStore: EventStoreWriteRepository,
+    private readonly eventStore: EventStoreService,
     private readonly metricsService: MetricsService,
     @Inject('FrameworkModelsConstructors')
-    private Models: ModelType[],
+    private Models: NormalizedModelCtor[],
     private readonly modelFactoryService: ModelFactoryService,
     private readonly businessConfig: BusinessConfig,
     private readonly providersConfig: ProvidersConfig
   ) {}
 
-  // @RuntimeTracker({ showMemory: false, warningThresholdMs: 1000, errorThresholdMs: 3000 })
   async execute({ payload }: AddBlocksBatchCommand) {
     // console.timeEnd('TIME_BETWEEN_COMMAND');
     const { batch, requestId } = payload;
@@ -49,25 +62,28 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
     // });
 
     try {
+      const lightBlocks = batch.map(
+        (block: Block) =>
+          ({
+            hash: block.hash,
+            previousblockhash: block.previousblockhash,
+            merkleroot: block.merkleroot,
+            height: block.height,
+            tx: block.tx?.map((item) => item.txid),
+          }) as LightBlock
+      );
+
       await networkModel.addBlocks({
         requestId,
-        blocks: batch.map(
-          (block: Block) =>
-            ({
-              hash: block.hash,
-              previousblockhash: block.previousblockhash,
-              merkleroot: block.merkleroot,
-              height: block.height,
-              tx: block.tx?.map((item) => item.txid),
-            }) as LightBlock
-        ),
+        blocks: lightBlocks,
       });
       // console.time('FRAMEWORK');
       for (let block of batch) {
         // await this.metricsService.track('framework_parse_block', async () => {
         for (const model of models) {
           const context: ExecutionContext = {
-            block,
+            // Deep freeze the original block
+            block: deepFreeze(block),
             mempool: this.mempoolModelFactory,
             services: {
               nodeProvider: this.blockchainProvider,
@@ -76,7 +92,7 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
             },
             networkConfig: this.blockchainProvider.config,
           };
-          await model.parseBlock(context);
+          await model.processBlock(context);
         }
         // });
       }
@@ -85,8 +101,25 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
       //   'system_eventstore_save',
       //   async () => await this.eventStore.save([...models, networkModel])
       // );
+
+      let mempoolModel: Mempool | null = null;
+
+      if (
+        Array.isArray(this.providersConfig.PROVIDER_MEMPOOL_RPC_URLS) &&
+        this.providersConfig.PROVIDER_MEMPOOL_RPC_URLS.length > 0
+      ) {
+        mempoolModel = await this.mempoolModelFactory.initModel();
+
+        await mempoolModel.processBlocksBatch({
+          requestId,
+          blocks: lightBlocks,
+        });
+
+        this.log.debug('Mempool blocks batch processed successfully');
+      }
+
       // console.time('DATABASE');
-      await this.eventStore.save([...models, networkModel]);
+      await this.eventStore.save([...models, networkModel, ...(mempoolModel ? [mempoolModel] : [])]);
       // console.timeEnd('DATABASE');
       const stats = {
         blocksHeight: batch[batch.length - 1]?.height,
@@ -107,7 +140,7 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
         // systemEventstoreSaveTotal: this.metricsService.getMetric('system_eventstore_save'),
       };
 
-      this.log.info('Blocks successfull loaded', { args: { blocksHeight: stats.blocksHeight } });
+      this.log.log('Blocks successfull loaded', { args: { blocksHeight: stats.blocksHeight } });
       // this.log.debug('Blocks successfull loaded', { args: { ...stats } });
 
       // console.time('TIME_BETWEEN_COMMAND');
@@ -123,10 +156,27 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
         // IMPORTANT: set blockHeight from last state of Network
         const reorgHeight = networkModel.lastBlockHeight;
 
+        let mempoolModel: Mempool | null = null;
+
+        if (
+          Array.isArray(this.providersConfig.PROVIDER_MEMPOOL_RPC_URLS) &&
+          this.providersConfig.PROVIDER_MEMPOOL_RPC_URLS.length > 0
+        ) {
+          mempoolModel = await this.mempoolModelFactory.initModel();
+
+          await mempoolModel.processReorganisation({
+            requestId,
+            reorgHeight,
+            service: this.blockchainProvider,
+          });
+
+          this.log.debug('Mempool reorganisation processed successfully');
+        }
+
         await this.eventStore.rollback({
           modelsToRollback: models,
           blockHeight: reorgHeight,
-          modelsToSave: [networkModel],
+          modelsToSave: [networkModel, ...(mempoolModel ? [mempoolModel] : [])],
         });
 
         models = await Promise.all(
@@ -135,11 +185,11 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
           )
         );
 
-        this.log.info('Blocks successfull reorganized', { args: { blockHeight: reorgHeight } });
+        this.log.log('Blocks successfull reorganized', { args: { blockHeight: reorgHeight } });
         return;
       }
 
-      this.log.error('Error while load blocks', { args: { error } });
+      this.log.error('Error while load blocks', ``, { args: { error } });
       throw error;
     }
   }

@@ -1,10 +1,27 @@
-import { resolve } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { Transform } from 'class-transformer';
 import { IsString, IsBoolean, IsOptional, IsNumber } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
 
-type DatabaseTypes = 'sqlite' | 'postgres';
+type DatabaseTypes = 'sqlite' | 'postgres' | 'sqljs';
+
+const isNodeLike = typeof window === 'undefined';
+
+function defaultDbName(dbType?: any, incoming?: string): string {
+  if (incoming && incoming.length) return incoming;
+
+  // Browser/sql.js: Just a DB key (name) in IndexedDB
+  if (!isNodeLike || dbType === 'sqljs') return 'bitcoin';
+
+  // Node/Electron:
+  if (dbType === 'sqlite' || !dbType) {
+    return `${process.cwd()}/eventstore/bitcoin.db`;
+  }
+  if (dbType === 'postgres') {
+    return 'bitcoin';
+  }
+  return 'bitcoin';
+}
 
 @Injectable()
 export class EventStoreConfig {
@@ -15,21 +32,16 @@ export class EventStoreConfig {
       'For Postgres: name of the database to connect to.',
     default: `resolve(process.cwd(), 'eventstore`,
   })
-  @Transform(({ value }) =>
-    typeof value === 'string' && value.length ? value : resolve(process.cwd(), 'eventstore/bitcoin.db')
-  )
-  EVENTSTORE_DB_NAME: string = resolve(process.cwd(), 'eventstore/bitcoin.db');
+  EVENTSTORE_DB_NAME: string = defaultDbName(process.env.EVENTSTORE_DB_TYPE, process.env.EVENTSTORE_DB_NAME);
 
-  @Transform(({ value }) => (value?.length ? value : 'sqlite'))
   @IsString()
   @JSONSchema({
     description: 'Type of database for the eventstore.',
     default: 'sqlite',
-    enum: ['sqlite', 'postgres'],
+    enum: ['sqlite', 'postgres', 'sqljs'],
   })
-  EVENTSTORE_DB_TYPE: DatabaseTypes = 'sqlite';
-
-  // @Transform(({ value }) => (value?.length ? value : 'sqlite'))
+  @Transform(({ value }) => (value?.length ? value : isNodeLike ? 'sqlite' : 'sqljs'))
+  EVENTSTORE_DB_TYPE: DatabaseTypes = isNodeLike ? 'sqlite' : 'sqljs';
 
   @IsBoolean()
   @JSONSchema({

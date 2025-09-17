@@ -1,4 +1,4 @@
-import { BasicEvent, EventBasePayload } from '@easylayer/bitcoin-crawler';
+import { BasicEvent } from '@easylayer/bitcoin-crawler';
 
 // Represents a transaction output (UTXO creation)
 export type AddressOutput = {
@@ -14,7 +14,7 @@ export type AddressInput = {
   n: number;        // Output index of the UTXO being spent
 };
 
-interface AddressBalanceChangedEventPayload extends EventBasePayload {
+interface AddressBalanceChangedEventPayload {
   outputs: AddressOutput[];   // New UTXOs created in this block
   inputs: AddressInput[];     // UTXOs spent in this block
 }

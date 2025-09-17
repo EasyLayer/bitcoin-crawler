@@ -2,14 +2,14 @@
     "version": "0.2.0",
     "configurations": [
       {
-          "name": "Debug E2E Tests",
+          "name": "Debug E2E Tests Server",
           "type": "node",
-          "runtimeVersion": "18.18.2",
+          "runtimeVersion": "20.18.1",
           "request": "launch",
           "runtimeArgs": [
             "--inspect-brk"
           ],
-          "cwd": "${workspaceFolder}/e2e-tests",
+          "cwd": "${workspaceFolder}/e2e-tests-server",
           "program": "${workspaceFolder}/node_modules/.bin/jest",
           "args": [
             "--runInBand",
@@ -28,9 +28,19 @@
           }
       },
       {
+          "name": "Debug E2E Tests Browser",
+          "type": "node",
+          "request": "launch",
+          "cwd": "${workspaceFolder}/e2e-tests-browser",
+          "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+          "args": ["test", "--headed", "--project=chromium", "--trace=on-first-retry"],
+          "env": { "PWDEBUG": "console" },
+          "console": "integratedTerminal"
+      },
+      {
         "name": "Debug Integration Tests",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk"
@@ -56,7 +66,7 @@
       {
         "name": "Debug Top Addresses Balance",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk",
@@ -75,7 +85,7 @@
       {
         "name": "Debug Multi Addresses Balance",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk",
@@ -94,7 +104,7 @@
       {
         "name": "Debug Large Transfers Tracker",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk",
@@ -113,7 +123,7 @@
       {
         "name": "Debug Address Flow Tracker",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk",

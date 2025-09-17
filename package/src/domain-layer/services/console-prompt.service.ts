@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as readline from 'readline';
-import { AppLogger } from '@easylayer/common/logger';
 
 @Injectable()
 export class ConsolePromptService {
-  constructor(private readonly log: AppLogger) {}
+  log = new Logger(ConsolePromptService.name);
+  constructor() {}
 
   private createReadlineInterface() {
     return readline.createInterface({

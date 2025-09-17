@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EventPublisher } from '@easylayer/common/cqrs';
-import { EventStoreWriteRepository } from '@easylayer/common/eventstore';
+import { EventStoreService } from '@easylayer/common/eventstore';
 import { Mempool, MempoolTransaction, Transaction } from '@easylayer/bitcoin';
 import { BusinessConfig } from '../../config';
 
@@ -9,28 +8,25 @@ export const MEMPOOL_AGGREGATE_ID = 'mempool';
 @Injectable()
 export class MempoolModelFactoryService {
   constructor(
-    private readonly publisher: EventPublisher,
-    private readonly mempoolWriteRepository: EventStoreWriteRepository<Mempool>,
+    private readonly eventStoreService: EventStoreService<Mempool>,
     private readonly businessConfig: BusinessConfig
   ) {}
 
   public createNewModel(): Mempool {
-    return this.publisher.mergeObjectContext(
-      new Mempool({
-        aggregateId: MEMPOOL_AGGREGATE_ID,
-        minFeeRate: this.businessConfig.MEMPOOL_MIN_FEE_RATE,
-        blockHeight: -1,
-        options: {
-          allowPruning: false,
-          snapshotsEnabled: true,
-          snapshotInterval: 25,
-        },
-      })
-    );
+    return new Mempool({
+      aggregateId: MEMPOOL_AGGREGATE_ID,
+      minFeeRate: this.businessConfig.MEMPOOL_MIN_FEE_RATE,
+      blockHeight: -1,
+      options: {
+        allowPruning: false,
+        snapshotsEnabled: true,
+        snapshotInterval: 25,
+      },
+    });
   }
 
   public async initModel(): Promise<Mempool> {
-    const model = await this.mempoolWriteRepository.getOne(this.createNewModel());
+    const model = await this.eventStoreService.getOne(this.createNewModel());
     return model;
   }
 

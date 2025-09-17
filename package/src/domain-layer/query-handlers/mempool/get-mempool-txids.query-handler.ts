@@ -1,7 +1,9 @@
+import { Injectable } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@easylayer/common/cqrs';
 import { GetMempoolTxidsQuery } from '@easylayer/bitcoin';
 import { MempoolModelFactoryService } from '../../services';
 
+@Injectable()
 @QueryHandler(GetMempoolTxidsQuery)
 export class GetMempoolTxidsQueryHandler implements IQueryHandler<GetMempoolTxidsQuery> {
   constructor(private readonly mempoolModelFactory: MempoolModelFactoryService) {}

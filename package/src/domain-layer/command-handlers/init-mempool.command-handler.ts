@@ -1,16 +1,17 @@
+import { Injectable, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
-import { EventStoreWriteRepository } from '@easylayer/common/eventstore';
-import { AppLogger } from '@easylayer/common/logger';
+import { EventStoreService } from '@easylayer/common/eventstore';
 import { InitMempoolCommand, Mempool, BlockchainProviderService } from '@easylayer/bitcoin';
 import { MempoolModelFactoryService } from '../services';
 import { BusinessConfig } from '../../config';
 import { ConsolePromptService } from '../services/console-prompt.service';
 
+@Injectable()
 @CommandHandler(InitMempoolCommand)
 export class InitMempoolCommandHandler implements ICommandHandler<InitMempoolCommand> {
+  log = new Logger(InitMempoolCommandHandler.name);
   constructor(
-    private readonly log: AppLogger,
-    private readonly eventStore: EventStoreWriteRepository,
+    private readonly eventStore: EventStoreService,
     private readonly mempoolModelFactory: MempoolModelFactoryService,
     private readonly businessConfig: BusinessConfig,
     private readonly blockchainProviderService: BlockchainProviderService,
@@ -40,7 +41,7 @@ export class InitMempoolCommandHandler implements ICommandHandler<InitMempoolCom
 
       await this.eventStore.save(mempoolModel);
 
-      this.log.info('Mempool successfully initialized', {
+      this.log.log('Mempool successfully initialized', {
         args: {
           currentNetworkHeight,
           currentTxids: mempoolModel.getCurrentTxids(),
@@ -49,21 +50,19 @@ export class InitMempoolCommandHandler implements ICommandHandler<InitMempoolCom
     } catch (error) {
       if ((error as any)?.message === 'DATA_RESET_REQUIRED') {
         // Handle database reset in catch block
-        this.log.info('Clearing mempool database as requested by user');
+        this.log.log('Clearing mempool database as requested by user');
+
+        // Clear mempool data
+        await mempoolModel.clearMempool({ requestId });
 
         // Use rollback with blockHeight = -1 to clear all data
         await this.eventStore.rollback({
           modelsToRollback: [mempoolModel],
           blockHeight: -1, // Clear everything
+          modelsToSave: [mempoolModel],
         });
 
-        // Clear mempool data
-        await mempoolModel.clearMempool({ requestId });
-
-        // Commit this event to trigger the saga
-        await mempoolModel.commit();
-
-        this.log.info('Mempool database cleared successfully, saga will reinitialize');
+        this.log.log('Mempool database cleared successfully, saga will reinitialize');
 
         return;
       }
@@ -74,29 +73,25 @@ export class InitMempoolCommandHandler implements ICommandHandler<InitMempoolCom
   }
 
   private async determineStartHeight(currentDbHeight: number, currentNetworkHeight: number): Promise<void> {
-    // Case 1: Database is empty - first launch (check for initial value)
-    if (currentDbHeight < 0 || !currentDbHeight) {
-      return; // No issues, proceed with initialization
+    const isEmpty = currentDbHeight < 0;
+    if (isEmpty) {
+      return;
     }
 
-    // Case 2: Database has data - check if network height is too far ahead
-    const heightDifference = currentNetworkHeight - currentDbHeight;
-
-    // If difference is more than 10 blocks, ask user if they want to reset
-    if (heightDifference > 10) {
-      const userConfirmed = await this.consolePromptService.askDataResetConfirmation(
-        currentNetworkHeight,
-        currentDbHeight
-      );
-
-      if (!userConfirmed) {
-        this.log.info('Mempool initialization cancelled by user');
-        throw new Error('Mempool initialization cancelled by user');
-      }
-
-      throw new Error('DATA_RESET_REQUIRED');
+    const diff = currentNetworkHeight - currentDbHeight;
+    if (diff <= 10) {
+      return;
     }
 
-    // Heights are close enough, continue with current state
+    const userConfirmed = await this.consolePromptService.askDataResetConfirmation(
+      currentNetworkHeight,
+      currentDbHeight
+    );
+
+    if (!userConfirmed) {
+      throw new Error('Mempool initialization cancelled by user');
+    }
+
+    throw new Error('DATA_RESET_REQUIRED');
   }
 }

@@ -218,28 +218,24 @@ export class AppConfig {
 
   // Helper method to get HTTP SSL options
   getHTTPSSLOptions() {
-    if (!this.HTTP_SSL_ENABLED) {
-      return { enabled: false };
-    }
-
+    if (!this.HTTP_SSL_ENABLED) return { enabled: false };
+    if (typeof window !== 'undefined') return { enabled: false };
     try {
       return {
         enabled: true,
         key: this.HTTP_SSL_KEY_PATH ? readFileSync(this.HTTP_SSL_KEY_PATH, 'utf8') : undefined,
         cert: this.HTTP_SSL_CERT_PATH ? readFileSync(this.HTTP_SSL_CERT_PATH, 'utf8') : undefined,
-        ca: this.HTTP_SSL_CA_PATH ? readFileSync(this.HTTP_SSL_CA_PATH, 'utf8') : undefined,
+        ca: this.HTTP_SSL_CA_PATH ? readFileSync(this.WS_SSL_CA_PATH!, 'utf8') : undefined,
       };
-    } catch (error) {
+    } catch {
       return { enabled: false };
     }
   }
 
   // Helper method to get WebSocket SSL options
   getWSSSLOptions() {
-    if (!this.WS_SSL_ENABLED) {
-      return { enabled: false };
-    }
-
+    if (!this.WS_SSL_ENABLED) return { enabled: false };
+    if (typeof window !== 'undefined') return { enabled: false };
     try {
       return {
         enabled: true,

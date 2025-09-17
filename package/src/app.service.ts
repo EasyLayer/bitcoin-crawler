@@ -1,13 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { AppLogger } from '@easylayer/common/logger';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { NetworkCommandFactoryService, MempoolCommandFactoryService } from './application-layer/services';
 import { ProvidersConfig } from './config';
 
 @Injectable()
 export class AppService implements OnModuleInit {
+  log = new Logger(AppService.name);
   constructor(
-    private readonly log: AppLogger,
     private readonly networkCommandFactory: NetworkCommandFactoryService,
     private readonly mempoolCommandFactory: MempoolCommandFactoryService,
     private readonly providersConfig: ProvidersConfig

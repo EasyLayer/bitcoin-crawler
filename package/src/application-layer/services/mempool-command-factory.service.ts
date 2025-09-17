@@ -1,12 +1,7 @@
 // import { v4 as uuidv4 } from 'uuid';
 import { Injectable } from '@nestjs/common';
 import { CommandBus } from '@easylayer/common/cqrs';
-import {
-  InitMempoolCommand,
-  ProcessMempoolSyncCommand,
-  ProcessMempoolBlocksBatchCommand,
-  ProcessMempoolReorganisationCommand,
-} from '@easylayer/bitcoin';
+import { InitMempoolCommand, SyncMempoolCommand } from '@easylayer/bitcoin';
 
 @Injectable()
 export class MempoolCommandFactoryService {
@@ -17,14 +12,6 @@ export class MempoolCommandFactoryService {
   }
 
   public async processSync(dto: any): Promise<void> {
-    await this.commandBus.execute(new ProcessMempoolSyncCommand({ ...dto }));
-  }
-
-  public async processBlocksBatch(dto: any): Promise<void> {
-    await this.commandBus.execute(new ProcessMempoolBlocksBatchCommand({ ...dto }));
-  }
-
-  public async processReorganisation(dto: any): Promise<void> {
-    await this.commandBus.execute(new ProcessMempoolReorganisationCommand({ ...dto }));
+    await this.commandBus.execute(new SyncMempoolCommand({ ...dto }));
   }
 }

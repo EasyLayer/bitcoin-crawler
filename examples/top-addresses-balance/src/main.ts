@@ -1,12 +1,12 @@
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import Model from './model';
-import {
-  GetTopAddressesQueryHandler
-} from './query';
+import { BtcBalances } from './model-class';
+// import {
+//   GetTopAddressesQueryHandler
+// } from './query';
 
 bootstrap({
-  Models: [Model],
-  QueryHandlers: [GetTopAddressesQueryHandler]
+  Models: [BtcBalances],
+  // QueryHandlers: [GetTopAddressesQueryHandler]
 })
   .then(() => {
     console.log('\n🚀 Bitcoin Top Addresses API Started!\n');    
