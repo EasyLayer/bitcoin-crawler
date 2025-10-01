@@ -1,6 +1,4 @@
 import { resolve } from 'node:path';
-import type { Server as HttpServer } from 'node:http';
-import { createServer } from 'node:http';
 import { config } from 'dotenv';
 import type { INestApplication, INestApplicationContext } from '@nestjs/common';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
@@ -16,29 +14,15 @@ import { mockBlocks } from './mocks';
 
 jest.setTimeout(60000);
 
-async function getFreePort(host = '127.0.0.1'): Promise<number> {
-  const srv = createServer();
-  await new Promise<void>((r) => srv.listen(0, host, r));
-  const port = (srv.address() as any).port as number;
-  await new Promise<void>((r) => srv.close(() => r()));
-  return port;
-}
-
-describe('/Bitcoin Crawler: HTTP Transport', () => {
+describe('/Bitcoin Crawler: WS Transport', () => {
   let app!: INestApplication | INestApplicationContext;
   let client!: Client;
-  let webhookSrv: HttpServer | undefined;
 
   let eventsDeferred: { promise: Promise<void>; resolve: () => void };
   const expectedEventCount = 3;
 
   const receivedBlockAddedEvents: any[] = [];
   let resolved = false;
-
-  const envBackup: Partial<Record<string, string | undefined>> = {
-    HTTP_WEBHOOK_URL: process.env.HTTP_WEBHOOK_URL,
-    HTTP_WEBHOOK_PING_URL: process.env.HTTP_WEBHOOK_PING_URL,
-  };
 
   beforeAll(async () => {
     jest.useRealTimers();
@@ -53,30 +37,12 @@ describe('/Bitcoin Crawler: HTTP Transport', () => {
     };
     eventsDeferred = makeDeferred();
 
-    config({ path: resolve(process.cwd(), 'src/http-checks/.env') });
+    // Load WS-specific env if present (optional)
+    config({ path: resolve(process.cwd(), 'src/ws-checks/.env') });
 
     await cleanDataFolder('eventstore');
 
-    const port = await getFreePort();
-    const host = '127.0.0.1';
-    const webhookUrl = `http://${host}:${port}/events`;
-    const pingUrl = `http://${host}:${port}/ping`;
-
-    process.env.TRANSPORT_HTTP_WEBHOOK_URL = webhookUrl;
-    process.env.TRANSPORT_HTTP_WEBHOOK_PING_URL = pingUrl;
-
-    const baseUrl = `http://${process.env.TRANSPORT_HTTP_HOST}:${process.env.TRANSPORT_HTTP_PORT}`.replace(/\/+$/, '');
-    client = new Client({
-      transport: {
-        type: 'http',
-        inbound: { webhookUrl },
-        query: { baseUrl },
-      },
-    });
-
-    webhookSrv = createServer(client.nodeHttpHandler());
-    await new Promise<void>((r) => webhookSrv!.listen(port, host, r));
-
+    // Mocks for bitcoin provider
     jest
       .spyOn(BlockchainProviderService.prototype, 'getManyBlocksStatsByHeights')
       .mockImplementation(async (heights: (string | number)[]): Promise<any> => {
@@ -95,8 +61,19 @@ describe('/Bitcoin Crawler: HTTP Transport', () => {
         });
       });
 
-    app = await bootstrap({ Models: [BlocksModel] });
+    // Client (receiver) — connects to server WS and handles events+queries over WS
+    const wsUrl = `ws://${process.env.TRANSPORT_WS_HOST}:${process.env.TRANSPORT_WS_PORT}${process.env.TRANSPORT_WS_PATH}`;
 
+    client = new Client({
+      transport: {
+        type: 'ws',
+        options: { url: wsUrl },
+      },
+    });
+
+    await client.connect();
+
+    // Subscribe to events (sequential per-type; we need 3 BlockAddedEvent)
     client.subscribe('BlockAddedEvent', async (event: any) => {
       receivedBlockAddedEvents.push(event);
       if (!resolved && receivedBlockAddedEvents.length >= expectedEventCount) {
@@ -105,14 +82,14 @@ describe('/Bitcoin Crawler: HTTP Transport', () => {
       }
     });
 
+    // Start app (server-side WS transport should start listening)
+    app = await bootstrap({ Models: [BlocksModel] });
+
     await eventsDeferred.promise;
   });
 
   afterAll(async () => {
-    process.env.TRANSPORT_HTTP_WEBHOOK_URL = envBackup.TRANSPORT_HTTP_WEBHOOK_URL;
-    process.env.TRANSPORT_HTTP_WEBHOOK_PING_URL = envBackup.TRANSPORT_HTTP_WEBHOOK_PING_URL;
     await (client as any)?.close?.().catch(() => undefined);
-    await new Promise<void>((r) => webhookSrv?.close?.(() => r())).catch(() => undefined);
     await app?.close?.().catch(() => undefined);
     jest.restoreAllMocks();
   });

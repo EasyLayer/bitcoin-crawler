@@ -5,9 +5,8 @@
     "private": true,
     "type": "commonjs",
     "scripts": {
-        "clear": "yarn run clear:dist && yarn run clear:node_modules",
+        "clear": "yarn run clear:node_modules",
         "clear:node_modules": "rimraf node_modules",
-        "clear:dist": "rimraf dist",
         "test:e2e": "jest --clearCache && jest --detectOpenHandles -c ./jest.config.mjs",
         "lint": "eslint -c eslint.config.mjs \"src/**/*.ts\"",
         "lint:fix": "eslint -c eslint.config.mjs \"src/**/*.ts\" --fix",

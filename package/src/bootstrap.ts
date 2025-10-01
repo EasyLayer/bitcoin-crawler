@@ -3,7 +3,7 @@ import 'dotenv/config';
 import './utils';
 import { NestFactory } from '@nestjs/core';
 import type { INestApplication, INestApplicationContext } from '@nestjs/common';
-import { NestLogger, ContextService } from '@easylayer/common/logger';
+import { NestLogger } from '@easylayer/common/logger';
 import { ContainerModule } from './container.module';
 import type { ContainerModuleOptions } from './container.module';
 import { setupTestEventSubscribers, type TestingOptions } from './utils';
@@ -22,7 +22,7 @@ export const bootstrap = async ({
   const wsPort = Number(process.env.WS_PORT ?? '0');
   const hasNetworkTransports = httpPort > 0 || wsPort > 0;
   const isTest = process.env.NODE_ENV === 'test';
-  const loggerLevel = isTest ? 'error' : (process.env.LOG_LEVEL as any) || 'info';
+  const loggerLevel = isTest ? 'error' : process.env.DEBUG === '1' ? 'debug' : (process.env.LOG_LEVEL as any) || 'info';
 
   const rootModule = await ContainerModule.register({
     Models,

@@ -177,4 +177,18 @@ export class ProvidersConfig {
   //     throw new Error('PROVIDER_MEMPOOL_RPC_URLS is required for mempool provider');
   //   }
   // }
+
+  /**
+   * RateLimits object for providers layer
+   * {
+   *   maxConcurrentRequests, maxBatchSize, requestDelayMs
+   * }
+   */
+  getRateLimits() {
+    return {
+      maxConcurrentRequests: this.PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS,
+      maxBatchSize: this.PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE,
+      requestDelayMs: this.PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS,
+    };
+  }
 }

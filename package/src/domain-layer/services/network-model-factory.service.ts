@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EventStoreService } from '@easylayer/common/eventstore';
+import { EventStoreReadService } from '@easylayer/common/eventstore';
 import { Network, LightBlock } from '@easylayer/bitcoin';
 import { BlocksQueueConfig } from '../../config';
 
@@ -8,7 +8,7 @@ export const NETWORK_AGGREGATE_ID = 'network';
 @Injectable()
 export class NetworkModelFactoryService {
   constructor(
-    private readonly eventStoreService: EventStoreService<Network>,
+    private readonly eventStoreService: EventStoreReadService<Network>,
     private readonly blocksQueueConfig: BlocksQueueConfig
   ) {}
 

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
-import { EventStoreService } from '@easylayer/common/eventstore';
+import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import { NormalizedModelCtor } from '@easylayer/common/framework';
 import { InitNetworkCommand, Network, BlockchainProviderService } from '@easylayer/bitcoin';
 import { NetworkModelFactoryService } from '../services';
@@ -13,7 +13,7 @@ import { ModelFactoryService } from '../framework';
 export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCommand> {
   log = new Logger(InitNetworkCommandHandler.name);
   constructor(
-    private readonly eventStore: EventStoreService,
+    private readonly eventStore: EventStoreWriteService,
     private readonly networkModelFactory: NetworkModelFactoryService,
     private readonly businessConfig: BusinessConfig,
     private readonly blockchainProviderService: BlockchainProviderService,

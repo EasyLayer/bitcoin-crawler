@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EventStoreService } from '@easylayer/common/eventstore';
+import { EventStoreReadService } from '@easylayer/common/eventstore';
 import { Mempool, MempoolTransaction, Transaction } from '@easylayer/bitcoin';
 import { BusinessConfig } from '../../config';
 
@@ -8,7 +8,7 @@ export const MEMPOOL_AGGREGATE_ID = 'mempool';
 @Injectable()
 export class MempoolModelFactoryService {
   constructor(
-    private readonly eventStoreService: EventStoreService<Mempool>,
+    private readonly eventStoreService: EventStoreReadService<Mempool>,
     private readonly businessConfig: BusinessConfig
   ) {}
 

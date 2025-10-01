@@ -1,33 +1,67 @@
 import { resolve } from 'node:path';
-import type { Server as HttpServer } from 'node:http';
-import { createServer } from 'node:http';
+import type { ChildProcess } from 'node:child_process';
+import { fork } from 'node:child_process';
 import { config } from 'dotenv';
 import type { INestApplication, INestApplicationContext } from '@nestjs/common';
-import { bootstrap } from '@easylayer/bitcoin-crawler';
-import {
-  BlockchainProviderService,
-  BitcoinNetworkInitializedEvent,
-  BitcoinNetworkBlocksAddedEvent,
-} from '@easylayer/bitcoin';
+import { BitcoinNetworkInitializedEvent, BitcoinNetworkBlocksAddedEvent } from '@easylayer/bitcoin';
 import { Client } from '@easylayer/transport-sdk';
 import { cleanDataFolder } from '../+helpers/clean-data-folder';
-import BlocksModel, { AGGREGATE_ID } from './blocks.model';
-import { mockBlocks } from './mocks';
+import { AGGREGATE_ID } from './blocks.model';
 
 jest.setTimeout(60000);
 
-async function getFreePort(host = '127.0.0.1'): Promise<number> {
-  const srv = createServer();
-  await new Promise<void>((r) => srv.listen(0, host, r));
-  const port = (srv.address() as any).port as number;
-  await new Promise<void>((r) => srv.close(() => r()));
-  return port;
+function makeDeferred() {
+  let resolveFn!: () => void;
+  const promise = new Promise<void>((res) => {
+    resolveFn = res;
+  });
+  return { promise, resolve: resolveFn };
 }
 
-describe('/Bitcoin Crawler: HTTP Transport', () => {
+function waitChildReady(cp: ChildProcess, timeoutMs = 15000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onMsg = (m: any) => {
+      if (m && m.type === 'ready') {
+        cleanup();
+        resolve();
+        return;
+      }
+      if (m && m.action === 'ping') {
+        cleanup();
+        resolve();
+        return;
+      }
+    };
+    const onExit = (code: number | null, signal: string | null) => {
+      cleanup();
+      reject(new Error(`child exited before ready (code=${code}, signal=${signal})`));
+    };
+    const onTimeout = () => {
+      cleanup();
+      reject(new Error('child did not become ready (timeout)'));
+    };
+    const cleanup = () => {
+      clearTimeout(timer);
+      cp.off('message', onMsg);
+      cp.off('exit', onExit);
+      cp.off('error', onErr);
+    };
+    const onErr = (err: any) => {
+      cleanup();
+      reject(err instanceof Error ? err : new Error(String(err)));
+    };
+
+    cp.on('message', onMsg);
+    cp.once('exit', onExit);
+    cp.once('error', onErr);
+    const timer = setTimeout(onTimeout, Math.max(1, timeoutMs));
+  });
+}
+
+describe('/Bitcoin Crawler: IPC Transport (server in child, client in parent)', () => {
   let app!: INestApplication | INestApplicationContext;
   let client!: Client;
-  let webhookSrv: HttpServer | undefined;
+  let child!: ChildProcess;
 
   let eventsDeferred: { promise: Promise<void>; resolve: () => void };
   const expectedEventCount = 3;
@@ -35,67 +69,29 @@ describe('/Bitcoin Crawler: HTTP Transport', () => {
   const receivedBlockAddedEvents: any[] = [];
   let resolved = false;
 
-  const envBackup: Partial<Record<string, string | undefined>> = {
-    HTTP_WEBHOOK_URL: process.env.HTTP_WEBHOOK_URL,
-    HTTP_WEBHOOK_PING_URL: process.env.HTTP_WEBHOOK_PING_URL,
-  };
-
   beforeAll(async () => {
     jest.useRealTimers();
     jest.resetModules();
 
-    const makeDeferred = () => {
-      let resolveFn!: () => void;
-      const promise = new Promise<void>((res) => {
-        resolveFn = res;
-      });
-      return { promise, resolve: resolveFn };
-    };
     eventsDeferred = makeDeferred();
 
-    config({ path: resolve(process.cwd(), 'src/http-checks/.env') });
+    config({ path: resolve(process.cwd(), 'src/ipc-child-checks/.env') });
 
     await cleanDataFolder('eventstore');
 
-    const port = await getFreePort();
-    const host = '127.0.0.1';
-    const webhookUrl = `http://${host}:${port}/events`;
-    const pingUrl = `http://${host}:${port}/ping`;
+    const appPath = resolve(process.cwd(), 'src/ipc-child-checks/ipc-child.runner.ts');
 
-    process.env.TRANSPORT_HTTP_WEBHOOK_URL = webhookUrl;
-    process.env.TRANSPORT_HTTP_WEBHOOK_PING_URL = pingUrl;
-
-    const baseUrl = `http://${process.env.TRANSPORT_HTTP_HOST}:${process.env.TRANSPORT_HTTP_PORT}`.replace(/\/+$/, '');
-    client = new Client({
-      transport: {
-        type: 'http',
-        inbound: { webhookUrl },
-        query: { baseUrl },
-      },
+    child = fork(appPath, [], {
+      execArgv: ['-r', 'ts-node/register/transpile-only'],
+      stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+      env: process.env,
     });
 
-    webhookSrv = createServer(client.nodeHttpHandler());
-    await new Promise<void>((r) => webhookSrv!.listen(port, host, r));
+    await waitChildReady(child);
 
-    jest
-      .spyOn(BlockchainProviderService.prototype, 'getManyBlocksStatsByHeights')
-      .mockImplementation(async (heights: (string | number)[]): Promise<any> => {
-        return mockBlocks
-          .filter((block: any) => heights.includes(block.height))
-          .map((block: any) => ({ blockhash: block.hash, total_size: 1, height: block.height }));
-      });
-
-    jest
-      .spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHeights')
-      .mockImplementation(async (heights: any[]): Promise<any[]> => {
-        return heights.map((height) => {
-          const blk = mockBlocks.find((b) => b.height === height);
-          if (!blk) throw new Error(`No mock block for height ${height}`);
-          return blk;
-        });
-      });
-
-    app = await bootstrap({ Models: [BlocksModel] });
+    client = new Client({
+      transport: { type: 'ipc-parent', options: { child, pongPassword: 'pw' } },
+    });
 
     client.subscribe('BlockAddedEvent', async (event: any) => {
       receivedBlockAddedEvents.push(event);
@@ -108,14 +104,16 @@ describe('/Bitcoin Crawler: HTTP Transport', () => {
     await eventsDeferred.promise;
   });
 
+  /* eslint-disable no-empty */
   afterAll(async () => {
-    process.env.TRANSPORT_HTTP_WEBHOOK_URL = envBackup.TRANSPORT_HTTP_WEBHOOK_URL;
-    process.env.TRANSPORT_HTTP_WEBHOOK_PING_URL = envBackup.TRANSPORT_HTTP_WEBHOOK_PING_URL;
     await (client as any)?.close?.().catch(() => undefined);
-    await new Promise<void>((r) => webhookSrv?.close?.(() => r())).catch(() => undefined);
+    try {
+      child?.kill();
+    } catch {}
     await app?.close?.().catch(() => undefined);
     jest.restoreAllMocks();
   });
+  /* eslint-enable no-empty */
 
   it('should get three BlockAddedEvent events', () => {
     expect(receivedBlockAddedEvents.length).toBe(expectedEventCount);

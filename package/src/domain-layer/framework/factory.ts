@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { EventStoreService } from '@easylayer/common/eventstore';
+import { EventStoreReadService } from '@easylayer/common/eventstore';
 import { Model, ZeroArgModelCtor } from '@easylayer/common/framework';
 
 export interface IModelFactoryService {
@@ -9,7 +9,7 @@ export interface IModelFactoryService {
 
 @Injectable()
 export class ModelFactoryService implements IModelFactoryService {
-  constructor(private readonly eventStore: EventStoreService) {}
+  constructor(private readonly eventStore: EventStoreReadService) {}
 
   public createNewModel<T extends Model>(ModelCtor: ZeroArgModelCtor<T>): T {
     return this.instantiateModel(ModelCtor);

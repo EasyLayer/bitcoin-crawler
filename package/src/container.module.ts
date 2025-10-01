@@ -32,7 +32,6 @@ export class ContainerModule {
       commands: [...CommandHandlers],
       queries: [...QueryHandlers, ...UserQueryHandlers],
       events: [...EventsHandlers, ...UserEventHandlers],
-      sagas: [],
     });
 
     return {

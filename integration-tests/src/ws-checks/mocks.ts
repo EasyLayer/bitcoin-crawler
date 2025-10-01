@@ -3,7 +3,7 @@ export const mockBlocks = [
     hash: '0000000000000000000000000000000000000000000000000000000000000001',
     confirmations: 4,
     strippedsize: 204,
-    size: 204,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 0,
     version: 1,
@@ -52,7 +52,7 @@ export const mockBlocks = [
     hash: '0000000000000000000000000000000000000000000000000000000000000002',
     confirmations: 3,
     strippedsize: 204,
-    size: 204,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 1,
     version: 1,
@@ -147,7 +147,7 @@ export const mockBlocks = [
     hash: '0000000000000000000000000000000000000000000000000000000000000003',
     confirmations: 2,
     strippedsize: 204,
-    size: 204,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 2,
     version: 1,
@@ -239,25 +239,3 @@ export const mockBlocks = [
     nextblockhash: '0000000000000000000000000000000000000000000000000000000000000004',
   },
 ];
-
-// SQL mocks for table creation
-export const networkTableSQL = `
-CREATE TABLE IF NOT EXISTS network (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  requestId   VARCHAR        DEFAULT NULL,
-  type        VARCHAR        NOT NULL,
-  payload     JSON           NOT NULL,
-  blockHeight INTEGER        DEFAULT 0
-);
-CREATE INDEX IF NOT EXISTS IDX_network_blockh ON network (blockHeight);
-`;
-
-export const balanceTableSQL = `
-CREATE TABLE IF NOT EXISTS balance (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  requestId   VARCHAR        DEFAULT NULL,
-  type        VARCHAR        NOT NULL,
-  payload     JSON           NOT NULL,
-  blockHeight INTEGER        DEFAULT 0
-);
-`;

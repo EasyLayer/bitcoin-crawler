@@ -2,7 +2,7 @@ import { Global, Module, DynamicModule, Provider } from '@nestjs/common';
 import { transformAndValidate } from 'class-transformer-validator';
 import { CqrsTransportModule } from '@easylayer/common/cqrs-transport';
 import { ArithmeticService } from '@easylayer/common/arithmetic';
-import { EventStoreModule, EventStoreService } from '@easylayer/common/eventstore';
+import { EventStoreModule, EventStoreReadService } from '@easylayer/common/eventstore';
 import { NetworkTransportModule } from '@easylayer/common/network-transport';
 import {
   Network,
@@ -26,7 +26,14 @@ import {
   NETWORK_AGGREGATE_ID,
   MEMPOOL_AGGREGATE_ID,
 } from './domain-layer/services';
-import { AppConfig, BusinessConfig, EventStoreConfig, BlocksQueueConfig, ProvidersConfig } from './config';
+import {
+  AppConfig,
+  BusinessConfig,
+  EventStoreConfig,
+  BlocksQueueConfig,
+  ProvidersConfig,
+  TransportConfig,
+} from './config';
 import { ModelInput } from '@easylayer/common/framework';
 import { MetricsService } from './metrics.service';
 import { ModelFactoryService, normalizeModelsBTC } from './domain-layer/framework';
@@ -56,6 +63,9 @@ export class AppModule {
     const providersConfig = await transformAndValidate(ProvidersConfig, process.env, {
       validator: { whitelist: true },
     });
+    const transportConfig = await transformAndValidate(TransportConfig, process.env, {
+      validator: { whitelist: true },
+    });
 
     const queueIteratorBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
     const queueLoaderRequestBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
@@ -68,31 +78,6 @@ export class AppModule {
     // Create instances of models without merging for basic instances
     const NormalizedModels = normalizeModelsBTC(Models);
     const userModels = NormalizedModels.map((ModelCtr) => new ModelCtr());
-
-    // Smart transport detection using helper methods
-    const transports = appConfig.getEnabledTransports();
-
-    // Network configuration
-    const network: NetworkConfig = {
-      network: businessConfig.NETWORK_TYPE as NetworkConfig['network'],
-      nativeCurrencySymbol: businessConfig.NETWORK_NATIVE_CURRENCY_SYMBOL,
-      nativeCurrencyDecimals: businessConfig.NETWORK_NATIVE_CURRENCY_DECIMALS,
-      hasSegWit: businessConfig.NETWORK_HAS_SEGWIT,
-      hasTaproot: businessConfig.NETWORK_HAS_TAPROOT,
-      hasRBF: businessConfig.NETWORK_HAS_RBF,
-      hasCSV: businessConfig.NETWORK_HAS_CSV,
-      hasCLTV: businessConfig.NETWORK_HAS_CLTV,
-      maxBlockSize: businessConfig.NETWORK_MAX_BLOCK_SIZE,
-      maxBlockWeight: businessConfig.NETWORK_MAX_BLOCK_WEIGHT,
-      difficultyAdjustmentInterval: businessConfig.NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL,
-      targetBlockTime: businessConfig.NETWORK_TARGET_BLOCK_TIME,
-    };
-
-    const rateLimits: RateLimits = {
-      maxConcurrentRequests: providersConfig.PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS,
-      maxBatchSize: providersConfig.PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE,
-      requestDelayMs: providersConfig.PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS,
-    };
 
     const networkConnections: any = providersConfig.PROVIDER_NETWORK_RPC_URLS?.map((item) => ({
       baseUrl: item,
@@ -108,11 +93,15 @@ export class AppModule {
       imports: [
         // Set main modules as global
         CqrsTransportModule.forRoot({ isGlobal: true, systemAggregates: [NETWORK_AGGREGATE_ID, MEMPOOL_AGGREGATE_ID] }),
-        NetworkTransportModule.forRoot({ isGlobal: true, transports }),
+        NetworkTransportModule.forRoot({
+          isGlobal: true,
+          transports: transportConfig.getEnabledTransports(),
+          outbox: transportConfig.getOutboxOptions(),
+        }),
         BlockchainProviderModule.forRootAsync({
           isGlobal: true,
-          network,
-          rateLimits,
+          network: businessConfig.getNetworkConfig(),
+          rateLimits: providersConfig.getRateLimits(),
           networkProviders: {
             type: providersConfig.NETWORK_PROVIDER_TYPE,
             connections: networkConnections,
@@ -195,13 +184,17 @@ export class AppModule {
           useValue: providersConfig,
         },
         {
+          provide: TransportConfig,
+          useValue: transportConfig,
+        },
+        {
           provide: 'FrameworkModelsConstructors',
           useValue: NormalizedModels,
         },
         {
           provide: ModelFactoryService,
-          useFactory: (eventStoreService: EventStoreService) => new ModelFactoryService(eventStoreService),
-          inject: [EventStoreService],
+          useFactory: (eventStoreService: EventStoreReadService) => new ModelFactoryService(eventStoreService),
+          inject: [EventStoreReadService],
         },
         AppService,
         MetricsService,

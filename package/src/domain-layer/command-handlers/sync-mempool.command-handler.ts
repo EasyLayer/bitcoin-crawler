@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
-import { EventStoreService } from '@easylayer/common/eventstore';
+import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import { SyncMempoolCommand, Mempool, BlockchainProviderService } from '@easylayer/bitcoin';
 import { MempoolModelFactoryService } from '../services';
 
@@ -9,7 +9,7 @@ import { MempoolModelFactoryService } from '../services';
 export class SyncMempoolCommandHandler implements ICommandHandler<SyncMempoolCommand> {
   log = new Logger(SyncMempoolCommandHandler.name);
   constructor(
-    private readonly eventStore: EventStoreService,
+    private readonly eventStore: EventStoreWriteService,
     private readonly mempoolModelFactory: MempoolModelFactoryService,
     private readonly blockchainProviderService: BlockchainProviderService
   ) {}

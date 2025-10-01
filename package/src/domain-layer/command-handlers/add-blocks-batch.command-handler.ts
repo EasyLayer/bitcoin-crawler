@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
-import { EventStoreService } from '@easylayer/common/eventstore';
+import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import {
   AddBlocksBatchCommand,
   Network,
@@ -36,7 +36,7 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
     private readonly networkModelFactory: NetworkModelFactoryService,
     private readonly mempoolModelFactory: MempoolModelFactoryService,
     private readonly blockchainProvider: BlockchainProviderService,
-    private readonly eventStore: EventStoreService,
+    private readonly eventStore: EventStoreWriteService,
     private readonly metricsService: MetricsService,
     @Inject('FrameworkModelsConstructors')
     private Models: NormalizedModelCtor[],
