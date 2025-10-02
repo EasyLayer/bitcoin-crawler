@@ -48,6 +48,7 @@ jobs:
         run: |
           # Define the environment variables using GitHub Secrets
           PROVIDER_NETWORK_RPC_URLS="${{ secrets.PROVIDER_NETWORK_RPC_URLS }}"
+          PROVIDER_MEMPOOL_RPC_URLS="${{ secrets.PROVIDER_MEMPOOL_RPC_URLS }}"
           # Add more variables here if needed
 
           # Find all .env files within the ./e2e-tests-server directory and its subdirectories
@@ -63,6 +64,17 @@ jobs:
               # Add the variable if it does not exist
               echo "PROVIDER_NETWORK_RPC_URLS=${PROVIDER_NETWORK_RPC_URLS}" >> "$env_file"
               echo "Added PROVIDER_NETWORK_RPC_URLS to $env_file"
+            fi
+
+            # Update PROVIDER_MEMPOOL_RPC_URLS
+            if grep -q "^PROVIDER_MEMPOOL_RPC_URLS=" "$env_file"; then
+              # Replace the existing value of the variable
+              sed -i "s|^PROVIDER_MEMPOOL_RPC_URLS=.*|PROVIDER_MEMPOOL_RPC_URLS=${PROVIDER_MEMPOOL_RPC_URLS}|" "$env_file"
+              echo "Updated PROVIDER_MEMPOOL_RPC_URLS in $env_file"
+            else
+              # Add the variable if it does not exist
+              echo "PROVIDER_MEMPOOL_RPC_URLS=${PROVIDER_MEMPOOL_RPC_URLS}" >> "$env_file"
+              echo "Added PROVIDER_MEMPOOL_RPC_URLS to $env_file"
             fi
 
             # Add more variables here following the same pattern if needed
