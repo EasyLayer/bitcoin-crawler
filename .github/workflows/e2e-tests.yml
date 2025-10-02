@@ -37,7 +37,7 @@ jobs:
       # Recursively find and copy .env.example to .env for each test package
       - name: Set up .env files for each e2e test package
         run: |
-          find ./e2e-tests -type f -name ".env.example" | while read example_env; do
+          find ./e2e-tests-server -type f -name ".env.example" | while read example_env; do
             env_dir=$(dirname "$example_env")
             cp "$example_env" "$env_dir/.env"
           done
@@ -50,8 +50,8 @@ jobs:
           PROVIDER_NETWORK_RPC_URLS="${{ secrets.PROVIDER_NETWORK_RPC_URLS }}"
           # Add more variables here if needed
 
-          # Find all .env files within the ./e2e-tests directory and its subdirectories
-          find ./e2e-tests -type f -name ".env" | while read env_file; do
+          # Find all .env files within the ./e2e-tests-server directory and its subdirectories
+          find ./e2e-tests-server -type f -name ".env" | while read env_file; do
             echo "Processing $env_file"
 
             # Update PROVIDER_NETWORK_RPC_URLS
