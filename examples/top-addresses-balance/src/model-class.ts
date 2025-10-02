@@ -21,7 +21,6 @@ type AddressOutput = { address: string; txid: string; n: number; value: string }
 type AddressInput  = { txid: string; n: number };
 
 export class BtcBalances extends Model {
-  // тот же стейт, что и в большой модели (без кеша и без applied)
   public addressStates = new Map<string, AddressState>();
   public sortedBalances: BalanceEntry[] = [];
   public utxoLookup = new Map<string, StoredUtxo>();        // key = `${txid}_${n}`
@@ -69,7 +68,6 @@ export class BtcBalances extends Model {
     const { outputs, inputs } = e.payload as { outputs: AddressOutput[]; inputs: AddressInput[] };
     const bh = e.blockHeight as number;
 
-    // 1) кредиты: пополняем баланс и индексируем UTXO
     for (const out of outputs) {
       let st = this.addressStates.get(out.address);
       if (!st) {
@@ -101,7 +99,6 @@ export class BtcBalances extends Model {
       this.addressUtxos.set(out.address, list);
     }
 
-    // 2) дебеты: списываем и удаляем UTXO
     for (const inp of inputs) {
       const key = `${inp.txid}_${inp.n}`;
       const utxo = this.utxoLookup.get(key);
@@ -132,7 +129,6 @@ export class BtcBalances extends Model {
       }
     }
 
-    // опциональная жёсткая усечка топа
     this.limitToTopAddresses();
   }
 

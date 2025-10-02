@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@easylayer/bitcoin-crawler": "0.1.3",
-    "@easylayer/common": "0.10.0",
-    "@easylayer/transport-sdk": "1.1.1",
+    "@easylayer/common": "1.0.2",
+    "@easylayer/transport-sdk": "1.2.0",
     "class-validator": "0.14.0",
     "uuid": "9.0.1"
   },
@@ -29,8 +29,7 @@
     "uuid": "a2903462-4cbe-4a2f-9852-bf89714b5b13"
   },
   "engines": {
-    "node": ">=17.0.0 <=22.x.x",
-    "npm": ">=8.0.0"
+    "node": ">=20.0.0 <=22.x.x"
   },
   "license": ""
 }

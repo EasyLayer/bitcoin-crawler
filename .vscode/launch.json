@@ -28,16 +28,6 @@
           }
       },
       {
-          "name": "Debug E2E Tests Browser",
-          "type": "node",
-          "request": "launch",
-          "cwd": "${workspaceFolder}/e2e-tests-browser",
-          "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
-          "args": ["test", "--headed", "--project=chromium", "--trace=on-first-retry"],
-          "env": { "PWDEBUG": "console" },
-          "console": "integratedTerminal"
-      },
-      {
         "name": "Debug Integration Tests",
         "type": "node",
         "runtimeVersion": "20.18.1",
@@ -80,63 +70,6 @@
         "internalConsoleOptions": "neverOpen",
         "env": {
           "TS_NODE_PROJECT": "${workspaceFolder}/examples/top-addresses-balance/tsconfig.json"
-        },
-      },
-      {
-        "name": "Debug Multi Addresses Balance",
-        "type": "node",
-        "runtimeVersion": "20.18.1",
-        "request": "launch",
-        "runtimeArgs": [
-          "--inspect-brk",
-          "-r",
-          "ts-node/register"
-        ],
-        "cwd": "${workspaceFolder}/examples/multi-addresses-balance",
-        "program": "${workspaceFolder}/examples/multi-addresses-balance/src/main.ts",
-        "envFile": "${workspaceFolder}/examples/multi-addresses-balance/.env",
-        "console": "integratedTerminal",
-        "internalConsoleOptions": "neverOpen",
-        "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/multi-addresses-balance/tsconfig.json"
-        },
-      },
-      {
-        "name": "Debug Large Transfers Tracker",
-        "type": "node",
-        "runtimeVersion": "20.18.1",
-        "request": "launch",
-        "runtimeArgs": [
-          "--inspect-brk",
-          "-r",
-          "ts-node/register"
-        ],
-        "cwd": "${workspaceFolder}/examples/large-transfers-tracker",
-        "program": "${workspaceFolder}/examples/large-transfers-tracker/src/main.ts",
-        "envFile": "${workspaceFolder}/examples/large-transfers-tracker/.env",
-        "console": "integratedTerminal",
-        "internalConsoleOptions": "neverOpen",
-        "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/large-transfers-tracker/tsconfig.json"
-        },
-      },
-      {
-        "name": "Debug Address Flow Tracker",
-        "type": "node",
-        "runtimeVersion": "20.18.1",
-        "request": "launch",
-        "runtimeArgs": [
-          "--inspect-brk",
-          "-r",
-          "ts-node/register"
-        ],
-        "cwd": "${workspaceFolder}/examples/address-flow-tracker",
-        "program": "${workspaceFolder}/examples/address-flow-tracker/src/main.ts",
-        "envFile": "${workspaceFolder}/examples/address-flow-tracker/.env",
-        "console": "integratedTerminal",
-        "internalConsoleOptions": "neverOpen",
-        "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/address-flow-tracker/tsconfig.json"
         },
       }
     ]

@@ -10,7 +10,7 @@
         "test:e2e": "jest --clearCache && jest --detectOpenHandles -c ./jest.config.mjs",
         "lint": "eslint -c eslint.config.mjs \"src/**/*.ts\"",
         "lint:fix": "eslint -c eslint.config.mjs \"src/**/*.ts\" --fix",
-        "format": "prettier -с prettier.config.mjs --write \"src/**/*.ts\""
+        "format": "prettier -c prettier.config.mjs --write \"src/**/*.ts\""
     },
     "author": "Yaroslav Pavliuk",
     "license": "",

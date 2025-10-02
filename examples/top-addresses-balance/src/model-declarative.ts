@@ -174,7 +174,6 @@ export const BtcBalancesDeclarative: DeclarativeModel<Store> = {
         }
       }
 
-      // жёсткая усечка top N (по желанию)
       if (store.sortedBalances.length > store.topLimit) {
         const drop = store.sortedBalances.slice(store.topLimit).map(x => x.address);
         store.sortedBalances.length = store.topLimit;

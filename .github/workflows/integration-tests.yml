@@ -47,22 +47,22 @@ jobs:
       - name: Set environment variables
         run: |
           # Define the environment variables using GitHub Secrets
-          NETWORK_PROVIDER_NODE_HTTP_URL="${{ secrets.NETWORK_PROVIDER_NODE_HTTP_URL }}"
+          PROVIDER_NETWORK_RPC_URLS="${{ secrets.PROVIDER_NETWORK_RPC_URLS }}"
           # Add more variables here if needed
 
           # Find all .env files within the ./integration-tests directory and its subdirectories
           find ./integration-tests -type f -name ".env" | while read env_file; do
             echo "Processing $env_file"
 
-            # Update NETWORK_PROVIDER_NODE_HTTP_URL
-            if grep -q "^NETWORK_PROVIDER_NODE_HTTP_URL=" "$env_file"; then
+            # Update PROVIDER_NETWORK_RPC_URLS
+            if grep -q "^PROVIDER_NETWORK_RPC_URLS=" "$env_file"; then
               # Replace the existing value of the variable
-              sed -i "s|^NETWORK_PROVIDER_NODE_HTTP_URL=.*|NETWORK_PROVIDER_NODE_HTTP_URL=${NETWORK_PROVIDER_NODE_HTTP_URL}|" "$env_file"
-              echo "Updated NETWORK_PROVIDER_NODE_HTTP_URL in $env_file"
+              sed -i "s|^PROVIDER_NETWORK_RPC_URLS=.*|PROVIDER_NETWORK_RPC_URLS=${PROVIDER_NETWORK_RPC_URLS}|" "$env_file"
+              echo "Updated PROVIDER_NETWORK_RPC_URLS in $env_file"
             else
               # Add the variable if it does not exist
-              echo "NETWORK_PROVIDER_NODE_HTTP_URL=${NETWORK_PROVIDER_NODE_HTTP_URL}" >> "$env_file"
-              echo "Added NETWORK_PROVIDER_NODE_HTTP_URL to $env_file"
+              echo "PROVIDER_NETWORK_RPC_URLS=${PROVIDER_NETWORK_RPC_URLS}" >> "$env_file"
+              echo "Added PROVIDER_NETWORK_RPC_URLS to $env_file"
             fi
 
             # Add more variables here following the same pattern if needed

@@ -4,19 +4,11 @@ import { CqrsTransportModule } from '@easylayer/common/cqrs-transport';
 import { ArithmeticService } from '@easylayer/common/arithmetic';
 import { EventStoreModule, EventStoreReadService } from '@easylayer/common/eventstore';
 import { NetworkTransportModule } from '@easylayer/common/network-transport';
-import {
-  Network,
-  Mempool,
-  BlockchainProviderModule,
-  BlocksQueueModule,
-  NetworkConfig,
-  RateLimits,
-} from '@easylayer/bitcoin';
+import { Network, Mempool, BlockchainProviderModule, BlocksQueueModule } from '@easylayer/bitcoin';
 import { AppService } from './app.service';
 import {
   NetworkCommandFactoryService,
   ReadStateExceptionHandlerService,
-  CqrsFactoryService,
   MempoolCommandFactoryService,
 } from './application-layer/services';
 import {
@@ -202,7 +194,6 @@ export class AppModule {
         NetworkCommandFactoryService,
         NetworkModelFactoryService,
         ReadStateExceptionHandlerService,
-        CqrsFactoryService,
         ConsolePromptService,
         MempoolCommandFactoryService,
         MempoolModelFactoryService,
@@ -214,7 +205,6 @@ export class AppModule {
         NetworkCommandFactoryService,
         NetworkModelFactoryService,
         ReadStateExceptionHandlerService,
-        CqrsFactoryService,
         ConsolePromptService,
         MempoolCommandFactoryService,
         MempoolModelFactoryService,
