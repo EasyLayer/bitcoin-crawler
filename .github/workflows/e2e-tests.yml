@@ -81,6 +81,17 @@ jobs:
           done
         shell: bash
 
+      - name: 🧾 Dump .env after patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Listing .env files under ./e2e-tests-server ..."
+          find ./e2e-tests-server -type f -name ".env" -print0 | while IFS= read -r -d '' f; do
+            echo "::group::$f"
+            echo "--- $f ---"
+            cat "$f"
+            echo "::endgroup::"
+          done
 
       # Run E2E tests
       - name: 📥 Run E2E Tests
