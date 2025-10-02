@@ -123,5 +123,5 @@ If you encounter a bug or have a feature request related to the `bitcoin-crawler
 
 ## License
 
-This project is licensed under the [MIT License](./package/LICENSE).
+This project is licensed under the [License](./package/LICENSE).
 

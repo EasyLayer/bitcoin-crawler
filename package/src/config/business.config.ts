@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Transform } from 'class-transformer';
-import { IsString, IsNumber, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsBoolean, IsOptional, IsIn } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
+
+type NetworkType = 'mainnet' | 'testnet' | 'regtest' | 'signet';
 
 @Injectable()
 export class BusinessConfig {
@@ -29,12 +31,18 @@ export class BusinessConfig {
   })
   START_BLOCK_HEIGHT?: number;
 
-  @Transform(({ value }) => (value?.length ? value : 'mainnet'))
-  @IsString()
-  @JSONSchema({
-    description: 'Bitcoin network type (mainnet, testnet, regtest, signet)',
+  @Transform(({ value }) => {
+    const v = String(value ?? '').toLowerCase();
+    return (['mainnet', 'testnet', 'regtest', 'signet'] as const).includes(v as any) ? (v as NetworkType) : 'mainnet';
   })
-  NETWORK_TYPE: string = 'mainnet';
+  @IsString()
+  @IsIn(['mainnet', 'testnet', 'regtest', 'signet'])
+  @JSONSchema({
+    description: 'Bitcoin network type',
+    enum: ['mainnet', 'testnet', 'regtest', 'signet'],
+    default: 'mainnet',
+  })
+  NETWORK_TYPE: NetworkType = 'mainnet';
 
   @Transform(({ value }) => (value?.length ? value : 'BTC'))
   @IsString()
@@ -55,13 +63,13 @@ export class BusinessConfig {
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
-    return n || 600; // 10 minutes for Bitcoin
+    return n || 600000;
   })
   @IsNumber()
   @JSONSchema({
-    description: 'Target block time in seconds (600=Bitcoin, 150=Litecoin, 60=Dogecoin)',
+    description: 'Target block time in milliseconds',
   })
-  NETWORK_TARGET_BLOCK_TIME: number = 600;
+  NETWORK_TARGET_BLOCK_TIME: number = 600000;
 
   @Transform(({ value }) => value !== 'false')
   @IsBoolean()
@@ -127,4 +135,34 @@ export class BusinessConfig {
     description: 'Difficulty adjustment interval in blocks',
   })
   NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL: number = 2016;
+
+  @Transform(({ value }) => {
+    const n = parseInt(value, 10);
+    return n || 1;
+  })
+  @IsNumber()
+  @JSONSchema({
+    description: 'Minimum fee rate for caching transactions in sat/vB',
+  })
+  MEMPOOL_MIN_FEE_RATE: number = 1;
+
+  /**
+   * Returns normalized network configuration built from this config.
+   */
+  getNetworkConfig() {
+    return {
+      network: this.NETWORK_TYPE,
+      nativeCurrencySymbol: this.NETWORK_NATIVE_CURRENCY_SYMBOL,
+      nativeCurrencyDecimals: this.NETWORK_NATIVE_CURRENCY_DECIMALS,
+      hasSegWit: this.NETWORK_HAS_SEGWIT,
+      hasTaproot: this.NETWORK_HAS_TAPROOT,
+      hasRBF: this.NETWORK_HAS_RBF,
+      hasCSV: this.NETWORK_HAS_CSV,
+      hasCLTV: this.NETWORK_HAS_CLTV,
+      maxBlockSize: this.NETWORK_MAX_BLOCK_SIZE,
+      maxBlockWeight: this.NETWORK_MAX_BLOCK_WEIGHT,
+      difficultyAdjustmentInterval: this.NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL,
+      targetBlockTime: this.NETWORK_TARGET_BLOCK_TIME,
+    };
+  }
 }

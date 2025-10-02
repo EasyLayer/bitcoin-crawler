@@ -34,43 +34,58 @@ jobs:
       - name: Install SQLite Dependencies
         run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
 
-      # Recursively find and copy .env.example to .env for each test package
+      # Copy each env.example -> .env and ensure trailing newline so the last line won't merge with the next write
       - name: Set up .env files for each e2e test package
+        shell: bash
         run: |
-          find ./e2e-tests -type f -name ".env.example" | while read example_env; do
+          set -euo pipefail
+          find ./e2e-tests-server -type f -name ".env.example" | while read -r example_env; do
             env_dir=$(dirname "$example_env")
             cp "$example_env" "$env_dir/.env"
+            # ensure file ends with newline to prevent line concatenation on later edits
+            printf '\n' >> "$env_dir/.env"
           done
+
+      # Patch ONLY existing keys in .env with Secrets (do not add new keys; skip if secret is empty)
+      - name: Set environment variables (patch existing keys only)
         shell: bash
-
-      # Set multiple environment variables from GitHub Secrets
-      - name: Set environment variables
         run: |
-          # Define the environment variables using GitHub Secrets
-          NETWORK_PROVIDER_NODE_HTTP_URL="${{ secrets.NETWORK_PROVIDER_NODE_HTTP_URL }}"
-          # Add more variables here if needed
+          set -euo pipefail
 
-          # Find all .env files within the ./e2e-tests directory and its subdirectories
-          find ./e2e-tests -type f -name ".env" | while read env_file; do
+          # Read secrets (will be masked in logs by GitHub)
+          PROVIDER_NETWORK_RPC_URLS="${{ secrets.PROVIDER_NETWORK_RPC_URLS }}"
+          PROVIDER_MEMPOOL_RPC_URLS="${{ secrets.PROVIDER_MEMPOOL_RPC_URLS }}"
+
+          # Escape / and & for sed
+          esc() { printf '%s' "$1" | sed -e 's/[\/&]/\\&/g'; }
+
+          # Iterate over all .env files and update ONLY if key exists and secret is non-empty
+          find ./e2e-tests-server -type f -name ".env" | while read -r env_file; do
             echo "Processing $env_file"
 
-            # Update NETWORK_PROVIDER_NODE_HTTP_URL
-            if grep -q "^NETWORK_PROVIDER_NODE_HTTP_URL=" "$env_file"; then
-              # Replace the existing value of the variable
-              sed -i "s|^NETWORK_PROVIDER_NODE_HTTP_URL=.*|NETWORK_PROVIDER_NODE_HTTP_URL=${NETWORK_PROVIDER_NODE_HTTP_URL}|" "$env_file"
-              echo "Updated NETWORK_PROVIDER_NODE_HTTP_URL in $env_file"
+            if grep -qE "^PROVIDER_NETWORK_RPC_URLS=" "$env_file"; then
+              if [ -n "$PROVIDER_NETWORK_RPC_URLS" ]; then
+                sed -i "s|^PROVIDER_NETWORK_RPC_URLS=.*|PROVIDER_NETWORK_RPC_URLS=$(esc "$PROVIDER_NETWORK_RPC_URLS")|" "$env_file"
+                echo "Updated PROVIDER_NETWORK_RPC_URLS in $env_file"
+              else
+                echo "Skip PROVIDER_NETWORK_RPC_URLS (secret empty)"
+              fi
             else
-              # Add the variable if it does not exist
-              echo "NETWORK_PROVIDER_NODE_HTTP_URL=${NETWORK_PROVIDER_NODE_HTTP_URL}" >> "$env_file"
-              echo "Added NETWORK_PROVIDER_NODE_HTTP_URL to $env_file"
+              echo "Skip PROVIDER_NETWORK_RPC_URLS (key not present in $env_file)"
             fi
 
-            # Add more variables here following the same pattern if needed
+            if grep -qE "^PROVIDER_MEMPOOL_RPC_URLS=" "$env_file"; then
+              if [ -n "$PROVIDER_MEMPOOL_RPC_URLS" ]; then
+                sed -i "s|^PROVIDER_MEMPOOL_RPC_URLS=.*|PROVIDER_MEMPOOL_RPC_URLS=$(esc "$PROVIDER_MEMPOOL_RPC_URLS")|" "$env_file"
+                echo "Updated PROVIDER_MEMPOOL_RPC_URLS in $env_file"
+              else
+                echo "Skip PROVIDER_MEMPOOL_RPC_URLS (secret empty)"
+              fi
+            else
+              echo "Skip PROVIDER_MEMPOOL_RPC_URLS (key not present in $env_file)"
+            fi
           done
-        shell: bash
 
-
-      # Run E2E tests
       - name: 📥 Run E2E Tests
-        run: yarn test:e2e
         shell: bash
+        run: yarn test:e2e

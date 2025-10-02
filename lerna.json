@@ -2,7 +2,7 @@
   "packages": [
     "examples/**",
     "package",
-    "e2e-tests",
+    "e2e-tests-server",
     "integration-tests"
   ],
   "version": "0.1.3",

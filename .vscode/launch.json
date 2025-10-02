@@ -2,14 +2,14 @@
     "version": "0.2.0",
     "configurations": [
       {
-          "name": "Debug E2E Tests",
+          "name": "Debug E2E Tests Server",
           "type": "node",
-          "runtimeVersion": "18.18.2",
+          "runtimeVersion": "20.18.1",
           "request": "launch",
           "runtimeArgs": [
             "--inspect-brk"
           ],
-          "cwd": "${workspaceFolder}/e2e-tests",
+          "cwd": "${workspaceFolder}/e2e-tests-server",
           "program": "${workspaceFolder}/node_modules/.bin/jest",
           "args": [
             "--runInBand",
@@ -30,7 +30,7 @@
       {
         "name": "Debug Integration Tests",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk"
@@ -54,62 +54,24 @@
         }
       },
       {
-        "name": "Debug Balances Monitoring",
+        "name": "Debug Top Addresses Balance",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk",
           "-r",
           "ts-node/register"
         ],
-        "cwd": "${workspaceFolder}/examples/real-time-data/balances-monitoring",
-        "program": "${workspaceFolder}/examples/real-time-data/balances-monitoring/src/server/index.ts",
-        "envFile": "${workspaceFolder}/examples/real-time-data/balances-monitoring/.env",
+        "cwd": "${workspaceFolder}/examples/top-addresses-balance",
+        "program": "${workspaceFolder}/examples/top-addresses-balance/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/top-addresses-balance/.env",
         "console": "integratedTerminal",
         "internalConsoleOptions": "neverOpen",
         "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/real-time-data/balances-monitoring/tsconfig.json"
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/top-addresses-balance/tsconfig.json"
         },
-      },
-      {
-        "name": "Debug Network Fee Analytics",
-        "type": "node",
-        "runtimeVersion": "18.18.2",
-        "request": "launch",
-        "runtimeArgs": [
-          "--inspect-brk",
-          "-r",
-          "ts-node/register"
-        ],
-        "cwd": "${workspaceFolder}/examples/historical-data/network-fee-analytics",
-        "program": "${workspaceFolder}/examples/historical-data/network-fee-analytics/src/main.ts",
-        "envFile": "${workspaceFolder}/examples/historical-data/network-fee-analytics/.env",
-        "console": "integratedTerminal",
-        "internalConsoleOptions": "neverOpen",
-        "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/historical-data/network-fee-analytics/tsconfig.json"
-        },
-      },
-      {
-        "name": "Debug Top Addresses by Balance",
-        "type": "node",
-        "runtimeVersion": "18.18.2",
-        "request": "launch",
-        "runtimeArgs": [
-          "--inspect-brk",
-          "-r",
-          "ts-node/register"
-        ],
-        "cwd": "${workspaceFolder}/examples/historical-data/top-addresses-by-balance",
-        "program": "${workspaceFolder}/examples/historical-data/top-addresses-by-balance/src/main.ts",
-        "envFile": "${workspaceFolder}/examples/historical-data/top-addresses-by-balance/.env",
-        "console": "integratedTerminal",
-        "internalConsoleOptions": "neverOpen",
-        "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/historical-data/top-addresses-by-balance/tsconfig.json"
-        },
-      },
+      }
     ]
 }
   

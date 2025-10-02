@@ -29,8 +29,8 @@ export function generateConfigJson(outputFolder = '.tmp') {
         });
       }
 
-      // Add the class name as title
-      schema.title = ConfigClass.name;
+      // // Add the class name as title
+      // schema.title = ConfigClass.name;
 
       // Write JSON to .tmp/<classname>.json
       const outPath = resolve(outputFolder, `${ConfigClass.name.toLowerCase()}.json`);

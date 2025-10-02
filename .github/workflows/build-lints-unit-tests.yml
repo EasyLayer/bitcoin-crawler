@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   all-in-one:
-    name: 'All-in-one (node: 18)'
+    name: 'All-in-one (node: 22)'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
       - name: Monorepo install
         uses: ./.github/actions/yarn-nm-install
       - name: Monorepo build

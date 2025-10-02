@@ -1,3 +1,6 @@
 export { bootstrap } from './bootstrap';
-export { Model, BasicEvent } from './framework';
-export type { ModelType, EventBasePayload } from './framework';
+
+export { Model } from '@easylayer/common/framework';
+export type { ExecutionContext, DeclarativeModel } from '@easylayer/common/framework';
+
+export * from './domain-layer/framework';

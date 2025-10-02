@@ -1,54 +1,45 @@
-import { Module, DynamicModule, Provider } from '@nestjs/common';
+import { Global, Module, DynamicModule, Provider } from '@nestjs/common';
 import { transformAndValidate } from 'class-transformer-validator';
-import { CqrsModule, EventPublisher } from '@easylayer/common/cqrs';
-import type { IQueryHandler, IEventHandler } from '@easylayer/common/cqrs';
 import { CqrsTransportModule } from '@easylayer/common/cqrs-transport';
-import { AppLogger, LoggerModule } from '@easylayer/common/logger';
 import { ArithmeticService } from '@easylayer/common/arithmetic';
-import { EventStoreModule, EventStoreWriteRepository } from '@easylayer/common/eventstore';
-import { TransportModule, TransportModuleOptions } from '@easylayer/common/network-transport';
-import {
-  Network,
-  BlockchainProviderModule,
-  BlocksQueueModule,
-  NodeProviderTypes,
-  NetworkConfig,
-  RateLimits,
-} from '@easylayer/bitcoin';
+import { EventStoreModule, EventStoreReadService } from '@easylayer/common/eventstore';
+import { NetworkTransportModule } from '@easylayer/common/network-transport';
+import { Network, Mempool, BlockchainProviderModule, BlocksQueueModule } from '@easylayer/bitcoin';
 import { AppService } from './app.service';
-import { NetworkSaga } from './application-layer/sagas';
 import {
   NetworkCommandFactoryService,
   ReadStateExceptionHandlerService,
-  CqrsFactoryService,
+  MempoolCommandFactoryService,
 } from './application-layer/services';
-import { NetworkModelFactoryService, ConsolePromptService, NETWORK_AGGREGATE_ID } from './domain-layer/services';
-import { CommandHandlers } from './domain-layer/command-handlers';
-import { EventsHandlers } from './domain-layer/events-handlers';
-import { QueryHandlers } from './domain-layer/query-handlers';
-import { AppConfig, BusinessConfig, EventStoreConfig, BlocksQueueConfig, ProvidersConfig } from './config';
-import { ModelType, ModelFactoryService } from './framework';
+import {
+  NetworkModelFactoryService,
+  ConsolePromptService,
+  MempoolModelFactoryService,
+  NETWORK_AGGREGATE_ID,
+  MEMPOOL_AGGREGATE_ID,
+} from './domain-layer/services';
+import {
+  AppConfig,
+  BusinessConfig,
+  EventStoreConfig,
+  BlocksQueueConfig,
+  ProvidersConfig,
+  TransportConfig,
+} from './config';
+import { ModelInput } from '@easylayer/common/framework';
 import { MetricsService } from './metrics.service';
-
-const appName = `${process?.env?.APPLICATION_NAME || 'bitcoin'}`;
-
-export const EVENTSTORE_NAME = `${appName}-eventstore`;
+import { ModelFactoryService, normalizeModelsBTC } from './domain-layer/framework';
 
 export interface AppModuleOptions {
-  Models?: ModelType[];
-  QueryHandlers?: Array<new (...args: any[]) => IQueryHandler>;
-  EventHandlers?: Array<new (...args: any[]) => IEventHandler>;
+  appName: string;
+  Models?: ModelInput[];
   Providers?: Array<new (...args: any[]) => Provider>;
 }
 
+@Global()
 @Module({})
 export class AppModule {
-  static async register({
-    Models = [],
-    QueryHandlers: UserQueryHandlers = [],
-    EventHandlers: UserEventHandlers = [],
-    Providers = [],
-  }: AppModuleOptions): Promise<DynamicModule> {
+  static async forRootAsync({ appName, Models = [], Providers = [] }: AppModuleOptions): Promise<DynamicModule> {
     const eventstoreConfig = await transformAndValidate(EventStoreConfig, process.env, {
       validator: { whitelist: true },
     });
@@ -64,70 +55,59 @@ export class AppModule {
     const providersConfig = await transformAndValidate(ProvidersConfig, process.env, {
       validator: { whitelist: true },
     });
+    const transportConfig = await transformAndValidate(TransportConfig, process.env, {
+      validator: { whitelist: true },
+    });
 
     const queueIteratorBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
     const queueLoaderRequestBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
-    const maxQueueSize = queueIteratorBlocksBatchSize * 8;
-    const minTransferSize = businessConfig.NETWORK_MAX_BLOCK_SIZE - 1;
+    const maxQueueSize = queueIteratorBlocksBatchSize * 10;
 
-    const networkModel = new Network({ aggregateId: NETWORK_AGGREGATE_ID, maxSize: 0 });
+    // This models will not be used, only for run event store
+    const networkModel = new Network({ aggregateId: NETWORK_AGGREGATE_ID, maxSize: 0, blockHeight: -1 });
+    const mempoolModel = new Mempool({ aggregateId: MEMPOOL_AGGREGATE_ID, blockHeight: -1 });
+
     // Create instances of models without merging for basic instances
-    const userModels = Models.map((ModelCtr) => new ModelCtr());
+    const NormalizedModels = normalizeModelsBTC(Models);
+    const userModels = NormalizedModels.map((ModelCtr) => new ModelCtr());
 
-    // Smart transport detection using helper methods
-    const transports = appConfig.getEnabledTransports();
+    const networkConnections: any = providersConfig.PROVIDER_NETWORK_RPC_URLS?.map((item) => ({
+      baseUrl: item,
+    }));
 
-    // Network configuration
-    const network: NetworkConfig = {
-      network: businessConfig.NETWORK_TYPE as NetworkConfig['network'],
-      nativeCurrencySymbol: businessConfig.NETWORK_NATIVE_CURRENCY_SYMBOL,
-      nativeCurrencyDecimals: businessConfig.NETWORK_NATIVE_CURRENCY_DECIMALS,
-      hasSegWit: businessConfig.NETWORK_HAS_SEGWIT,
-      hasTaproot: businessConfig.NETWORK_HAS_TAPROOT,
-      hasRBF: businessConfig.NETWORK_HAS_RBF,
-      hasCSV: businessConfig.NETWORK_HAS_CSV,
-      hasCLTV: businessConfig.NETWORK_HAS_CLTV,
-      maxBlockSize: businessConfig.NETWORK_MAX_BLOCK_SIZE,
-      maxBlockWeight: businessConfig.NETWORK_MAX_BLOCK_WEIGHT,
-      difficultyAdjustmentInterval: businessConfig.NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL,
-      targetBlockTime: businessConfig.NETWORK_TARGET_BLOCK_TIME,
-    };
-
-    const rateLimits: RateLimits = {
-      maxConcurrentRequests: providersConfig.NETWORK_PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS,
-      maxBatchSize: providersConfig.NETWORK_PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE,
-      requestDelayMs: providersConfig.NETWORK_PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS,
-    };
+    const mempoolConnections: any = providersConfig.PROVIDER_MEMPOOL_RPC_URLS?.map((item) => ({
+      baseUrl: item,
+    }));
 
     return {
       module: AppModule,
       controllers: [],
       imports: [
-        LoggerModule.forRoot({ componentName: appName }),
         // Set main modules as global
-        CqrsTransportModule.forRoot({ isGlobal: true }),
-        CqrsModule.forRoot({ isGlobal: true }),
-        TransportModule.forRoot({ isGlobal: true, transports }),
+        CqrsTransportModule.forRoot({ isGlobal: true, systemAggregates: [NETWORK_AGGREGATE_ID, MEMPOOL_AGGREGATE_ID] }),
+        NetworkTransportModule.forRoot({
+          isGlobal: true,
+          transports: transportConfig.getEnabledTransports(),
+          outbox: transportConfig.getOutboxOptions(),
+        }),
         BlockchainProviderModule.forRootAsync({
           isGlobal: true,
-          network,
-          rateLimits,
-          providers: [
-            {
-              connection: {
-                type: providersConfig.NETWORK_PROVIDER_TYPE as NodeProviderTypes,
-                baseUrl: providersConfig.NETWORK_PROVIDER_NODE_HTTP_URL,
-                responseTimeout: providersConfig.NETWORK_PROVIDER_REQUEST_TIMEOUT,
-              },
-            },
-          ],
+          network: businessConfig.getNetworkConfig(),
+          rateLimits: providersConfig.getRateLimits(),
+          networkProviders: {
+            type: providersConfig.NETWORK_PROVIDER_TYPE,
+            connections: networkConnections,
+          },
+          mempoolProviders: {
+            type: providersConfig.MEMPOOL_PROVIDER_TYPE,
+            connections: mempoolConnections,
+          },
         }),
         EventStoreModule.forRootAsync({
-          name: EVENTSTORE_NAME,
-          aggregates: [...userModels, networkModel],
+          isGlobal: true,
+          name: `${appName}-eventstore`,
+          aggregates: [...userModels, networkModel, mempoolModel],
           logging: eventstoreConfig.isLogging(),
-          snapshotInterval: eventstoreConfig.EVENTSTORE_SNAPSHOT_INTERVAL,
-          sqliteBatchSize: eventstoreConfig.EVENTSTORE_INSERT_BATCH_SIZE,
           type: eventstoreConfig.EVENTSTORE_DB_TYPE,
           database: eventstoreConfig.EVENTSTORE_DB_NAME,
           ...(eventstoreConfig.EVENTSTORE_DB_HOST && {
@@ -142,6 +122,25 @@ export class AppModule {
           ...(eventstoreConfig.EVENTSTORE_DB_PASSWORD && {
             password: eventstoreConfig.EVENTSTORE_DB_PASSWORD,
           }),
+          // PostgreSQL pool settings
+          ...(eventstoreConfig.EVENTSTORE_PG_POOL_MAX && {
+            extra: {
+              min: eventstoreConfig.EVENTSTORE_PG_POOL_MIN,
+              max: eventstoreConfig.EVENTSTORE_PG_POOL_MAX,
+            },
+          }),
+          ...(eventstoreConfig.EVENTSTORE_PG_QUERY_TIMEOUT && {
+            maxQueryExecutionTime: eventstoreConfig.EVENTSTORE_PG_QUERY_TIMEOUT,
+          }),
+          ...(eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT &&
+            ({
+              extra: {
+                idleTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT,
+                ...(eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT && {
+                  connectionTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT,
+                }),
+              },
+            } as any)),
         }),
         BlocksQueueModule.forRootAsync({
           blocksCommandExecutor: NetworkCommandFactoryService,
@@ -152,7 +151,7 @@ export class AppModule {
           queueLoaderRequestBlocksBatchSize,
           queueIteratorBlocksBatchSize,
           maxQueueSize,
-          minTransferSize,
+          blockTimeMs: businessConfig.NETWORK_TARGET_BLOCK_TIME,
         }),
       ],
       providers: [
@@ -177,32 +176,49 @@ export class AppModule {
           useValue: providersConfig,
         },
         {
-          provide: 'FrameworkModelsConstructors',
-          useValue: Models,
+          provide: TransportConfig,
+          useValue: transportConfig,
         },
         {
-          provide: 'FrameworModelFactory',
-          useFactory: (eventStoreWriteRepository: EventStoreWriteRepository, eventPublisher: EventPublisher) =>
-            new ModelFactoryService(eventStoreWriteRepository, eventPublisher),
-          inject: [EventStoreWriteRepository, EventPublisher],
+          provide: 'FrameworkModelsConstructors',
+          useValue: NormalizedModels,
+        },
+        {
+          provide: ModelFactoryService,
+          useFactory: (eventStoreService: EventStoreReadService) => new ModelFactoryService(eventStoreService),
+          inject: [EventStoreReadService],
         },
         AppService,
         MetricsService,
         ArithmeticService,
-        NetworkSaga,
         NetworkCommandFactoryService,
         NetworkModelFactoryService,
         ReadStateExceptionHandlerService,
-        CqrsFactoryService,
         ConsolePromptService,
-        ...CommandHandlers,
-        ...EventsHandlers,
-        ...QueryHandlers,
-        ...UserQueryHandlers,
-        ...UserEventHandlers,
+        MempoolCommandFactoryService,
+        MempoolModelFactoryService,
         ...Providers,
       ],
-      exports: [],
+      exports: [
+        AppService,
+        MetricsService,
+        NetworkCommandFactoryService,
+        NetworkModelFactoryService,
+        ReadStateExceptionHandlerService,
+        ConsolePromptService,
+        MempoolCommandFactoryService,
+        MempoolModelFactoryService,
+        AppConfig,
+        BusinessConfig,
+        EventStoreConfig,
+        BlocksQueueConfig,
+        ProvidersConfig,
+        'FrameworkModelsConstructors',
+        ModelFactoryService,
+        BlocksQueueModule,
+        EventStoreModule,
+        ...Providers,
+      ],
     };
   }
 }
