@@ -19,5 +19,5 @@ export default {
     "<rootDir>/node_modules",
     "<rootDir>/dist"
   ]),
-  setupFiles: ["<rootDir>/jest.setup.mjs"]
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.mjs"]
 }; 

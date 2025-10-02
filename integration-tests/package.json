@@ -7,7 +7,7 @@
     "scripts": {
         "clear": "yarn run clear:node_modules",
         "clear:node_modules": "rimraf node_modules",
-        "test:integration": "jest --clearCache && jest --detectOpenHandles -c ./jest.config.mjs",
+        "test:integration": "jest --clearCache && jest --detectOpenHandles --forceExit -c ./jest.config.mjs",
         "lint": "eslint -c eslint.config.mjs \"src/**/*.ts\"",
         "lint:fix": "eslint -c eslint.config.mjs \"src/**/*.ts\" --fix",
         "format": "prettier -c prettier.config.mjs --write \"src/**/*.ts\""

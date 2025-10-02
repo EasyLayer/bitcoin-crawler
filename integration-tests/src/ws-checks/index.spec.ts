@@ -89,9 +89,12 @@ describe('/Bitcoin Crawler: WS Transport', () => {
   });
 
   afterAll(async () => {
+    await (client as any)?.disconnect?.().catch(() => undefined);
     await (client as any)?.close?.().catch(() => undefined);
     await app?.close?.().catch(() => undefined);
     jest.restoreAllMocks();
+
+    await new Promise((r) => setImmediate(r));
   });
 
   it('should get three BlockAddedEvent events', () => {

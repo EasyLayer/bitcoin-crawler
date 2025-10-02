@@ -112,9 +112,15 @@ describe('/Bitcoin Crawler: HTTP Transport', () => {
     process.env.TRANSPORT_HTTP_WEBHOOK_URL = envBackup.TRANSPORT_HTTP_WEBHOOK_URL;
     process.env.TRANSPORT_HTTP_WEBHOOK_PING_URL = envBackup.TRANSPORT_HTTP_WEBHOOK_PING_URL;
     await (client as any)?.close?.().catch(() => undefined);
-    await new Promise<void>((r) => webhookSrv?.close?.(() => r())).catch(() => undefined);
+    await Promise.race([
+      new Promise<void>((r) => webhookSrv?.close?.(() => r())),
+      new Promise<void>((r) => setTimeout(r, 2000)),
+    ]).catch(() => undefined);
+
     await app?.close?.().catch(() => undefined);
     jest.restoreAllMocks();
+
+    await new Promise((r) => setImmediate(r));
   });
 
   it('should get three BlockAddedEvent events', () => {

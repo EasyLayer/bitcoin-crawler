@@ -107,9 +107,25 @@ describe('/Bitcoin Crawler: IPC Transport (server in child, client in parent)', 
   /* eslint-disable no-empty */
   afterAll(async () => {
     await (client as any)?.close?.().catch(() => undefined);
-    try {
-      child?.kill();
-    } catch {}
+    if (child && child.pid) {
+      try {
+        child.kill('SIGTERM');
+      } catch {}
+
+      await new Promise<void>((resolve) => {
+        const to = setTimeout(() => {
+          try {
+            child.kill('SIGKILL');
+          } catch {}
+          resolve();
+        }, 3000);
+        child.once('exit', () => {
+          clearTimeout(to);
+          resolve();
+        });
+      }).catch(() => undefined);
+    }
+
     await app?.close?.().catch(() => undefined);
     jest.restoreAllMocks();
   });
