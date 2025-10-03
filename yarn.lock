@@ -3476,6 +3476,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"base-wallet-watcher@workspace:examples/business/base-wallet-watcher":
+  version: 0.0.0-use.local
+  resolution: "base-wallet-watcher@workspace:examples/business/base-wallet-watcher"
+  dependencies:
+    "@easylayer/bitcoin-crawler": "npm:0.1.3"
+    "@easylayer/common": "npm:1.0.2"
+    "@types/node": "npm:20.10.4"
+    rimraf: "npm:5.0.5"
+    ts-node: "npm:10.9.2"
+    typescript: "npm:5.3.3"
+    uuid: "npm:9.0.1"
+  languageName: unknown
+  linkType: soft
+
 "base-x@npm:^3.0.2":
   version: 3.0.11
   resolution: "base-x@npm:3.0.11"
@@ -4267,9 +4281,7 @@ __metadata:
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.1.3"
     "@easylayer/common": "npm:1.0.2"
-    "@easylayer/transport-sdk": "npm:1.2.0"
     "@types/node": "npm:20.10.4"
-    class-validator: "npm:0.14.0"
     rimraf: "npm:5.0.5"
     ts-node: "npm:10.9.2"
     typescript: "npm:5.3.3"
@@ -5172,9 +5184,7 @@ __metadata:
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.1.3"
     "@easylayer/common": "npm:1.0.2"
-    "@easylayer/transport-sdk": "npm:1.2.0"
     "@types/node": "npm:20.10.4"
-    class-validator: "npm:0.14.0"
     rimraf: "npm:5.0.5"
     ts-node: "npm:10.9.2"
     typescript: "npm:5.3.3"
@@ -11787,22 +11797,6 @@ __metadata:
   checksum: 10/952c29e2a85d7123239b5cfdd889a0dde47ab0497f0913d70588f19c53f7e0b5327c95f4651e413c74b785147f9637b17410ac8c846d5d4a20a5a33eb6dc3a45
   languageName: node
   linkType: hard
-
-"top-addresses-by-balance@workspace:examples/business/top-addresses-balance":
-  version: 0.0.0-use.local
-  resolution: "top-addresses-by-balance@workspace:examples/business/top-addresses-balance"
-  dependencies:
-    "@easylayer/bitcoin-crawler": "npm:0.1.3"
-    "@easylayer/common": "npm:1.0.2"
-    "@easylayer/transport-sdk": "npm:1.2.0"
-    "@types/node": "npm:20.10.4"
-    class-validator: "npm:0.14.0"
-    rimraf: "npm:5.0.5"
-    ts-node: "npm:10.9.2"
-    typescript: "npm:5.3.3"
-    uuid: "npm:9.0.1"
-  languageName: unknown
-  linkType: soft
 
 "tr46@npm:~0.0.3":
   version: 0.0.3

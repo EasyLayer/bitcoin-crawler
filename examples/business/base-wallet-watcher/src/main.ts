@@ -1,18 +1,22 @@
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import { AddressUtxoWatcher } from './model';
+import { BaseWalletWatcher } from './model';
 import {
-  GetBalanceQueryHandler
-} from './query';
+  GetBalanceQueryHandler,
+  GetUnspentQueryHandler,
+  GetTxidsQueryHandler,
+} from './queries';
 
 bootstrap({
-  Models: [AddressUtxoWatcher],
-  QueryHandlers: [GetBalanceQueryHandler]
+  Models: [BaseWalletWatcher],
+  QueryHandlers: [
+    GetBalanceQueryHandler,
+    GetUnspentQueryHandler,
+    GetTxidsQueryHandler,
+  ],
 })
   .then(() => {
-    console.log('\n🚀 Bitcoin Address UTXOx Watcher Started!\n');    
-    console.log('🔧 Default Framework Queries:');
-
-    console.log('💡 Example with curl:');
+    console.log('\n🚀 Bitcoin Base Wallet Watcher Started!\n');
+    console.log('🔧 Default Framework Queries:\n');
 
     console.log('curl -X POST http://localhost:3000/ \\');
     console.log(' -H "Content-Type: application/json" \\');
@@ -26,8 +30,16 @@ bootstrap({
     console.log(' -H "Content-Type: application/json" \\');
     console.log(' -d \'{"action":"query","payload":{"name":"GetBalanceQuery","dto":{"addresses":["bc1qexampleaddr1...","bc1qexampleaddr2..."]}}}\'\n');
 
+    console.log('curl -X POST http://localhost:3000/ \\');
+    console.log(' -H "Content-Type: application/json" \\');
+    console.log(' -d \'{"action":"query","payload":{"name":"GetUnspentQuery","dto":{"addresses":["bc1qexampleaddr1...","bc1qexampleaddr2..."]}}}\'\n');
+
+    console.log('curl -X POST http://localhost:3000/ \\');
+    console.log(' -H "Content-Type: application/json" \\');
+    console.log(' -d \'{"action":"query","payload":{"name":"GetTxidsQuery","dto":{"addresses":["bc1qexampleaddr1...","bc1qexampleaddr2..."]}}}\'\n');
+
     console.log('═══════════════════════════════════════════════════════════════\n');
   })
   .catch((error: Error) => {
-    console.error('❌ Failed to start Bitcoin Address UTXOx Watcher:', error);
+    console.error('❌ Failed to start Bitcoin Base Wallet Watcher:', error);
   });

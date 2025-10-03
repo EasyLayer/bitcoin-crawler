@@ -90,6 +90,25 @@
         "env": {
           "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/declarative-model/tsconfig.json"
         },
+      },
+      {
+        "name": "Debug Business Example Base Wallet Watcher",
+        "type": "node",
+        "runtimeVersion": "20.18.1",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk",
+          "-r",
+          "ts-node/register"
+        ],
+        "cwd": "${workspaceFolder}/examples/business/base-wallet-watcher",
+        "program": "${workspaceFolder}/examples/business/base-wallet-watcher/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/business/base-wallet-watcher/.env",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/business/base-wallet-watcher/tsconfig.json"
+        },
       }
     ]
 }

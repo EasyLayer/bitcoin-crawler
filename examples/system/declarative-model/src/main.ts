@@ -16,15 +16,15 @@ bootstrap({
 
     console.log('curl -X POST http://localhost:3000/ \\');
     console.log(' -H "Content-Type: application/json" \\');
-    console.log(' -d \'{"action":"query","payload":{"constructorName":"GetModelsQuery","dto":{"modelIds":["my-model-name"],"filter":{"blockHeight":100}}}}\'\n');
+    console.log(' -d \'{"action":"query","payload":{"name":"GetModelsQuery","dto":{"modelIds":["my-model-name"],"filter":{"blockHeight":100}}}}\'\n');
 
     console.log('curl -X POST http://localhost:3000/ \\');
     console.log(' -H "Content-Type: application/json" \\');
-    console.log(' -d \'{"action":"query","payload":{"constructorName":"FetchEventsQuery","dto":{"modelIds":["my-model-name"],"filter":{},"paging":{"limit":10}}}}\'\n');
+    console.log(' -d \'{"action":"query","payload":{"name":"FetchEventsQuery","dto":{"modelIds":["my-model-name"],"filter":{},"paging":{"limit":10}}}}\'\n');
 
     console.log('curl -X POST http://localhost:3000/ \\');
     console.log(' -H "Content-Type: application/json" \\');
-    console.log(' -d \'{"action":"query","payload":{"constructorName":"GetBalanceQuery","dto":{"addresses":["bc1qexampleaddr1...","bc1qexampleaddr2..."]}}}\'\n');
+    console.log(' -d \'{"action":"query","payload":{"name":"GetBalanceQuery","dto":{"addresses":["bc1qexampleaddr1...","bc1qexampleaddr2..."]}}}\'\n');
 
     console.log('═══════════════════════════════════════════════════════════════\n');
   })
