@@ -109,6 +109,25 @@
         "env": {
           "TS_NODE_PROJECT": "${workspaceFolder}/examples/business/base-wallet-watcher/tsconfig.json"
         },
+      },
+      {
+        "name": "Debug System Example Transport",
+        "type": "node",
+        "runtimeVersion": "20.18.1",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk",
+          "-r",
+          "ts-node/register"
+        ],
+        "cwd": "${workspaceFolder}/examples/system/transport",
+        "program": "${workspaceFolder}/examples/system/transport/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/system/transport/.env",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/transport/tsconfig.json"
+        },
       }
     ]
 }
