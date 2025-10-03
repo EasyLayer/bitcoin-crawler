@@ -10,16 +10,13 @@ export class BlockAddedEvent {
 type Store = Record<string, never>;
 
 const BlocksModelDeclarative: DeclarativeModel<Store> = {
-  name: AGGREGATE_ID,
+  modelId: AGGREGATE_ID,
   state: (): Store => ({}),
 
   sources: {
-    rollupBlock: {
-      from: 'block',
-      async handler({ block, applyEvent }: any) {
-        if (!block) return;
-        await applyEvent('BlockAddedEvent', block.height, { hash: block.hash });
-      },
+    async block({ block, applyEvent }: any): Promise<void> {
+      if (!block) return;
+      await applyEvent('BlockAddedEvent', block.height, { hash: block.hash });
     },
   },
 

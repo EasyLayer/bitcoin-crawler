@@ -9,7 +9,7 @@
   "type": "commonjs",
   "workspaces": {
     "packages": [
-      "examples/**",
+      "examples/*/*",
       "package",
       "e2e-tests-server",
       "integration-tests"

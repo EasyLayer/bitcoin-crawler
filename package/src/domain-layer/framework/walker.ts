@@ -1,4 +1,4 @@
-import type { Walker } from '@easylayer/common/framework';
+import type { Walker } from './declarative';
 
 export const walkBTC: Walker = async (from, block, fn) => {
   if (!block) return;

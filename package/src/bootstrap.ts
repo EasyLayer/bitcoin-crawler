@@ -22,7 +22,20 @@ export const bootstrap = async ({
   const wsPort = Number(process.env.WS_PORT ?? '0');
   const hasNetworkTransports = httpPort > 0 || wsPort > 0;
   const isTest = process.env.NODE_ENV === 'test';
-  const loggerLevel = isTest ? 'error' : process.env.DEBUG === '1' ? 'debug' : (process.env.LOG_LEVEL as any) || 'info';
+
+  // Allow-list для LOG_LEVEL
+  const allowedLevels = new Set(['trace', 'debug', 'info', 'warn', 'error', 'fatal']);
+  const envLevel = (process.env.LOG_LEVEL || '').toLowerCase();
+
+  const loggerLevel = isTest
+    ? 'error'
+    : allowedLevels.has(envLevel)
+      ? (envLevel as any)
+      : process.env.DEBUG === '1'
+        ? 'debug'
+        : 'info';
+
+  const commonFactoryOpts = { bufferLogs: true, logger: ['error'] as any };
 
   const rootModule = await ContainerModule.register({
     Models,
@@ -34,12 +47,17 @@ export const bootstrap = async ({
 
   let appContext: INestApplicationContext | INestApplication;
   if (!hasNetworkTransports) {
-    appContext = await NestFactory.createApplicationContext(rootModule, { bufferLogs: true, logger: ['error'] as any });
+    appContext = await NestFactory.createApplicationContext(rootModule, commonFactoryOpts);
   } else {
-    appContext = await NestFactory.create(rootModule, { bufferLogs: true, logger: ['error'] as any });
+    appContext = await NestFactory.create(rootModule, commonFactoryOpts);
   }
 
-  const logger = new NestLogger({ name: appName, level: loggerLevel });
+  const logger = new NestLogger({
+    name: appName,
+    level: loggerLevel,
+    enabled: true,
+  });
+
   appContext.useLogger(logger);
   (appContext as any).flushLogs?.();
 

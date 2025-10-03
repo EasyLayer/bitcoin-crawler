@@ -54,7 +54,7 @@
         }
       },
       {
-        "name": "Debug Top Addresses Balance",
+        "name": "Debug System Example Class Model",
         "type": "node",
         "runtimeVersion": "20.18.1",
         "request": "launch",
@@ -63,13 +63,32 @@
           "-r",
           "ts-node/register"
         ],
-        "cwd": "${workspaceFolder}/examples/top-addresses-balance",
-        "program": "${workspaceFolder}/examples/top-addresses-balance/src/main.ts",
-        "envFile": "${workspaceFolder}/examples/top-addresses-balance/.env",
+        "cwd": "${workspaceFolder}/examples/system/class-model",
+        "program": "${workspaceFolder}/examples/system/class-model/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/system/class-model/.env",
         "console": "integratedTerminal",
         "internalConsoleOptions": "neverOpen",
         "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/top-addresses-balance/tsconfig.json"
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/class-model/tsconfig.json"
+        },
+      },
+      {
+        "name": "Debug System Example Declarative Model",
+        "type": "node",
+        "runtimeVersion": "20.18.1",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk",
+          "-r",
+          "ts-node/register"
+        ],
+        "cwd": "${workspaceFolder}/examples/system/declarative-model",
+        "program": "${workspaceFolder}/examples/system/declarative-model/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/system/declarative-model/.env",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/declarative-model/tsconfig.json"
         },
       }
     ]

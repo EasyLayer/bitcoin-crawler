@@ -1,17 +1,12 @@
 import { Model } from '@easylayer/bitcoin-crawler';
-import type { ExecutionContext } from '@easylayer/bitcoin-crawler';
-import type { Block } from '@easylayer/bitcoin';
 
 export const AGGREGATE_ID = 'BlocksModel';
 
 export default class BlocksModel extends Model {
+  static override modelId: string = AGGREGATE_ID;
   public blocks: any = [];
 
-  constructor() {
-    super(AGGREGATE_ID, -1);
-  }
-
-  public async processBlock(ctx: ExecutionContext<Block>): Promise<void> {
+  public async processBlock(ctx: any): Promise<void> {
     const b = ctx.block;
     if (!b) return;
     this.applyEvent('BlockAddedEvent', b.height, {

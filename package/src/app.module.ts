@@ -26,9 +26,8 @@ import {
   ProvidersConfig,
   TransportConfig,
 } from './config';
-import { ModelInput } from '@easylayer/common/framework';
 import { MetricsService } from './metrics.service';
-import { ModelFactoryService, normalizeModelsBTC } from './domain-layer/framework';
+import { ModelFactoryService, normalizeModelsBTC, ModelInput } from './domain-layer/framework';
 
 export interface AppModuleOptions {
   appName: string;
@@ -185,7 +184,8 @@ export class AppModule {
         },
         {
           provide: ModelFactoryService,
-          useFactory: (eventStoreService: EventStoreReadService) => new ModelFactoryService(eventStoreService),
+          useFactory: (eventStoreService: EventStoreReadService) =>
+            new ModelFactoryService(businessConfig, eventStoreService),
           inject: [EventStoreReadService],
         },
         AppService,
