@@ -1,8 +1,8 @@
 import check from 'check-node-version';
 import { resolve } from 'node:path';
-import fsExtra from 'fs-extra';
+import { readFileSync } from 'node:fs';
 
-const packageJson = JSON.parse(fsExtra.readFileSync(resolve(__dirname, '../../package.json'), 'utf8'));
+const packageJson = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf8'));
 
 check(packageJson.engines, (err, result) => {
   if (err) {

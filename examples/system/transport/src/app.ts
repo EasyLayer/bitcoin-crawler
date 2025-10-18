@@ -1,7 +1,7 @@
 import { bootstrap } from '@easylayer/bitcoin-crawler';
 import { AddressUtxoWatcher } from './model';
 import {
-    GetBalanceQueryHandler
+  GetBalanceQueryHandler
 } from './query';
 
 (async () => {  

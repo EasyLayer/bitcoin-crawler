@@ -3,7 +3,7 @@ export const mockBlocks = [
     hash: '0000000000000000000000000000000000000000000000000000000000000001',
     confirmations: 4,
     strippedsize: 204,
-    size: 204,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 0,
     version: 1,
@@ -52,7 +52,7 @@ export const mockBlocks = [
     hash: '0000000000000000000000000000000000000000000000000000000000000002',
     confirmations: 3,
     strippedsize: 204,
-    size: 204,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 1,
     version: 1,
@@ -147,7 +147,7 @@ export const mockBlocks = [
     hash: '0000000000000000000000000000000000000000000000000000000000000003',
     confirmations: 2,
     strippedsize: 204,
-    size: 204,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 2,
     version: 1,

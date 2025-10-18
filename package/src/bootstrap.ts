@@ -7,6 +7,7 @@ import { NestLogger } from '@easylayer/common/logger';
 import { ContainerModule } from './container.module';
 import type { ContainerModuleOptions } from './container.module';
 import { setupTestEventSubscribers, type TestingOptions } from './utils';
+import { AppService } from './app.service';
 
 type BootstrapOptions = Omit<ContainerModuleOptions, 'appName'> & { testing?: TestingOptions };
 
@@ -27,15 +28,9 @@ export const bootstrap = async ({
   const allowedLevels = new Set(['trace', 'debug', 'info', 'warn', 'error', 'fatal']);
   const envLevel = (process.env.LOG_LEVEL || '').toLowerCase();
 
-  const loggerLevel = isTest
-    ? 'error'
-    : allowedLevels.has(envLevel)
-      ? (envLevel as any)
-      : process.env.DEBUG === '1'
-        ? 'debug'
-        : 'info';
+  const loggerLevel = allowedLevels.has(envLevel) ? (envLevel as any) : process.env.DEBUG === '1' ? 'debug' : 'info';
 
-  const commonFactoryOpts = { bufferLogs: true, logger: ['error'] as any };
+  const commonFactoryOpts = { bufferLogs: false, logger: ['fatal'] as any };
 
   const rootModule = await ContainerModule.register({
     Models,
@@ -59,7 +54,7 @@ export const bootstrap = async ({
   });
 
   appContext.useLogger(logger);
-  (appContext as any).flushLogs?.();
+  // (appContext as any).flushLogs?.();
 
   try {
     if (!isTest) {
@@ -72,6 +67,8 @@ export const bootstrap = async ({
     }
 
     await appContext.init();
+    const appService = appContext.get(AppService, { strict: false });
+    await appService.init();
 
     if (testPromises.length > 0) {
       await Promise.all(testPromises);
@@ -81,7 +78,6 @@ export const bootstrap = async ({
 
     if (isTest) return appContext;
 
-    logger.log('Application bootstrap completed');
     return appContext;
   } catch (err) {
     const trace = err instanceof Error ? err.stack : undefined;

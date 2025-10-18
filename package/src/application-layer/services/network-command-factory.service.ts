@@ -2,9 +2,10 @@
 import { Injectable } from '@nestjs/common';
 import { CommandBus } from '@easylayer/common/cqrs';
 import { InitNetworkCommand, AddBlocksBatchCommand } from '@easylayer/bitcoin';
+import type { BlocksCommandExecutor } from '@easylayer/bitcoin';
 
 @Injectable()
-export class NetworkCommandFactoryService {
+export class NetworkCommandFactoryService implements BlocksCommandExecutor {
   constructor(private readonly commandBus: CommandBus) {}
 
   public async init(dto: any): Promise<void> {

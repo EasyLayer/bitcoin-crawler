@@ -20,7 +20,9 @@ jest
   .spyOn(BlockchainProviderService.prototype, 'getBasicBlockByHeight')
   .mockImplementation(async (height: string | number): Promise<any> => {
     const h = Number(height);
-    if (h >= 2) useReal = true;
+    if (h >= 2) {
+      useReal = true;
+    }
     return pickSrc().find((b: any) => Number(b.height) === h) ?? null;
   });
 
@@ -33,7 +35,7 @@ jest
       .filter((b: any) => hs.includes(Number(b.height)))
       .map((b: any) => ({
         blockhash: b.hash,
-        total_size: b.size ?? 1,
+        total_size: b.size,
         height: Number(b.height),
       }));
   });

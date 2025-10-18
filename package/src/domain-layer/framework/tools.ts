@@ -1,9 +1,9 @@
-import type { Model, NormalizedModelCtor } from '@easylayer/common/framework';
 import { normalizeModels } from './normalizer';
-import type { ModelInput } from './normalizer';
+import type { ModelInput, NormalizedModelCtor } from './normalizer';
 import type { DeclarativeModel, CompiledModelClass } from './declarative';
 import { compileStateModel } from './declarative';
 import { walkBTC } from './walker';
+import type { Model } from './model';
 
 export function compileStateModelBTC<State>(decl: DeclarativeModel<State>): CompiledModelClass<State> {
   return compileStateModel<State>(decl, walkBTC);

@@ -1,7 +1,11 @@
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import { BitcoinMempoolInitializedEvent, BitcoinMempoolSynchronizedEvent } from '@easylayer/bitcoin';
+import {
+  BitcoinMempoolInitializedEvent,
+  BitcoinMempoolSynchronizedEvent,
+  BitcoinMempoolRefreshedEvent,
+} from '@easylayer/bitcoin';
 import { SQLiteService } from '../../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 
@@ -21,6 +25,7 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
       testing: {
         handlerEventsToWait: [
           { eventType: BitcoinMempoolInitializedEvent, count: 1 },
+          { eventType: BitcoinMempoolRefreshedEvent, count: 1 },
           { eventType: BitcoinMempoolSynchronizedEvent, count: 1 },
         ],
       },
@@ -64,8 +69,9 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
     );
 
     const mempoolEvents = await dbService.all(`SELECT * FROM mempool ORDER BY id ASC`);
+
     expect(Array.isArray(mempoolEvents)).toBe(true);
-    expect(mempoolEvents.length).toBe(2);
+    expect(mempoolEvents.length).toBe(3);
 
     const e1 = mempoolEvents[0];
     expect(e1.version).toBe(1);
@@ -80,7 +86,6 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
     expect(() => JSON.parse(payloadString1)).not.toThrow();
     const payloadObj1 = JSON.parse(payloadString1);
     expect(payloadObj1 && typeof payloadObj1 === 'object').toBe(true);
-    expect(typeof payloadObj1.isSynchronized).toBe('boolean');
     expect(Number.isInteger(e1.timestamp)).toBe(true);
     expect(e1.timestamp).toBeGreaterThan(1e15);
     expect(e1.timestamp).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
@@ -88,7 +93,7 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
 
     const e2 = mempoolEvents[1];
     expect(e2.version).toBe(2);
-    expect(e2.type).toBe('BitcoinMempoolSynchronizedEvent');
+    expect(e2.type).toBe('BitcoinMempoolRefreshedEvent');
     expect(typeof e2.requestId).toBe('string');
     expect(e2.requestId.length).toBeGreaterThan(0);
     expect(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(e2.requestId)).toBe(true);
@@ -99,13 +104,27 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
     expect(() => JSON.parse(payloadString2)).not.toThrow();
     const payloadObj2 = JSON.parse(payloadString2);
     expect(payloadObj2 && typeof payloadObj2 === 'object').toBe(true);
-    expect(payloadObj2.isSynchronized).toBe(true);
     expect(Number.isInteger(e2.timestamp)).toBe(true);
     expect(e2.timestamp).toBeGreaterThan(1e15);
     expect(e2.timestamp).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
     expect([0, 1]).toContain(e2.isCompressed);
 
-    const outboxCount = await dbService.all(`SELECT COUNT(*) AS c FROM outbox`);
-    expect(Number(outboxCount[0]?.c ?? 0)).toBe(0);
+    const e3 = mempoolEvents[2];
+    expect(e3.version).toBe(3);
+    expect(e3.type).toBe('BitcoinMempoolSynchronizedEvent');
+    expect(typeof e3.requestId).toBe('string');
+    expect(e3.requestId.length).toBeGreaterThan(0);
+    expect(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(e3.requestId)).toBe(true);
+    expect(Number.isInteger(e3.blockHeight)).toBe(true);
+    expect(e3.blockHeight).toBeGreaterThan(0);
+    const rawPayload3 = e3.payload;
+    const payloadString3 = Buffer.isBuffer(rawPayload3) ? rawPayload3.toString('utf8') : String(rawPayload3);
+    expect(() => JSON.parse(payloadString3)).not.toThrow();
+    const payloadObj3 = JSON.parse(payloadString3);
+    expect(payloadObj3 && typeof payloadObj3 === 'object').toBe(true);
+    expect(Number.isInteger(e3.timestamp)).toBe(true);
+    expect(e3.timestamp).toBeGreaterThan(1e15);
+    expect(e3.timestamp).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
+    expect([0, 1]).toContain(e3.isCompressed);
   });
 });

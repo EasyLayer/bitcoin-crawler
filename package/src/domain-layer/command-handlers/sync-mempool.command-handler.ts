@@ -15,27 +15,22 @@ export class SyncMempoolCommandHandler implements ICommandHandler<SyncMempoolCom
   ) {}
 
   async execute({ payload }: SyncMempoolCommand) {
-    const { requestId, hasMoreToProcess } = payload;
+    const { requestId } = payload;
 
     const mempoolModel: Mempool = await this.mempoolModelFactory.initModel();
 
     try {
-      await mempoolModel.processSync({
+      await mempoolModel.sync({
         requestId,
         service: this.blockchainProviderService,
-        hasMoreToProcess,
+        logger: this.log,
       });
 
       await this.eventStore.save(mempoolModel);
 
-      this.log.log('Mempool sync processed successfully', {
-        args: {
-          currentTxids: mempoolModel.getCurrentTxids(),
-          isSynchronized: mempoolModel.isReady(),
-        },
-      });
+      this.log.verbose('Mempool saved into eventstore');
     } catch (error) {
-      this.log.error('Error while processing mempool sync', '', { args: { error } });
+      this.log.warn('Error while syncing mempool', { args: { message: (error as any)?.message } });
       throw error;
     }
   }

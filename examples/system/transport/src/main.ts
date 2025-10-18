@@ -13,6 +13,10 @@ const client = new Client({
   transport: { type: 'ipc-parent', options: { child } },
 });
 
+client.subscribe('BasicWalletDelta', async (event: any) => {
+  console.log('BasicWalletDelta', event);
+});
+
 const app = express();
 app.use(express.json());
 
@@ -89,7 +93,7 @@ app.get('/events', async (req, res) => {
   }
 });
 
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(3000);
 const server = app.listen(PORT, () => {
   console.log('\n🚀 Bitcoin Address UTXOx Watcher Started!\n');
   console.log('💡 Example with curl:');

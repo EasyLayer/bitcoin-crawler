@@ -1,9 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@easylayer/common/cqrs';
 import { GetModelsQuery } from '@easylayer/bitcoin';
-import { NormalizedModelCtor } from '@easylayer/common/framework';
 import { EventStoreReadService } from '@easylayer/common/eventstore';
-import { ModelFactoryService } from '../framework';
+import { ModelFactoryService, NormalizedModelCtor } from '../framework';
 import { NetworkModelFactoryService, MempoolModelFactoryService } from '../services';
 
 @Injectable()

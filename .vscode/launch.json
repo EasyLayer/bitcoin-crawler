@@ -128,6 +128,44 @@
         "env": {
           "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/transport/tsconfig.json"
         },
+      },
+      {
+        "name": "Debug Business Example Advanced Wallet Watcher",
+        "type": "node",
+        "runtimeVersion": "20.18.1",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk",
+          "-r",
+          "ts-node/register"
+        ],
+        "cwd": "${workspaceFolder}/examples/business/advanced-wallet-watcher",
+        "program": "${workspaceFolder}/examples/business/advanced-wallet-watcher/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/business/advanced-wallet-watcher/.env",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/business/advanced-wallet-watcher/tsconfig.json"
+        },
+      },
+      {
+        "name": "Debug System Example Postgres EventStore",
+        "type": "node",
+        "runtimeVersion": "20.18.1",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk",
+          "-r",
+          "ts-node/register"
+        ],
+        "cwd": "${workspaceFolder}/examples/system/postgres",
+        "program": "${workspaceFolder}/examples/system/postgres/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/system/postgres/.env",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/postgres/tsconfig.json"
+        },
       }
     ]
 }

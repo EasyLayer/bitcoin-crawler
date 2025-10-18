@@ -26,7 +26,6 @@ import {
   ProvidersConfig,
   TransportConfig,
 } from './config';
-import { MetricsService } from './metrics.service';
 import { ModelFactoryService, normalizeModelsBTC, ModelInput } from './domain-layer/framework';
 
 export interface AppModuleOptions {
@@ -142,6 +141,7 @@ export class AppModule {
             } as any)),
         }),
         BlocksQueueModule.forRootAsync({
+          mempoolCommandExecutor: MempoolCommandFactoryService,
           blocksCommandExecutor: NetworkCommandFactoryService,
           maxBlockHeight: businessConfig.MAX_BLOCK_HEIGHT,
           queueLoaderStrategyName: blocksQueueConfig.BLOCKS_QUEUE_LOADER_STRATEGY_NAME,
@@ -189,7 +189,6 @@ export class AppModule {
           inject: [EventStoreReadService],
         },
         AppService,
-        MetricsService,
         ArithmeticService,
         NetworkCommandFactoryService,
         NetworkModelFactoryService,
@@ -201,7 +200,6 @@ export class AppModule {
       ],
       exports: [
         AppService,
-        MetricsService,
         NetworkCommandFactoryService,
         NetworkModelFactoryService,
         ReadStateExceptionHandlerService,

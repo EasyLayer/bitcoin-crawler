@@ -3,7 +3,7 @@ import { BitcoinNetworkReorganizedEventHandler } from './network-reorganized.eve
 import { BitcoinNetworkInitializedEventHandler } from './network-initialized.event-handler';
 import { BitcoinMempoolSyncProcessedEventHandler } from './mempool-sync-processed.event-handler';
 import { BitcoinMempoolInitializedEventHandler } from './mempool-initialized.event-handler';
-import { BitcoinMempoolClearedEventHandler } from './mempool-cleared.event-handler';
+import { BitcoinMempoolRefreshedEventHandler } from './mempool-refreshed.event-handler';
 import { BitcoinNetworkClearedEventHandler } from './network-cleared.event-handler';
 import { BitcoinMempoolSynchronizedEventHandler } from './mempool-synchronized.event-handler';
 
@@ -13,7 +13,7 @@ export const EventsHandlers = [
   BitcoinNetworkInitializedEventHandler,
   BitcoinMempoolSyncProcessedEventHandler,
   BitcoinMempoolInitializedEventHandler,
-  BitcoinMempoolClearedEventHandler,
+  BitcoinMempoolRefreshedEventHandler,
   BitcoinNetworkClearedEventHandler,
   BitcoinMempoolSynchronizedEventHandler,
 ];
