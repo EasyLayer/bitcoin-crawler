@@ -13,8 +13,9 @@ describe('Bitcoin Crawler: First Initializaton Only Network Flow', () => {
   });
 
   beforeAll(async () => {
-    jest.useFakeTimers({ advanceTimers: true });
+    jest.useRealTimers();
     jest.resetModules();
+
     config({ path: resolve(process.cwd(), 'src/first-app-init/init-only-network-flow/.env') });
     await cleanDataFolder('eventstore');
     await bootstrap({
@@ -22,11 +23,9 @@ describe('Bitcoin Crawler: First Initializaton Only Network Flow', () => {
         handlerEventsToWait: [{ eventType: BitcoinNetworkInitializedEvent, count: 1 }],
       },
     });
-    jest.runAllTimers();
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     jest.restoreAllMocks();
     if (dbService) {
       // eslint-disable-next-line no-console

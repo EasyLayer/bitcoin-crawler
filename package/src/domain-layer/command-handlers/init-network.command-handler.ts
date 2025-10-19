@@ -1,12 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
 import { EventStoreWriteService } from '@easylayer/common/eventstore';
-import { NormalizedModelCtor } from '@easylayer/common/framework';
 import { InitNetworkCommand, Network, BlockchainProviderService } from '@easylayer/bitcoin';
 import { NetworkModelFactoryService } from '../services';
 import { BusinessConfig } from '../../config';
 import { ConsolePromptService } from '../services/console-prompt.service';
-import { ModelFactoryService } from '../framework';
+import { ModelFactoryService, NormalizedModelCtor } from '../framework';
 
 @Injectable()
 @CommandHandler(InitNetworkCommand)
@@ -26,14 +25,10 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
   async execute({ payload }: InitNetworkCommand) {
     const { requestId } = payload;
 
-    // Get current network height for listen strategy
-    const currentNetworkHeight = await this.blockchainProviderService.getCurrentBlockHeightFromNetwork();
-
     const networkModel: Network = await this.networkModelFactory.initModel();
 
-    // Get configured start height (can be undefined)
+    const currentNetworkHeight = await this.blockchainProviderService.getCurrentBlockHeightFromNetwork();
     const configStartHeight = this.businessConfig.START_BLOCK_HEIGHT;
-
     const currentDbHeight = networkModel.lastBlockHeight;
 
     try {
@@ -48,31 +43,24 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
       // init() will use this directly as blockHeight in the event
       await networkModel.init({
         requestId,
+        currentNetworkHeight,
         startHeight: finalStartHeight,
+        logger: this.log,
       });
 
       await this.eventStore.save(networkModel);
 
-      this.log.log('Network successfully initialized', {
-        args: {
-          lastIndexedHeight: finalStartHeight,
-          nextBlockToProcess: finalStartHeight + 1,
-          currentNetworkHeight,
-        },
-      });
+      this.log.debug('Network saved into eventstore');
     } catch (error) {
       if ((error as any)?.message === 'DATA_RESET_REQUIRED') {
-        // Handle database reset in catch block
         this.log.log('Clearing database as requested by user');
 
-        // Create all models that need to be cleared
         const models = this.Models.map((ModelCtr) => this.modelFactoryService.createNewModel(ModelCtr));
 
         // Publish event that database was cleared (this will trigger saga to reinitialize)
         // This event is NOT saved to eventstore, only published to trigger saga
         await networkModel.clearChain({ requestId });
 
-        // Use rollback with blockHeight = -1 to clear all data from all tables
         await this.eventStore.rollback({
           modelsToRollback: [...models, networkModel],
           blockHeight: -1, // Clear everything
@@ -80,11 +68,10 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
         });
 
         this.log.log('Database cleared successfully, saga will reinitialize network');
-
         return;
       }
 
-      this.log.error('Error while initializing Network', '', { args: { error } });
+      this.log.error('Error while initializing Network', { args: { message: (error as any)?.message } });
       throw error;
     }
   }

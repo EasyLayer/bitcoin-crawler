@@ -3,3 +3,5 @@
 
 // IMPORTANT: Its mock nodejs timers
 // jest.useFakeTimers();
+
+jest.setTimeout(60000);

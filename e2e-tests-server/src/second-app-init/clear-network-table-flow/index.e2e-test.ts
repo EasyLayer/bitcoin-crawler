@@ -29,7 +29,6 @@ describe('/Bitcoin Crawler: Clear Network Table Flow', () => {
   });
 
   beforeAll(async () => {
-    jest.useFakeTimers({ advanceTimers: true });
     jest.resetModules();
 
     config({ path: resolve(process.cwd(), 'src/second-app-init/clear-network-table-flow/.env') });
@@ -59,12 +58,9 @@ describe('/Bitcoin Crawler: Clear Network Table Flow', () => {
         handlerEventsToWait: [{ eventType: BitcoinNetworkClearedEvent, count: 1 }],
       },
     });
-
-    jest.runAllTimers();
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     jest.restoreAllMocks();
     if (db) {
       // eslint-disable-next-line no-console

@@ -16,7 +16,7 @@ export class ReadStateExceptionHandlerService implements OnModuleInit, OnModuleD
 
   onModuleInit() {
     this.subscription = this.unhandledExceptionBus.stream$.subscribe((error: UnhandledExceptionEvent) => {
-      this.log.error('Read State Unhandled Exception:', '', 'onModuleInit');
+      this.log.error('Read State Unhandled Exception');
 
       // IMPORTANT: At the moment, if there is an error in the EventHandler (read state update),
       // we throw an unhandled error to crash the application.

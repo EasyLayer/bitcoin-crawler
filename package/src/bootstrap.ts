@@ -7,6 +7,7 @@ import { NestLogger } from '@easylayer/common/logger';
 import { ContainerModule } from './container.module';
 import type { ContainerModuleOptions } from './container.module';
 import { setupTestEventSubscribers, type TestingOptions } from './utils';
+import { AppService } from './app.service';
 
 type BootstrapOptions = Omit<ContainerModuleOptions, 'appName'> & { testing?: TestingOptions };
 
@@ -22,7 +23,14 @@ export const bootstrap = async ({
   const wsPort = Number(process.env.WS_PORT ?? '0');
   const hasNetworkTransports = httpPort > 0 || wsPort > 0;
   const isTest = process.env.NODE_ENV === 'test';
-  const loggerLevel = isTest ? 'error' : process.env.DEBUG === '1' ? 'debug' : (process.env.LOG_LEVEL as any) || 'info';
+
+  // Allow-list для LOG_LEVEL
+  const allowedLevels = new Set(['trace', 'debug', 'info', 'warn', 'error', 'fatal']);
+  const envLevel = (process.env.LOG_LEVEL || '').toLowerCase();
+
+  const loggerLevel = allowedLevels.has(envLevel) ? (envLevel as any) : process.env.DEBUG === '1' ? 'debug' : 'info';
+
+  const commonFactoryOpts = { bufferLogs: false, logger: ['fatal'] as any };
 
   const rootModule = await ContainerModule.register({
     Models,
@@ -34,14 +42,19 @@ export const bootstrap = async ({
 
   let appContext: INestApplicationContext | INestApplication;
   if (!hasNetworkTransports) {
-    appContext = await NestFactory.createApplicationContext(rootModule, { bufferLogs: true, logger: ['error'] as any });
+    appContext = await NestFactory.createApplicationContext(rootModule, commonFactoryOpts);
   } else {
-    appContext = await NestFactory.create(rootModule, { bufferLogs: true, logger: ['error'] as any });
+    appContext = await NestFactory.create(rootModule, commonFactoryOpts);
   }
 
-  const logger = new NestLogger({ name: appName, level: loggerLevel });
+  const logger = new NestLogger({
+    name: appName,
+    level: loggerLevel,
+    enabled: true,
+  });
+
   appContext.useLogger(logger);
-  (appContext as any).flushLogs?.();
+  // (appContext as any).flushLogs?.();
 
   try {
     if (!isTest) {
@@ -54,6 +67,8 @@ export const bootstrap = async ({
     }
 
     await appContext.init();
+    const appService = appContext.get(AppService, { strict: false });
+    await appService.init();
 
     if (testPromises.length > 0) {
       await Promise.all(testPromises);
@@ -63,7 +78,6 @@ export const bootstrap = async ({
 
     if (isTest) return appContext;
 
-    logger.log('Application bootstrap completed');
     return appContext;
   } catch (err) {
     const trace = err instanceof Error ? err.stack : undefined;

@@ -1,10 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { NetworkCommandFactoryService, MempoolCommandFactoryService } from './application-layer/services';
 import { ProvidersConfig } from './config';
 
 @Injectable()
-export class AppService implements OnModuleInit {
+export class AppService {
   log = new Logger(AppService.name);
   constructor(
     private readonly networkCommandFactory: NetworkCommandFactoryService,
@@ -12,7 +12,7 @@ export class AppService implements OnModuleInit {
     private readonly providersConfig: ProvidersConfig
   ) {}
 
-  async onModuleInit() {
+  async init() {
     if (
       Array.isArray(this.providersConfig.PROVIDER_MEMPOOL_RPC_URLS) &&
       this.providersConfig.PROVIDER_MEMPOOL_RPC_URLS.length > 0

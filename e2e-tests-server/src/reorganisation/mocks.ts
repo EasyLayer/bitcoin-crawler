@@ -3,7 +3,7 @@ export const reorgBlock = {
   hash: '0000000000000000000000000000000000000000000000000000000000000001',
   confirmations: 4,
   strippedsize: 204,
-  size: 50,
+  size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
   weight: 816,
   height: 0,
   version: 1,
@@ -59,7 +59,7 @@ export const mockFakeChainBlocks = [
     hash: '2000000000000000000000000000000000000000000000000000000000000002',
     confirmations: 3,
     strippedsize: 204,
-    size: 50,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 1,
     version: 1,
@@ -109,7 +109,7 @@ export const mockFakeChainBlocks = [
     hash: '3000000000000000000000000000000000000000000000000000000000000003',
     confirmations: 2,
     strippedsize: 204,
-    size: 50,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 2,
     version: 1,
@@ -160,7 +160,7 @@ export const mockFakeChainBlocks = [
     hash: '4000000000000000000000000000000000000000000000000000000000000004',
     confirmations: 1,
     strippedsize: 204,
-    size: 50,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 3,
     version: 1,
@@ -218,7 +218,7 @@ export const mockRealChainBlocks = [
     hash: '0000000000000000000000000000000000000000000000000000000000000002',
     confirmations: 3,
     strippedsize: 204,
-    size: 50,
+    size: 3, // NETWORK_MAX_BLOCK_WEIGHT * 2 + 1
     weight: 816,
     height: 1,
     version: 1,

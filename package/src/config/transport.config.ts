@@ -5,6 +5,8 @@ import { IsString, IsNumber, Min, Max, IsOptional, IsBoolean, IsArray, IsIn } fr
 import { JSONSchema } from 'class-validator-jsonschema';
 import type { TransportKind } from '@easylayer/common/network-transport';
 
+type IpcKind = 'ipc-child' | 'ipc-parent';
+
 @Injectable()
 export class TransportConfig {
   @Transform(({ value }) => (value?.length ? value : undefined))
@@ -259,6 +261,17 @@ export class TransportConfig {
   })
   TRANSPORT_OUTBOX_KIND?: TransportKind;
 
+  @Transform(({ value }) => (value?.length ? value : undefined))
+  @IsIn(['ipc-parent', 'ipc-child'], {
+    message: 'TRANSPORT_IPC_TYPE must be one of: ipc-parent, ipc-child',
+  })
+  @IsOptional()
+  @JSONSchema({
+    description: 'IPC transport kind for enable transport',
+    examples: ['ipc-parent', 'ipc-child'],
+  })
+  TRANSPORT_IPC_TYPE?: IpcKind;
+
   getHTTPSSLOptions() {
     if (!this.TRANSPORT_HTTP_SSL_ENABLED) return { enabled: false };
     try {
@@ -332,7 +345,7 @@ export class TransportConfig {
   }
 
   getIpcChildTransportConfig() {
-    if (this.TRANSPORT_OUTBOX_KIND !== 'ipc-child') return undefined;
+    if (this.TRANSPORT_OUTBOX_KIND !== 'ipc-child' && this.TRANSPORT_IPC_TYPE !== 'ipc-child') return undefined;
 
     const p: any = process;
     if (!p?.send || !p?.connected || !p?.channel) {
@@ -348,7 +361,7 @@ export class TransportConfig {
   }
 
   getIpcParentTransportConfig() {
-    if (this.TRANSPORT_OUTBOX_KIND !== 'ipc-parent') return undefined;
+    if (this.TRANSPORT_OUTBOX_KIND !== 'ipc-parent' && this.TRANSPORT_IPC_TYPE !== 'ipc-parent') return undefined;
 
     const p: any = process;
     if (p?.send && p?.channel) {

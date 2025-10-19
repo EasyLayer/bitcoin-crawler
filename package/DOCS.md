@@ -1,6 +1,6 @@
 # EasyLayer Bitcoin Crawler Documentation
 
-<b>Bitcoin Crawler</b> is a self-hosted application that enables monitoring of the blockchain state both historically and in real-time
+<b>Bitcoin Crawler</b> is a self-hosted framework for building custom blockchain indexers and parsers that monitor Bitcoin blockchain data both historically and in real-time.
 
 ---
 
@@ -8,214 +8,875 @@
 
 ## Overview
 
-Bitcoin Crawler is a powerful self-hosted application designed for monitoring and analyzing the Bitcoin blockchain. It provides developers with a flexible framework to track blockchain state both historically and in real-time, enabling them to build custom blockchain analytics and monitoring solutions.
+Bitcoin Crawler is a powerful framework designed for building custom Bitcoin blockchain indexers. It provides developers with a flexible system to track blockchain state, enabling them to build tailored blockchain analytics and monitoring solutions.
 
-The application is built on modern architectural patterns including CQRS (Command Query Responsibility Segregation) and Event Sourcing, ensuring reliable and consistent data processing. It offers multiple transport options (RPC, WebSocket, IPC) for accessing blockchain data and supports both SQL-like for event storage.
+The framework is built on Event Sourcing and CQRS (Command Query Responsibility Segregation) patterns, ensuring reliable and consistent data processing. It offers multiple transport options (HTTP RPC, WebSocket, IPC, Electron, Browser) for communicating with your application and supports SQLite, PostgreSQL, and IndexedDB for event storage.
 
 ## Key Features
 
 * **Self-Hosted & Private**: Deploy entirely on your own infrastructure — your data never leaves your servers.
 * **Custom State Models**: Define only the states you need in custom model files for smaller datasets, faster queries, and lower storage overhead.
-* **Live & Historical Streams**: Sync the entire chain history once and maintain a continuous real-time feed through the same endpoint for dashboards or alerts.
+* **Live & Historical Streams**: Sync the entire chain history once and maintain a continuous real-time feed for dashboards or alerts.
 * **Reorg-Proof Consistency**: Automatic fork handler rolls back and replays data for chain reorganizations of any depth — no manual intervention required.
 * **Mempool Monitoring**: Track and filter unconfirmed transactions in real time to power mempool analytics and alerting.
 * **2 RPC Calls per Block**: Fetch full block data with just two RPC requests to minimize node load and reduce operational cost.
 * **Instant Block Snapshots**: Request the exact state of any model at a specific block height with a single call.
 * **Event-Based Processing**: Create and handle custom events to track blockchain state changes with full auditability.
-* **Multiple Transport Options**: Access data over HTTP RPC, WebSocket, or IPC, with built‑in heartbeat and message‑size controls.
-* **Database Flexibility**: Choose between managed SQLite for quick setups or PostgreSQL for production-ready performance.
-* **Flexible Node Connectivity**: Works seamlessly with a self-hosted Bitcoin node or provider services like QuickNode.
+* **Multiple Transport Options**: Access data over HTTP RPC, WebSocket, IPC, Electron, or Browser with built-in message handling.
+* **Database Flexibility**: Choose between SQLite for quick setups, PostgreSQL for production, or IndexedDB for browser.
+* **Flexible Node Connectivity**: Works seamlessly with a self-hosted Bitcoin node or provider services like QuickNode via RPC, P2P, or ZMQ.
 
 <!-- KEY-FEATURES-END -->
 
-<!-- PERFORMANCE-START -->
-## Performance (TODO)
-
-Bitcoin Crawler is engineered for high-speed operation, but actual performance is primarily influenced by two factors: network latency when fetching blocks from the blockchain and the efficiency of inserting large datasets into database, depending on your model structure.
-
-<!-- PERFORMANCE-END -->
-
-<!-- SETUP-START -->
-# Setup Guide
-
-This guide explains how to install, configure, and bootstrap your application using the EasyLayer Bitcoin Crawler framework.
-
 ---
 
-## Prerequisites
-
-* Node.js v17 or higher
-* A running Bitcoin node (self-hosted or via provider URL)
-* Environment variables configured in a `.env` file at project root
-
----
+# Getting Started
 
 ## Installation
 
-Install the package via npm or yarn:
+Install the Bitcoin Crawler package in your Node.js project:
 
 ```bash
-# Using npm
 npm install @easylayer/bitcoin-crawler
-
-# Using yarn
+# or
 yarn add @easylayer/bitcoin-crawler
 ```
 
-## Bootstrapping the Application
+**Requirements:**
+- Node.js v20 or higher
+- TypeScript (recommended)
+- Bitcoin node access (self-hosted or provider like QuickNode)
 
-The [@easylayer/bitcoin-crawler](https://www.npmjs.com/@easylayer.io/bitcoin-crawler) package exports a `bootstrap` function that initializes the crawler. Here's a basic setup:
+---
 
-```ts title="main.ts"
-import 'reflect-metadata';
+# Creating Your First Model
+
+Models define what blockchain data you want to track. There are two ways to define models:
+
+## 1. Declarative Model (Simpler)
+
+**Example: Address Balance Tracker**
+
+```typescript
+import type { DeclarativeModel } from '@easylayer/bitcoin-crawler';
+import { compileStateModelBTC } from '@easylayer/bitcoin-crawler';
+
+export const AddressBalanceModel: DeclarativeModel<any> = {
+  modelId: 'address-balance',
+
+  state() {
+    return {
+      balances: new Map<string, string>(),
+    };
+  },
+
+  sources: {
+    async vout(ctx: any) {
+      const address = ctx.vout.scriptPubKey?.addresses?.[0];
+      if (!address) return;
+      
+      return { address, amount: String(ctx.vout.value), txid: ctx.tx.txid };
+    },
+
+    async block(ctx: any) {
+      const deposits = ctx.locals.vout;
+      if (deposits.length > 0) {
+        ctx.applyEvent('DepositReceived', ctx.block.height, { deposits });
+      }
+    },
+  },
+
+  reducers: {
+    DepositReceived(state, e) {
+      const { deposits } = e.payload;
+      for (const deposit of deposits) {
+        const current = BigInt(state.balances.get(deposit.address) ?? '0');
+        const newBalance = current + BigInt(deposit.amount);
+        state.balances.set(deposit.address, newBalance.toString());
+      }
+    },
+  },
+};
+
+export const AddressBalance = compileStateModelBTC(AddressBalanceModel);
+```
+
+## 2. Class-Based Model (More Control)
+
+**Example: Same Address Balance Tracker**
+
+```typescript
+import { Model } from '@easylayer/bitcoin-crawler';
+import type { Block } from '@easylayer/bitcoin';
+
+export class AddressBalanceTracker extends Model {
+  static override modelId: string = 'address-balance';
+
+  public balances = new Map<string, string>();
+
+  public async processBlock(ctx: any & { block: Block }) {
+    const { tx = [], height } = ctx.block;
+    const deposits = [];
+
+    for (const t of tx) {
+      for (const o of t.vout ?? []) {
+        const address = o.scriptPubKey?.addresses?.[0];
+        if (!address) continue;
+        deposits.push({ address, amount: String(o.value), txid: t.txid });
+      }
+    }
+
+    if (deposits.length > 0) {
+      this.applyEvent('DepositReceived', height, { deposits });
+    }
+  }
+
+  protected onDepositReceived(e: any) {
+    const { deposits } = e.payload;
+    for (const deposit of deposits) {
+      const current = BigInt(this.balances.get(deposit.address) ?? '0');
+      const newBalance = current + BigInt(deposit.amount);
+      this.balances.set(deposit.address, newBalance.toString());
+    }
+  }
+}
+```
+
+## Accessing System Models in Your Model
+
+You can access system models (Network, Mempool) from your model's context:
+
+```typescript
+sources: {
+  async block(ctx: any) {
+    // Access mempool service
+    const mempool = ctx.mempoolService;
+    
+    // Check if transaction was in mempool
+    const wasInMempool = mempool.hasTransaction('txid...');
+    const isLoaded = mempool.isTransactionLoaded('txid...');
+    
+    // Get mempool data
+    const metadata = mempool.getTransactionMetadata('txid...');
+    const fullTx = mempool.getFullTransaction('txid...');
+    
+    // Get stats: { txids, metadata, transactions, providers }
+    const stats = mempool.getStats();
+  }
+}
+```
+
+---
+
+# System Models
+
+Bitcoin Crawler includes two built-in system models:
+
+## Network Model
+
+Manages blockchain chain validation and state.
+
+### Events
+
+**BitcoinNetworkInitializedEvent**
+```typescript
+// Emitted when network model starts
+payload: {}
+```
+
+**BitcoinNetworkBlocksAddedEvent**
+```typescript
+// New blocks added to validated chain
+payload: {
+  blocks: LightBlock[]  // Array of validated blocks
+}
+```
+
+**BitcoinNetworkReorganizedEvent**
+```typescript
+// Blockchain reorganization occurred
+payload: {
+  blocks: LightBlock[]  // Blocks that were removed during reorg
+}
+```
+
+**BitcoinNetworkClearedEvent**
+```typescript
+// Chain data cleared (for database cleaning)
+payload: {}
+```
+
+### LightBlock Structure
+
+```typescript
+interface LightBlock {
+  height: number;
+  hash: string;
+  merkleroot: string;
+  previousblockhash: string;
+  tx: string[]; // array of transaction IDs
+}
+```
+
+## Mempool Model
+
+Monitors unconfirmed transactions (when enabled).
+
+### Events
+
+**BitcoinMempoolInitializedEvent**
+```typescript
+// Mempool monitoring started
+payload: {}
+```
+
+**BitcoinMempoolRefreshedEvent**
+```typescript
+// Mempool snapshot refreshed from providers
+payload: {
+  aggregatedMetadata: Record<string, Array<{
+    txid: string;
+    metadata: MempoolTxMetadata
+  }>>
+}
+// Key: provider name, Value: array of transactions with metadata
+```
+
+**BitcoinMempoolSyncProcessedEvent**
+```typescript
+// Batch of transactions loaded and processed
+payload: {
+  loadedTransactions: Array<{
+    txid: string;
+    transaction: LightTransaction;
+    providerName?: string;
+  }>;
+  batchDurations?: Record<string, number>;  // ms per provider
+}
+```
+
+**BitcoinMempoolSynchronizedEvent**
+```typescript
+// Full sync cycle complete for current snapshot
+payload: {}
+```
+
+### Accessing Mempool in Models
+
+```typescript
+sources: {
+  async block(ctx: any) {
+    const mempool = ctx.mempoolService;
+    
+    // Check transaction status
+    const hasTx = mempool.hasTransaction('txid...');
+    const isLoaded = mempool.isTransactionLoaded('txid...');
+    
+    // Get transaction data
+    const metadata = mempool.getTransactionMetadata('txid...');
+    const fullTx = mempool.getFullTransaction('txid...');
+    
+    // Get stats: { txids, metadata, transactions, providers }
+    const stats = mempool.getStats();
+  }
+}
+```
+
+---
+
+# Bootstrapping Your Application
+
+Create your main file and bootstrap the crawler:
+
+```typescript
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import CustomModel from './model';
+import { AddressBalance } from './address-balance.model';
 
 (async () => {
-  const app = await bootstrap({ Models: [CustomModel]});
+  const app = await bootstrap({
+    Models: [AddressBalance],
+  });
 })();
 ```
 
-### Bootstrap Options
+## Bootstrap Options
 
-| Option          | Type                                                                        | Description                                                |
-| --------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `Models`        | `Array<ModelType>`                                                          | Custom model classes extending `Model`                     |
-| `QueryHandlers` | `Array<new(...args) => IQueryHandler>`                                      | Classes implementing query handling logic                  |
-| `EventHandlers` | `Array<new(...args) => IEventHandler>`                                      | Classes implementing event handling logic                  |
-| `Providers`     | `Array<Provider>`                                                           | Additional custom providers (services, factories, etc.)      |
----
+| Option | Type | Description | Required |
+|--------|------|-------------|----------|
+| `Models` | `Array<ModelType>` | Custom model classes or compiled declarative models (can be empty) | ❌ |
+| `QueryHandlers` | `Array<QueryHandler>` | Custom query handler classes for extending API | ❌ |
 
-*For detailed transport configuration and message interfaces, see the **Transport API Reference** section.*
-
-<!-- SETUP-END -->
-
-<!-- TRANSPORT-API-REFERENCE-START -->
-# Transport API Reference
-
-This document describes all supported transport protocols, their endpoints, configurable options, and message interfaces.
+**Note:** You can bootstrap without custom models (empty Models array) to only use system models and subscribe to their events.
 
 ---
 
-## Common Settings
+# Extending API with Custom Query Handlers
 
-* **SSL/TLS**: Supported for both HTTP and WebSocket. Enable via `ssl.enabled`, `ssl.cert`, and `ssl.key` in transport configurations.
-* **Message Size Limits**: Configurable per transport using the `maxMessageSize` option.
-* **Heartbeat (ping/pong)**: Available for WebSocket and IPC with adjustable `heartbeatTimeout` settings.
+You can extend the built-in API by adding custom query handlers:
 
----
+```typescript
+import { IQueryHandler, QueryHandler } from '@easylayer/common/cqrs';
 
-## 1. HTTP RPC (Queries Only)
-
-### 1.1 Endpoints
-
-| Method | Path      | Description           |
-| ------ | --------- | --------------------- |
-| GET    | `/health` | Health check endpoint |
-| POST   | `/`       | Receives RPC requests |
-
-**Example URL**: `https://{host}:{port}/` or `http://{host}:{port}/` if SSL is disabled.
-
-### 1.2 Behavior
-
-* Accepts only requests with `action: "query"`.
-* Validates incoming message format and size against configured limits.
-* **Responses:**
-
-  * **Success:** `action: "queryResponse"` with the same `requestId`.
-  * **Error:** `action: "error"` or HTTP 4xx/5xx status codes for transport-level failures.
-
----
-
-## 2. HTTP Streaming (NDJSON)
-
-### 2.1 Endpoint
-
-| Method | Path      | Description                                 |
-| ------ | --------- | ------------------------------------------- |
-| POST   | `/stream` | Receives streaming queries (chunked NDJSON) |
-
-* **Content-Type**: `application/x-ndjson`
-
-### 2.2 Behavior
-
-* Accepts only requests with `action: "streamQuery"`.
-* Returns `Transfer-Encoding: chunked` with newline-delimited JSON objects.
-* Sends a `streamEnd` message at the end of the stream.
-* Streams individual error objects as separate JSON lines.
-
----
-
-## 3. WebSocket
-
-### 3.1 Endpoint and Path
-
-* **URL Template**: `ws://{host}:{wsPort}{path}` or `wss://{host}:{wsPort}{path}` when SSL is enabled.
-* **Path Configuration**: Controlled by the `wsOptions.path` setting (default: `/events`).
-
-### 3.2 Behavior
-
-* All messages are emitted and received on a single `message` event containing a JSON payload.
-* Connection health is maintained via periodic `ping` (server → client) and `pong` (client → server) messages.
-* Enforces maximum message size via the `maxMessageSize` configuration.
-
----
-
-## 4. IPC (Child Process)
-
-### 4.1 Operation Mode
-
-* Available only when the application runs as a Node.js child process using `fork()`.
-* Uses `process.send()` and `process.on('message')` for bidirectional messaging.
-* Supports `ping`/`pong` heartbeat with a configurable `heartbeatTimeout`.
-* Validates message sizes against IPC-specific limits.
-
----
-
-## 5. Message Interfaces
-
-```ts
-export interface BaseMessage<A extends string = string, P = any> {
-  /** Optional request identifier */
-  requestId?: string;
-  /** Action type */
-  action: A;
-  /** Message payload */
-  payload?: P;
-  /** Timestamp of the message */
-  timestamp?: number;
+// Define your custom query
+export class GetBlockHeightQuery {
+  constructor() {}
 }
 
-export type IncomingActions = 'query' | 'streamQuery' | 'ping' | 'pong';
+// Implement query handler
+@QueryHandler(GetBlockHeightQuery)
+export class GetBlockHeightQueryHandler implements IQueryHandler<GetBlockHeightQuery> {
+  async execute() {
+    return { height: 850000 };
+  }
+}
 
-export type OutgoingActions =
-  | 'queryResponse'
-  | 'streamResponse'
-  | 'streamEnd'
-  | 'event'
-  | 'eventsBatch'
-  | 'error'
-  | 'ping'
-  | 'pong';
+// Bootstrap with custom handler
+bootstrap({
+  Models: [],
+  QueryHandlers: [GetBlockHeightQueryHandler]
+});
+```
 
-export interface IncomingMessage<A extends IncomingActions = IncomingActions, P = any>
-  extends BaseMessage<A, P> {}
+**Query this custom endpoint:**
 
-export interface OutgoingMessage<A extends OutgoingActions = OutgoingActions, P = any>
-  extends BaseMessage<A, P> {}
+```bash
+curl -X POST http://localhost:3000/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "GetBlockHeightQuery",
+    "dto": {}
+  }'
+```
 
-export interface BasePayload<DTO = any> {
-  /** Query constructor name */
-  constructorName: string;
-  /** DTO object for the query */
-  dto: DTO;
+---
+
+# Transport Layer
+
+Transport layer handles communication between your application and clients. All transports are configured automatically through environment variables and work under the hood.
+
+**For easier integration, use [@easylayer/transport-sdk](https://www.npmjs.com/package/@easylayer/transport-sdk) - our client library that simplifies working with all transport types.**
+
+## Transport Mechanisms
+
+Each transport supports two mechanisms:
+
+1. **Event Batches** (crawler → client): Stream of events from your models
+2. **Query/Response** (client ↔ crawler): Request data and get response
+
+## Connection Protocol
+
+### Ping/Pong Heartbeat
+
+All transports use ping/pong heartbeat to maintain connections:
+
+**Server sends Ping:**
+```json
+{
+  "action": "ping",
+  "timestamp": 1234567890
 }
 ```
 
-*Detailed DTO examples and query documentation are available in the **Query API Reference** section.*
+**Client must respond with Pong:**
+```json
+{
+  "action": "pong",
+  "payload": {
+    "password": "your-configured-password"
+  },
+  "timestamp": 1234567890
+}
+```
+
+Password must match the one configured in transport settings. Only after valid Pong, the client is considered "online" and server will send event batches.
+
+### Event Batch Delivery
+
+Event batches use **at-least-once delivery** guarantee:
+
+**Server sends batch:**
+```json
+{
+  "action": "outbox.stream.batch",
+  "correlationId": "batch-uuid",
+  "payload": {
+    "events": [
+      {
+        "modelName": "address-balance",
+        "eventType": "DepositReceived",
+        "eventVersion": 1,
+        "requestId": "evt-uuid",
+        "blockHeight": 850001,
+        "payload": "{\"deposits\":[...]}",
+        "timestamp": 1234567890
+      }
+    ]
+  },
+  "timestamp": 1234567890
+}
+```
+
+**Client MUST send ACK:**
+```json
+{
+  "action": "outbox.stream.ack",
+  "correlationId": "same-as-batch-correlationId",
+  "payload": {
+    "ok": true,
+    "okIndices": [0, 1, 2]  // indices of successfully processed events
+  }
+}
+```
+
+**Important:**
+- ACK is mandatory! Without ACK, server will retry sending the batch
+- Use `correlationId` from batch in your ACK
+- `okIndices` indicates which events you successfully processed
+- At-least-once means you might receive same events multiple times - handle idempotently
 
 ---
-<!-- TRANSPORT-API-REFERENCE-END -->
+
+## HTTP Transport
+
+### Event Batches (Webhook)
+
+Configure webhook to receive event batches:
+
+```bash
+# .env
+HTTP_HOST=0.0.0.0
+HTTP_PORT=3000
+HTTP_WEBHOOK_URL=https://your-server.com/events
+HTTP_WEBHOOK_PING_URL=https://your-server.com/ping
+HTTP_WEBHOOK_TOKEN=optional-auth-token
+HTTP_WEBHOOK_PASSWORD=ping-pong-password
+```
+
+**How it works:**
+
+1. **Crawler sends Ping** to `HTTP_WEBHOOK_PING_URL`:
+   ```json
+   POST https://your-server.com/ping
+   {
+     "action": "ping",
+     "timestamp": 1234567890
+   }
+   ```
+
+2. **Your server responds with Pong:**
+   ```json
+   {
+     "action": "pong",
+     "payload": { "password": "ping-pong-password" },
+     "timestamp": 1234567890
+   }
+   ```
+
+3. **After valid Pong, crawler sends event batch** to `HTTP_WEBHOOK_URL`:
+   ```json
+   POST https://your-server.com/events
+   X-Transport-Token: optional-auth-token
+   
+   {
+     "action": "outbox.stream.batch",
+     "correlationId": "batch-uuid",
+     "payload": { "events": [...] }
+   }
+   ```
+
+4. **Your server must respond with ACK:**
+   ```json
+   {
+     "action": "outbox.stream.ack",
+     "correlationId": "batch-uuid",
+     "payload": { "ok": true, "okIndices": [0, 1, 2] }
+   }
+   ```
+
+### Query/Response
+
+Crawler automatically starts HTTP server with `/query` endpoint:
+
+```bash
+curl -X POST http://localhost:3000/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "GetModelsQuery",
+    "dto": {
+      "modelIds": ["address-balance"]
+    }
+  }'
+```
+
+**Response:**
+```json
+{
+  "ok": true,
+  "data": {
+    "aggregateId": "address-balance",
+    "state": { /* model state */ }
+  }
+}
+```
+
+---
+
+## WebSocket Transport
+
+Client connects to WebSocket and receives both event batches and can send queries on same connection.
+
+```bash
+# .env
+WS_HOST=0.0.0.0
+WS_PORT=3001
+WS_PATH=/
+WS_PASSWORD=ping-pong-password
+```
+
+**Client example:**
+
+```typescript
+import { WebSocket } from 'ws';
+
+const ws = new WebSocket('ws://localhost:3001');
+
+ws.on('open', () => {
+  console.log('Connected');
+});
+
+ws.on('message', (data) => {
+  const message = JSON.parse(data.toString());
+  
+  // Handle Ping
+  if (message.action === 'ping') {
+    ws.send(JSON.stringify({
+      action: 'pong',
+      payload: { password: 'ping-pong-password' },
+      timestamp: Date.now()
+    }));
+    return;
+  }
+  
+  // Handle event batch
+  if (message.action === 'outbox.stream.batch') {
+    const events = message.payload.events;
+    
+    // Process events...
+    console.log(`Received ${events.length} events`);
+    
+    // Send ACK
+    ws.send(JSON.stringify({
+      action: 'outbox.stream.ack',
+      correlationId: message.correlationId,
+      payload: { ok: true, okIndices: events.map((_, i) => i) }
+    }));
+    return;
+  }
+  
+  // Handle query response
+  if (message.action === 'query.response') {
+    console.log('Query result:', message.payload.data);
+  }
+});
+
+// Send query
+ws.send(JSON.stringify({
+  action: 'query.request',
+  correlationId: 'query-1',
+  payload: {
+    name: 'GetModelsQuery',
+    dto: { modelIds: ['address-balance'] }
+  }
+}));
+```
+
+---
+
+## IPC Transport
+
+IPC transport works between parent and child Node.js processes. Behavior depends on where bootstrap is called.
+
+### Client in Parent, Crawler in Child
+
+Bootstrap runs in child process. Parent process acts as client.
+
+**Child process (crawler.ts):**
+```typescript
+import { bootstrap } from '@easylayer/bitcoin-crawler';
+
+bootstrap({ Models: [] });  // Crawler runs here
+```
+
+**Parent process (client):**
+```typescript
+import { fork } from 'child_process';
+import { Client } from '@easylayer/transport-sdk';
+
+// Fork child process with IPC channel
+const child = fork('./crawler.js', [], {
+  stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+});
+
+// Create client
+const client = new Client({
+  transport: { type: 'ipc-parent', options: { child } }
+});
+
+// Subscribe to events
+client.subscribe('DepositReceived', (event) => {
+  console.log('Deposit:', event);
+});
+
+// Send query
+const result = await client.query('GetModelsQuery', {
+  modelIds: ['address-balance']
+});
+```
+
+### Client in Child, Crawler in Parent
+
+Bootstrap runs in parent process. Child process acts as client.
+
+**Parent process (crawler.ts):**
+```typescript
+import { bootstrap } from '@easylayer/bitcoin-crawler';
+
+bootstrap({ Models: [] });  // Crawler runs here
+```
+
+**Child process (client):**
+```typescript
+import { Client } from '@easylayer/transport-sdk';
+
+// Create client
+const client = new Client({
+  transport: { type: 'ipc-child', options: {} }
+});
+
+// Subscribe to events
+client.subscribe('DepositReceived', (event) => {
+  console.log('Deposit:', event);
+});
+
+// Send query
+const result = await client.query('GetModelsQuery', {
+  modelIds: ['address-balance']
+});
+```
+
+### Complete Example with Express Server
+
+**Parent process serves HTTP API, child runs crawler:**
+
+```typescript
+import { resolve } from 'path';
+import { fork } from 'child_process';
+import express from 'express';
+import { Client } from '@easylayer/transport-sdk';
+
+// Fork crawler as child
+const child = fork(resolve(process.cwd(), 'src/crawler.js'), [], {
+  stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
+});
+
+// Create IPC client
+const client = new Client({
+  transport: { type: 'ipc-parent', options: { child } }
+});
+
+// Subscribe to events
+client.subscribe('DepositReceived', (event) => {
+  console.log('New deposit:', event);
+});
+
+// Express server
+const app = express();
+app.use(express.json());
+
+app.get('/balance', async (req, res) => {
+  const addresses = (req.query.addresses as string).split(',');
+  const data = await client.query('GetBalanceQuery', { addresses });
+  res.json(data);
+});
+
+app.get('/model', async (req, res) => {
+  const modelId = req.query.modelId as string;
+  const data = await client.query('GetModelsQuery', {
+    modelIds: [modelId]
+  });
+  res.json(data);
+});
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
+```
+
+---
+
+## Electron Transport
+
+<!-- TODO: Add Electron transport configuration and examples -->
+
+## Browser Transport
+
+<!-- TODO: Add Browser transport configuration and examples -->
+
+**Note:** In browser and Electron renderer, only event streaming works. Query server doesn't start - queries must go to main application or server.
+
+---
+
+# Event Delivery & Broker
+
+## At-Least-Once Delivery
+
+Bitcoin Crawler uses **at-least-once delivery** guarantee for event batches:
+
+**Guarantees:**
+- Every event batch will be delivered at least once
+- Events may be delivered multiple times
+- Order is preserved within batches
+- Events won't be lost
+
+**Your responsibility:**
+- Handle events idempotently (same event can arrive multiple times)
+- Always send ACK after processing
+- Use `correlationId` to match ACK with batch
+
+## Batch Size
+
+Event batches are automatically sized based on:
+- Number of events generated
+- Total payload size
+- Transport message size limits
+
+**Configuration:**
+```bash
+HTTP_MAX_MESSAGE_SIZE=1048576  # 1MB default
+WS_MAX_MESSAGE_SIZE=1048576
+IPC_MAX_MESSAGE_SIZE=1048576
+```
+
+If single batch exceeds limit, it will be split into multiple batches.
+
+## Retry Logic
+
+If ACK not received within timeout:
+- Batch is retried
+- Exponential backoff between retries
+- Connection health checked via ping/pong
+
+**Best practices:**
+- Process events quickly
+- Send ACK immediately after processing
+- Don't block on slow operations before ACK
+- Store events for async processing if needed
+
+---
+
+<!-- CONFIG-START -->
+## Configuration Reference
+
+### AppConfig
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
+| `NODE_ENV` | string | Node environment | `"development"` | ✅ |
+| `LOG_LEVEL` | string | Minimum log level to output. Ignored if DEBUG=1. Defaults to "info" when not set. |  |  |
+| `LOGS_FILE` | string | If set, structured logs (NDJSON) are appended to this file. When unset, logs go to stdout. |  |  |
+| `DEBUG` | string | When set to "1", forces debug-level logging regardless of LOG_LEVEL (except in test). |  |  |
+
+### BlocksQueueConfig
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
+| `BLOCKS_QUEUE_LOADER_STRATEGY_NAME` | string | Loader strategy name for the Bitcoin blocks queue. | `"rpc"` | ✅ |
+
+### BusinessConfig
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
+| `MAX_BLOCK_HEIGHT` | number | Maximum block height to be processed. Defaults to infinity. | `9007199254740991` | ✅ |
+| `START_BLOCK_HEIGHT` | number | The block height from which processing begins. If not set, only listen to new blocks. |  |  |
+| `NETWORK_TYPE` | string | Bitcoin network type | `"mainnet"` | ✅ |
+| `NETWORK_NATIVE_CURRENCY_SYMBOL` | string | Symbol of the native currency (BTC, LTC, DOGE, etc.) |  | ✅ |
+| `NETWORK_NATIVE_CURRENCY_DECIMALS` | number | Decimals of the native currency |  | ✅ |
+| `NETWORK_TARGET_BLOCK_TIME` | number | Target block time in milliseconds |  | ✅ |
+| `NETWORK_HAS_SEGWIT` | boolean | Whether the network supports SegWit |  | ✅ |
+| `NETWORK_HAS_TAPROOT` | boolean | Whether the network supports Taproot |  | ✅ |
+| `NETWORK_HAS_RBF` | boolean | Whether the network supports Replace-by-Fee |  | ✅ |
+| `NETWORK_HAS_CSV` | boolean | Whether the network supports CheckSequenceVerify |  | ✅ |
+| `NETWORK_HAS_CLTV` | boolean | Whether the network supports CheckLockTimeVerify |  | ✅ |
+| `NETWORK_MAX_BLOCK_SIZE` | number | Maximum block size in bytes (1MB for Bitcoin, 32MB for BCH) |  | ✅ |
+| `NETWORK_MAX_BLOCK_WEIGHT` | number | Maximum block weight in weight units |  | ✅ |
+| `NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL` | number | Difficulty adjustment interval in blocks |  | ✅ |
+| `MEMPOOL_MIN_FEE_RATE` | number | Minimum fee rate for caching transactions in sat/vB |  | ✅ |
+
+### EventStoreConfig
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
+| `EVENTSTORE_DB_NAME` | string | For SQLite: folder path where the database file will be created; For Postgres: name of the database to connect to. | `"resolve(process.cwd(), 'eventstore"` | ✅ |
+| `EVENTSTORE_DB_TYPE` | string | Type of database for the eventstore. | `"sqlite"` | ✅ |
+| `EVENTSTORE_DB_SYNCHRONIZE` | boolean | Automatic synchronization that creates or updates tables and columns. Use with caution. | `true` | ✅ |
+| `EVENTSTORE_DB_HOST` | string | Host for the eventstore database connection. |  |  |
+| `EVENTSTORE_DB_PORT` | number | Port for the eventstore database connection. |  |  |
+| `EVENTSTORE_DB_USERNAME` | string | Username for the eventstore database connection. |  |  |
+| `EVENTSTORE_DB_PASSWORD` | string | Password for the eventstore database connection. |  |  |
+
+### ProvidersConfig
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
+| `NETWORK_PROVIDER_TYPE` | string | Type of the network provider |  | ✅ |
+| `MEMPOOL_PROVIDER_TYPE` | string | Type of the mempool provider - only RPC supported |  | ✅ |
+| `PROVIDER_RPC_REQUEST_TIMEOUT` | number | RPC request timeout in milliseconds for all providers |  | ✅ |
+| `PROVIDER_NETWORK_RPC_URLS` | undefined | Network RPC URLs as comma-separated list |  |  |
+| `PROVIDER_NETWORK_ZMQ_ENDPOINT` | string | Network ZMQ endpoint for real-time notifications |  |  |
+| `PROVIDER_MEMPOOL_RPC_URLS` | undefined | Mempool RPC URLs as comma-separated list |  |  |
+| `PROVIDER_P2P_CONNECTION_TIMEOUT` | number | P2P connection timeout in milliseconds for network provider |  | ✅ |
+| `PROVIDER_P2P_MAX_PEERS` | number | Maximum number of P2P peers to connect for network provider |  | ✅ |
+| `PROVIDER_NETWORK_P2P_PEERS` | undefined | Network P2P peers as comma-separated host:port pairs |  |  |
+| `PROVIDER_NETWORK_P2P_MAX_BLOCKS_BATCH_SIZE` | number | Maximum blocks batch size for network P2P requests |  | ✅ |
+| `PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE` | number | Maximum batch size for requests for all providers |  | ✅ |
+| `PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS` | number | Maximum concurrent requests for providers |  | ✅ |
+| `PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS` | number | Delay between batches in milliseconds for providers |  | ✅ |
+
+### TransportConfig
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
+| `TRANSPORT_HTTP_HOST` | string | HTTP server host (if omitted, HTTP is disabled) |  |  |
+| `TRANSPORT_HTTP_PORT` | number | HTTP server port. If undefined or 0, HTTP transport is disabled. |  |  |
+| `TRANSPORT_HTTP_MAX_MESSAGE_SIZE` | number | Maximum HTTP message/frame size in bytes. If undefined, use app default. |  |  |
+| `TRANSPORT_HTTP_SSL_ENABLED` | boolean | Enable TLS for HTTP server. If undefined, treated as disabled. |  |  |
+| `TRANSPORT_HTTP_SSL_KEY_PATH` | string | Path to HTTP TLS private key (PEM) |  |  |
+| `TRANSPORT_HTTP_SSL_CERT_PATH` | string | Path to HTTP TLS certificate (PEM) |  |  |
+| `TRANSPORT_HTTP_SSL_CA_PATH` | string | Path to HTTP TLS CA bundle (PEM) |  |  |
+| `TRANSPORT_HTTP_WEBHOOK_URL` | string | HTTP webhook URL for outbound event batches |  |  |
+| `TRANSPORT_HTTP_WEBHOOK_PING_URL` | string | Optional healthcheck/ping URL for webhook |  |  |
+| `TRANSPORT_HTTP_WEBHOOK_TOKEN` | string | Optional bearer/shared token for webhook auth |  |  |
+| `TRANSPORT_WS_HOST` | string | WebSocket server host (if omitted, WS is disabled) |  |  |
+| `TRANSPORT_WS_PATH` | string | WebSocket server path (e.g., "/socket") |  |  |
+| `TRANSPORT_WS_PORT` | number | WebSocket server port. If undefined or 0, WS transport is disabled. |  |  |
+| `TRANSPORT_WS_MAX_MESSAGE_SIZE` | number | Maximum WebSocket message/frame size in bytes. If undefined, use app default. |  |  |
+| `TRANSPORT_WS_CORS_ORIGIN` | string | CORS origin for WS server (string value). If undefined, CORS is not applied. |  |  |
+| `TRANSPORT_WS_CORS_CREDENTIALS` | boolean | CORS credentials for WS server |  |  |
+| `TRANSPORT_WS_SSL_ENABLED` | boolean | Enable TLS for WebSocket server. If undefined, treated as disabled. |  |  |
+| `TRANSPORT_WS_SSL_KEY_PATH` | string | Path to WS TLS private key (PEM) |  |  |
+| `TRANSPORT_WS_SSL_CERT_PATH` | string | Path to WS TLS certificate (PEM) |  |  |
+| `TRANSPORT_WS_SSL_CA_PATH` | string | Path to WS TLS CA bundle (PEM) |  |  |
+| `TRANSPORT_WS_TRANSPORTS` | array | Enabled WS transport modes (comma-separated). If undefined, library defaults apply. |  |  |
+| `TRANSPORT_IPC_MAX_MESSAGE_SIZE` | number | Maximum IPC message size in bytes. If undefined, use app default. |  |  |
+| `TRANSPORT_HEARTBEAT_TIMEOUT` | number | Heartbeat timeout in milliseconds for streaming transports. If undefined, use app default. |  |  |
+| `TRANSPORT_CONNECTION_TIMEOUT` | number | Connection timeout in milliseconds. If undefined, use app default. |  |  |
+| `TRANSPORT_OUTBOX_ENABLE` | string | Enable outbox-driven transport publishing: "1" or "0". If undefined, feature is off by default. |  |  |
+| `TRANSPORT_OUTBOX_KIND` | string | Outbox transport kind for publishing batches |  |  |
+| `TRANSPORT_IPC_TYPE` | string | IPC transport kind for enable transport |  |  |
+
+<!-- CONFIG-END -->
+
+---
 
 <!-- QUERY-API-START -->
 ## Query API Reference
@@ -336,193 +997,6 @@ Retrieves the current state of one or more models at a specified block height
     }
   }
 ]
-```
-
----
-
-### Mempool Queries
-
-#### CheckMempoolTransactionQuery
-
-Checks if a specific transaction exists in mempool and retrieves its status
-
-**Parameters:**
-
-| Parameter | Type | Required | Description | Default | Example |
-|-----------|------|----------|-------------|---------|----------|
-| `txid` | string | ✅ | Transaction ID to check in mempool |  | `"abc123def456789012345678901234567890123456789012345678901234567890"` |
-
-**Example Request:**
-
-```json
-{
-  "requestId": "uuid-1",
-  "action": "query",
-  "payload": {
-    "constructorName": "CheckMempoolTransactionQuery",
-    "dto": {
-      "txid": "abc123def456789012345678901234567890123456789012345678901234567890"
-    }
-  }
-}
-```
-
-**Example Response:**
-
-```json
-{
-  "txid": "abc123def456789012345678901234567890123456789012345678901234567890",
-  "exists": true,
-  "isLoaded": true,
-  "wasAttempted": true,
-  "loadInfo": {
-    "timestamp": 1672531200000,
-    "feeRate": 100.5
-  }
-}
-```
-
----
-
-#### GetMempoolStatsQuery
-
-Retrieves mempool statistics and synchronization status
-
-**Example Request:**
-
-```json
-{
-  "requestId": "uuid-2",
-  "action": "query",
-  "payload": {
-    "constructorName": "GetMempoolStatsQuery",
-    "dto": {}
-  }
-}
-```
-
-**Example Response:**
-
-```json
-{
-  "totalTxids": 50000,
-  "loadedTransactions": 45000,
-  "isSynchronized": true,
-  "fullSyncThreshold": 10000,
-  "currentBatchSize": 150,
-  "syncTimingInfo": {
-    "previous": 1200,
-    "last": 950,
-    "ratio": 0.79
-  }
-}
-```
-
----
-
-#### GetMempoolTransactionsQuery
-
-Retrieves mempool transactions with optional streaming support for large datasets
-
-🔄 **Supports Streaming**
-
-**Parameters:**
-
-| Parameter | Type | Required | Description | Default | Example |
-|-----------|------|----------|-------------|---------|----------|
-| `onlyLoaded` | boolean |  | Return only fully loaded transactions (excludes null placeholders) | `false` | `true` |
-| `streaming` | boolean |  | Enable streaming response for large datasets | `false` | `true` |
-| `batchSize` | number |  | Number of transactions per batch when streaming | `100` | `100` |
-
-**Example Request:**
-
-```json
-{
-  "requestId": "uuid-3",
-  "action": "streamQuery",
-  "payload": {
-    "constructorName": "GetMempoolTransactionsQuery",
-    "dto": {
-      "streaming": true,
-      "onlyLoaded": true,
-      "batchSize": 100
-    }
-  }
-}
-```
-
-**Example Response:**
-
-```json
-{
-  "type": "batch",
-  "data": {
-    "batch": [
-      {
-        "txid": "abc123...",
-        "transaction": {
-          "vsize": 250,
-          "fees": {
-            "base": 25000
-          },
-          "time": 1672531200
-        }
-      }
-    ],
-    "batchIndex": 0,
-    "hasMore": true
-  }
-}
-```
-
----
-
-#### GetMempoolTxidsQuery
-
-Retrieves transaction IDs currently tracked in mempool with optional load information
-
-🔄 **Supports Streaming**
-
-**Parameters:**
-
-| Parameter | Type | Required | Description | Default | Example |
-|-----------|------|----------|-------------|---------|----------|
-| `streaming` | boolean |  | Enable streaming response for large datasets | `false` | `true` |
-| `batchSize` | number |  | Number of transaction IDs per batch when streaming | `1000` | `1000` |
-| `includeLoadInfo` | boolean |  | Include load attempt information (timestamp and fee rate) | `false` | `true` |
-
-**Example Request:**
-
-```json
-{
-  "requestId": "uuid-4",
-  "action": "streamQuery",
-  "payload": {
-    "constructorName": "GetMempoolTxidsQuery",
-    "dto": {
-      "streaming": true,
-      "batchSize": 1000,
-      "includeLoadInfo": true
-    }
-  }
-}
-```
-
-**Example Response:**
-
-```json
-{
-  "type": "currentTxids",
-  "data": {
-    "batch": [
-      "abc123def456...",
-      "def789abc123...",
-      "fed321cba987..."
-    ],
-    "batchIndex": 0,
-    "hasMore": true
-  }
-}
 ```
 
 ---
@@ -705,92 +1179,168 @@ Retrieves the last (most recent) block from the blockchain network
 
 ---
 
+### Mempool Queries
+
+#### CheckMempoolTransactionFullQuery
+
+Full check of a mempool transaction: existence, load status, providers, feeRate; optionally metadata and transaction.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description | Default | Example |
+|-----------|------|----------|-------------|---------|----------|
+| `txid` | string | ✅ | Transaction ID to check in mempool |  | `"abc123def4567890abc123def4567890abc123def4567890abc123def4567890"` |
+| `includeMetadata` | boolean |  | Include mempool metadata for the tx | `false` |  |
+| `includeTransaction` | boolean |  | Include normalized transaction object | `true` |  |
+
+**Example Request:**
+
+```json
+{
+  "requestId": "uuid-1",
+  "action": "query",
+  "payload": {
+    "constructorName": "CheckMempoolTransactionFullQuery",
+    "dto": {
+      "txid": "abc123…7890",
+      "includeMetadata": true,
+      "includeTransaction": true
+    }
+  }
+}
+```
+
+**Example Response:**
+
+```json
+{
+  "txid": "abc123…7890",
+  "exists": true,
+  "isLoaded": true,
+  "providers": [
+    "provider_0",
+    "provider_1"
+  ],
+  "feeRate": 52.3,
+  "metadata": {
+    "fee": 20000,
+    "vsize": 382
+  },
+  "transaction": {
+    "txid": "abc123…7890",
+    "vsize": 382
+  }
+}
+```
+
+---
+
+#### GetMempoolOverviewQuery
+
+Retrieves a concise overview of mempool: stats, size estimates, sync progress, providers.
+
+**Example Request:**
+
+```json
+{
+  "requestId": "uuid-2",
+  "action": "query",
+  "payload": {
+    "constructorName": "GetMempoolOverviewQuery",
+    "dto": {}
+  }
+}
+```
+
+**Example Response:**
+
+```json
+{
+  "stats": {
+    "totalTxids": 50213
+  },
+  "size": {
+    "estimatedMemoryUsage": {
+      "total": 134217728
+    }
+  },
+  "sync": {
+    "progress": 0.91,
+    "totalExpected": 48000,
+    "loaded": 43680,
+    "remaining": 4320
+  },
+  "providers": [
+    "provider_0",
+    "provider_1"
+  ]
+}
+```
+
+---
+
+
 <!-- QUERY-API-END -->
 
-<!-- CONFIG-START -->
-## Configuration Reference
+---
 
-### undefined
+# Examples
 
-| Property | Type | Description | Default | Required |
-|---|---|---|---|:---:|
-| `NODE_ENV` | string | Node environment | `"development"` | ✅ |
-| `HTTP_HOST` | string | Http Server host |  |  |
-| `HTTP_PORT` | number | Http Server port (0 or undefined to disable) |  |  |
-| `HTTP_SSL_ENABLED` | boolean | Enable SSL for HTTP server | `false` |  |
-| `HTTP_SSL_KEY_PATH` | string | Path to SSL private key file for HTTP server |  |  |
-| `HTTP_SSL_CERT_PATH` | string | Path to SSL certificate file for HTTP server |  |  |
-| `HTTP_SSL_CA_PATH` | string | Path to SSL CA file for HTTP server |  |  |
-| `WS_HOST` | string | WebSocket server host | `"0.0.0.0"` |  |
-| `WS_PATH` | string | WebSocket Server path | `"/"` |  |
-| `WS_PORT` | number | WebSocket Server port (0 or undefined to disable) |  |  |
-| `HTTP_MAX_MESSAGE_SIZE` | number | Maximum message size for HTTP transport in bytes | `1048576` | ✅ |
-| `WS_MAX_MESSAGE_SIZE` | number | Maximum message size for WebSocket transport in bytes | `1048576` | ✅ |
-| `IPC_MAX_MESSAGE_SIZE` | number | Maximum message size for IPC transport in bytes | `1048576` | ✅ |
-| `HEARTBEAT_TIMEOUT` | number | Heartbeat timeout in milliseconds | `3000` | ✅ |
-| `CONNECTION_TIMEOUT` | number | Connection timeout in milliseconds | `2000` | ✅ |
-| `WS_CORS_ORIGIN` | string | CORS origin for WebSocket | `"*"` |  |
-| `WS_CORS_CREDENTIALS` | boolean | CORS credentials for WebSocket | `false` |  |
-| `WS_SSL_ENABLED` | boolean | Enable SSL for WebSocket | `false` |  |
-| `WS_SSL_KEY_PATH` | string | Path to SSL private key file for WebSocket |  |  |
-| `WS_SSL_CERT_PATH` | string | Path to SSL certificate file for WebSocket |  |  |
-| `WS_SSL_CA_PATH` | string | Path to SSL CA file for WebSocket |  |  |
-| `WS_TRANSPORTS` | array | WebSocket transports (comma-separated: websocket,polling) | `"websocket,polling"` |  |
+Complete working examples are available in the [GitHub repository](https://github.com/easylayer/easylayer/tree/main/packages/bitcoin-crawler/examples).
 
-### undefined
+---
 
-| Property | Type | Description | Default | Required |
-|---|---|---|---|:---:|
-| `BLOCKS_QUEUE_LOADER_STRATEGY_NAME` | string | Loader strategy name for the Bitcoin blocks queue. | `"pull"` | ✅ |
+# Best Practices
 
-### undefined
+## Model Design
 
-| Property | Type | Description | Default | Required |
-|---|---|---|---|:---:|
-| `MAX_BLOCK_HEIGHT` | number | Maximum block height to be processed. Defaults to infinity. | `9007199254740991` | ✅ |
-| `START_BLOCK_HEIGHT` | number | The block height from which processing begins. If not set, only listen to new blocks. |  |  |
-| `NETWORK_TYPE` | string | Bitcoin network type (mainnet, testnet, regtest, signet) |  | ✅ |
-| `NETWORK_NATIVE_CURRENCY_SYMBOL` | string | Symbol of the native currency (BTC, LTC, DOGE, etc.) |  | ✅ |
-| `NETWORK_NATIVE_CURRENCY_DECIMALS` | number | Decimals of the native currency |  | ✅ |
-| `NETWORK_TARGET_BLOCK_TIME` | number | Target block time in seconds (600=Bitcoin, 150=Litecoin, 60=Dogecoin) |  | ✅ |
-| `NETWORK_HAS_SEGWIT` | boolean | Whether the network supports SegWit |  | ✅ |
-| `NETWORK_HAS_TAPROOT` | boolean | Whether the network supports Taproot |  | ✅ |
-| `NETWORK_HAS_RBF` | boolean | Whether the network supports Replace-by-Fee |  | ✅ |
-| `NETWORK_HAS_CSV` | boolean | Whether the network supports CheckSequenceVerify |  | ✅ |
-| `NETWORK_HAS_CLTV` | boolean | Whether the network supports CheckLockTimeVerify |  | ✅ |
-| `NETWORK_MAX_BLOCK_SIZE` | number | Maximum block size in bytes (1MB for Bitcoin, 32MB for BCH) |  | ✅ |
-| `NETWORK_MAX_BLOCK_WEIGHT` | number | Maximum block weight in weight units |  | ✅ |
-| `NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL` | number | Difficulty adjustment interval in blocks |  | ✅ |
+1. **Keep models focused**: One responsibility per model
+2. **Filter early**: Don't process irrelevant data
+3. **Optimize events**: Small events = faster processing
+4. **Handle idempotency**: Events can arrive multiple times
 
-### undefined
+## Event Processing
 
-| Property | Type | Description | Default | Required |
-|---|---|---|---|:---:|
-| `EVENTSTORE_DB_NAME` | string | For SQLite: folder path where the database file will be created; For Postgres: name of the database to connect to. | `"resolve(process.cwd(), 'eventstore"` | ✅ |
-| `EVENTSTORE_DB_TYPE` | string | Type of database for the eventstore. | `"sqlite"` | ✅ |
-| `EVENTSTORE_DB_SYNCHRONIZE` | boolean | Automatic synchronization that creates or updates tables and columns. Use with caution. | `true` | ✅ |
-| `EVENTSTORE_DB_HOST` | string | Host for the eventstore database connection. |  |  |
-| `EVENTSTORE_DB_PORT` | number | Port for the eventstore database connection. |  |  |
-| `EVENTSTORE_DB_USERNAME` | string | Username for the eventstore database connection. |  |  |
-| `EVENTSTORE_DB_PASSWORD` | string | Password for the eventstore database connection. |  |  |
+1. **Idempotent handlers**: Same event should produce same result
+2. **Quick ACK**: Send ACK immediately after processing
+3. **Async work**: Don't block before ACK - store and process async if needed
+4. **Error handling**: Log errors but send ACK to avoid retries
 
-### undefined
+## Deployment
 
-| Property | Type | Description | Default | Required |
-|---|---|---|---|:---:|
-| `MEMPOOL_MONITORING_ENABLED` | boolean | Enable Bitcoin mempool monitoring and caching |  | ✅ |
-| `MEMPOOL_FULL_SYNC_THRESHOLD` | number | Threshold for using getRawMempool(true) strategy in transaction count |  | ✅ |
-| `MEMPOOL_MIN_FEE_RATE` | number | Minimum fee rate for caching transactions in sat/vB |  | ✅ |
+1. **Start small**: Test with recent blocks before full historical sync
+2. **Monitor resources**: Track CPU, memory, disk usage
+3. **Use PostgreSQL**: For production and large datasets
+4. **Backup Event Store**: Regular backups of your database
+5. **Multiple instances**: Run separate indexers for different models
 
-### undefined
+## Security
 
-| Property | Type | Description | Default | Required |
-|---|---|---|---|:---:|
-| `NETWORK_PROVIDER_NODE_HTTP_URL` | string | HTTP URL of the Bitcoin-like network provider node |  | ✅ |
-| `NETWORK_PROVIDER_TYPE` | string | Type of the network provider (selfnode, quicknode, etc.) |  | ✅ |
-| `NETWORK_PROVIDER_REQUEST_TIMEOUT` | number | Request timeout in milliseconds |  | ✅ |
-| `NETWORK_PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS` | number | Maximum concurrent requests |  | ✅ |
-| `NETWORK_PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE` | number | Maximum batch size for parallel requests |  | ✅ |
-| `NETWORK_PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS` | number | Delay between batches in milliseconds |  | ✅ |
+1. **Secure node access**: Use authentication if available
+2. **Environment variables**: Never commit sensitive data to git
+3. **Transport passwords**: Use strong passwords for ping/pong
+4. **Database access**: Restrict database user permissions
+5. **Firewall rules**: Restrict access to transport ports
 
-<!-- CONFIG-END -->
+---
+
+# Support
+
+## Community Support
+
+- **GitHub Discussions:** https://github.com/easylayer/easylayer/discussions
+- **GitHub Issues:** https://github.com/easylayer/easylayer/issues
+- **Documentation:** https://easylayer.io/docs
+
+## Enterprise Support
+
+For priority support, custom solutions, or consulting:
+- Contact: https://easylayer.io/enterprise
+
+---
+
+# License
+
+Bitcoin Crawler is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+See [LICENSE](https://github.com/easylayer/easylayer/blob/main/LICENSE) for details.

@@ -24,7 +24,6 @@ describe('/Bitcoin Crawler: Second Initialization Only Mempool Flow', () => {
 
   beforeAll(async () => {
     jest.resetModules();
-    jest.useFakeTimers({ advanceTimers: true });
 
     config({ path: resolve(process.cwd(), 'src/second-app-init/init-restore-mempool-flow/.env') });
 
@@ -60,12 +59,9 @@ describe('/Bitcoin Crawler: Second Initialization Only Mempool Flow', () => {
         handlerEventsToWait: [{ eventType: BitcoinMempoolInitializedEvent, count: 1 }],
       },
     });
-
-    jest.runAllTimers();
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     jest.restoreAllMocks();
     if (dbService) {
       await dbService.close().catch(() => undefined as any);
