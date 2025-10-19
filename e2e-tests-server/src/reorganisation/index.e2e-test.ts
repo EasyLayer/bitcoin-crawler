@@ -75,8 +75,8 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
   });
 
   beforeAll(async () => {
-    jest.resetModules();
     jest.useFakeTimers({ advanceTimers: true });
+    jest.resetModules();
 
     config({ path: resolve(process.cwd(), 'src/reorganisation/.env') });
 

@@ -17,8 +17,9 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
   });
 
   beforeAll(async () => {
-    jest.useFakeTimers({ advanceTimers: true });
+    jest.useRealTimers();
     jest.resetModules();
+
     config({ path: resolve(process.cwd(), 'src/first-app-init/init-with-mempool-flow/.env') });
     await cleanDataFolder('eventstore');
     await bootstrap({
@@ -30,11 +31,9 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
         ],
       },
     });
-    jest.runAllTimers();
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     jest.restoreAllMocks();
     if (dbService) {
       // eslint-disable-next-line no-console
