@@ -1,3 +1,14 @@
+# [0.2.0](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.1.3...v0.2.0) (2025-10-19)
+
+
+### Features
+
+* added base wallet watcher business example app; ([e0985e2](https://github.com/EasyLayer/bitcoin-crawler/commit/e0985e27c32164429d28e3d86a571a152ef193b5))
+* added system postgres and advanced wallet watcher examples; fixed tests with refactoring code; ([da9bc0a](https://github.com/EasyLayer/bitcoin-crawler/commit/da9bc0aa79c99ab170cd3bc4e6465c30733b326e))
+* added transport system example app; ([e119e45](https://github.com/EasyLayer/bitcoin-crawler/commit/e119e459e9bfe0a7f4304e522ba1f4f43079b638))
+
+
+
 ## <small>0.1.3 (2025-07-20)</small>
 
 * refactor: fixed tests; updated easylayer libs; ([9fd0c8c](https://github.com/EasyLayer/bitcoin-crawler/commit/9fd0c8c))
