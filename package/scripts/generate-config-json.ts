@@ -29,7 +29,7 @@ export function generateConfigJson(outputFolder = '.tmp') {
         });
       }
 
-      // Add the class name as title
+      // // Add the class name as title
       schema.title = ConfigClass.name;
 
       // Write JSON to .tmp/<classname>.json

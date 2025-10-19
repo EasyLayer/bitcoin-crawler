@@ -1,107 +1,92 @@
-import { Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
-import { EventStoreWriteRepository } from '@easylayer/common/eventstore';
-import { AppLogger, RuntimeTracker } from '@easylayer/common/logger';
+import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import {
   AddBlocksBatchCommand,
   Network,
   BlockchainProviderService,
   BlockchainValidationError,
 } from '@easylayer/bitcoin';
-import { NetworkModelFactoryService } from '../services';
-import { Model, ModelType, ModelFactoryService } from '../../framework';
-import { MetricsService } from '../../metrics.service';
-import { BusinessConfig, ProvidersConfig } from '../../config';
+import { ExecutionContext } from '@easylayer/common/framework';
+import { NetworkModelFactoryService, MempoolModelFactoryService } from '../services';
+import { ModelFactoryService, Model, NormalizedModelCtor } from '../framework';
 
+function deepFreeze<T>(obj: T): T {
+  Object.getOwnPropertyNames(obj).forEach((name) => {
+    const value = (obj as any)[name];
+
+    if (value && typeof value === 'object') {
+      deepFreeze(value);
+    }
+  });
+
+  return Object.freeze(obj);
+}
+
+@Injectable()
 @CommandHandler(AddBlocksBatchCommand)
 export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBatchCommand> {
+  log = new Logger(AddBlocksBatchCommandHandler.name);
   constructor(
-    private readonly log: AppLogger,
     private readonly networkModelFactory: NetworkModelFactoryService,
+    private readonly mempoolModelFactory: MempoolModelFactoryService,
     private readonly blockchainProvider: BlockchainProviderService,
-    private readonly eventStore: EventStoreWriteRepository,
-    private readonly metricsService: MetricsService,
+    private readonly eventStore: EventStoreWriteService,
     @Inject('FrameworkModelsConstructors')
-    private Models: ModelType[],
-    @Inject('FrameworModelFactory')
-    private readonly modelFactoryService: ModelFactoryService,
-    private readonly businessConfig: BusinessConfig,
-    private readonly providersConfig: ProvidersConfig
+    private Models: NormalizedModelCtor[],
+    private readonly modelFactoryService: ModelFactoryService
   ) {}
 
-  @RuntimeTracker({ showMemory: false, warningThresholdMs: 1000, errorThresholdMs: 3000 })
   async execute({ payload }: AddBlocksBatchCommand) {
     const { batch, requestId } = payload;
 
-    const networkModel: Network = await this.networkModelFactory.initModel();
-
-    let models = this.Models.map((ModelCtr) => this.modelFactoryService.createNewModel(ModelCtr));
-
-    await this.metricsService.track('framework_restore_models', async () => {
-      const result: Model[] = [];
-      for (const model of models) {
-        result.push(await this.modelFactoryService.restoreModel(model));
-      }
-      models = result;
-    });
-
     try {
-      await networkModel.addBlocks({
-        requestId,
-        blocks: batch,
-      });
+      const networkModel: Network = await this.networkModelFactory.initModel();
 
-      for (let block of batch) {
-        await this.metricsService.track('framework_parse_block', async () => {
-          for (const model of models) {
-            await model.parseBlock({
-              block,
-              services: {
-                provider: this.blockchainProvider,
-              },
-              networkConfig: this.blockchainProvider.config,
-            });
-          }
-        });
+      const models: Model[] = [];
+
+      for (const m of this.Models) {
+        models.push(await this.modelFactoryService.restoreByCtor(m));
       }
 
-      await this.metricsService.track(
-        'system_eventstore_save',
-        async () => await this.eventStore.save([...models, networkModel])
-      );
+      await networkModel.addBlocks({ requestId, blocks: batch, logger: this.log });
 
-      const stats = {
-        blocksHeight: batch[batch.length - 1]?.height,
-        blocksLength: batch?.length,
-        blocksSize:
-          batch.reduce((sum: number, b: any) => sum + b?.size, 0) /
-          this.businessConfig.BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT,
-        txLength: batch.reduce((sum: number, b: any) => sum + b?.tx?.length, 0),
-        vinLength: batch.reduce(
-          (sum: number, b: any) => sum + b?.tx?.reduce((s: number, tx: any) => s + tx?.vin?.length, 0),
-          0
-        ),
-        voutLength: batch.reduce(
-          (sum: number, b: any) => sum + b?.tx?.reduce((s: number, tx: any) => s + tx?.vout?.length, 0),
-          0
-        ),
-        frameworkRestoreModels: this.metricsService.getMetric('framework_restore_models'),
-        frameworkParseBlockTotal: this.metricsService.getMetric('framework_parse_block'),
-        systemEventstoreSaveTotal: this.metricsService.getMetric('system_eventstore_save'),
-      };
+      for (const block of batch) {
+        const frozen = deepFreeze(block);
+        const ctx: ExecutionContext = {
+          block: frozen,
+          mempool: this.mempoolModelFactory,
+          services: {
+            nodeProvider: this.blockchainProvider,
+            networkModelService: this.networkModelFactory,
+            userModelService: this.modelFactoryService,
+          },
+          networkConfig: this.blockchainProvider.config,
+        };
 
-      this.log.info('Blocks successfull loaded', { args: { blocksHeight: stats.blocksHeight } });
-      this.log.debug('Blocks successfull loaded', { args: { ...stats } });
+        for (const m of models) {
+          await m.processBlock(ctx);
+        }
+      }
+
+      await this.eventStore.save([...models, networkModel]);
+
+      this.log.verbose('Blocks saved into eventstore');
     } catch (error) {
       if (error instanceof BlockchainValidationError) {
+        const networkModel: Network = await this.networkModelFactory.initModel();
+
+        const models: Model[] = this.Models.map((ModelCtr) => this.modelFactoryService.createNewModel(ModelCtr));
+
         await networkModel.reorganisation({
-          reorgHeight: networkModel.lastBlockHeight,
+          reorgHeight: networkModel.lastBlockHeight, // IMPORTANT: last network height
           requestId,
           blocks: [],
           service: this.blockchainProvider,
+          logger: this.log,
         });
 
-        // IMPORTANT: set blockHeight from last state of Network
+        // IMPORTANT: set blockHeight from last state of Network AFTER state reorganisation
         const reorgHeight = networkModel.lastBlockHeight;
 
         await this.eventStore.rollback({
@@ -110,17 +95,11 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
           modelsToSave: [networkModel],
         });
 
-        models = await Promise.all(
-          this.Models.map((ModelCtr) =>
-            this.modelFactoryService.restoreModel(this.modelFactoryService.createNewModel(ModelCtr))
-          )
-        );
-
-        this.log.info('Blocks successfull reorganized', { args: { blockHeight: reorgHeight } });
+        this.log.debug('Blocks successfully reorganized', { args: { blockHeight: reorgHeight, requestId } });
         return;
       }
 
-      this.log.error('Error while load blocks', { args: { error } });
+      this.log.warn('Error while adding blocks', { args: { message: (error as any)?.message } });
       throw error;
     }
   }

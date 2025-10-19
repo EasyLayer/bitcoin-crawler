@@ -2,14 +2,14 @@
     "version": "0.2.0",
     "configurations": [
       {
-          "name": "Debug E2E Tests",
+          "name": "Debug E2E Tests Server",
           "type": "node",
-          "runtimeVersion": "18.18.2",
+          "runtimeVersion": "20.18.1",
           "request": "launch",
           "runtimeArgs": [
             "--inspect-brk"
           ],
-          "cwd": "${workspaceFolder}/e2e-tests",
+          "cwd": "${workspaceFolder}/e2e-tests-server",
           "program": "${workspaceFolder}/node_modules/.bin/jest",
           "args": [
             "--runInBand",
@@ -30,7 +30,7 @@
       {
         "name": "Debug Integration Tests",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk"
@@ -54,62 +54,119 @@
         }
       },
       {
-        "name": "Debug Balances Monitoring",
+        "name": "Debug System Example Class Model",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk",
           "-r",
           "ts-node/register"
         ],
-        "cwd": "${workspaceFolder}/examples/real-time-data/balances-monitoring",
-        "program": "${workspaceFolder}/examples/real-time-data/balances-monitoring/src/server/index.ts",
-        "envFile": "${workspaceFolder}/examples/real-time-data/balances-monitoring/.env",
+        "cwd": "${workspaceFolder}/examples/system/class-model",
+        "program": "${workspaceFolder}/examples/system/class-model/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/system/class-model/.env",
         "console": "integratedTerminal",
         "internalConsoleOptions": "neverOpen",
         "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/real-time-data/balances-monitoring/tsconfig.json"
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/class-model/tsconfig.json"
         },
       },
       {
-        "name": "Debug Network Fee Analytics",
+        "name": "Debug System Example Declarative Model",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk",
           "-r",
           "ts-node/register"
         ],
-        "cwd": "${workspaceFolder}/examples/historical-data/network-fee-analytics",
-        "program": "${workspaceFolder}/examples/historical-data/network-fee-analytics/src/main.ts",
-        "envFile": "${workspaceFolder}/examples/historical-data/network-fee-analytics/.env",
+        "cwd": "${workspaceFolder}/examples/system/declarative-model",
+        "program": "${workspaceFolder}/examples/system/declarative-model/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/system/declarative-model/.env",
         "console": "integratedTerminal",
         "internalConsoleOptions": "neverOpen",
         "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/historical-data/network-fee-analytics/tsconfig.json"
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/declarative-model/tsconfig.json"
         },
       },
       {
-        "name": "Debug Top Addresses by Balance",
+        "name": "Debug Business Example Base Wallet Watcher",
         "type": "node",
-        "runtimeVersion": "18.18.2",
+        "runtimeVersion": "20.18.1",
         "request": "launch",
         "runtimeArgs": [
           "--inspect-brk",
           "-r",
           "ts-node/register"
         ],
-        "cwd": "${workspaceFolder}/examples/historical-data/top-addresses-by-balance",
-        "program": "${workspaceFolder}/examples/historical-data/top-addresses-by-balance/src/main.ts",
-        "envFile": "${workspaceFolder}/examples/historical-data/top-addresses-by-balance/.env",
+        "cwd": "${workspaceFolder}/examples/business/base-wallet-watcher",
+        "program": "${workspaceFolder}/examples/business/base-wallet-watcher/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/business/base-wallet-watcher/.env",
         "console": "integratedTerminal",
         "internalConsoleOptions": "neverOpen",
         "env": {
-          "TS_NODE_PROJECT": "${workspaceFolder}/examples/historical-data/top-addresses-by-balance/tsconfig.json"
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/business/base-wallet-watcher/tsconfig.json"
         },
       },
+      {
+        "name": "Debug System Example Transport",
+        "type": "node",
+        "runtimeVersion": "20.18.1",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk",
+          "-r",
+          "ts-node/register"
+        ],
+        "cwd": "${workspaceFolder}/examples/system/transport",
+        "program": "${workspaceFolder}/examples/system/transport/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/system/transport/.env",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/transport/tsconfig.json"
+        },
+      },
+      {
+        "name": "Debug Business Example Advanced Wallet Watcher",
+        "type": "node",
+        "runtimeVersion": "20.18.1",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk",
+          "-r",
+          "ts-node/register"
+        ],
+        "cwd": "${workspaceFolder}/examples/business/advanced-wallet-watcher",
+        "program": "${workspaceFolder}/examples/business/advanced-wallet-watcher/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/business/advanced-wallet-watcher/.env",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/business/advanced-wallet-watcher/tsconfig.json"
+        },
+      },
+      {
+        "name": "Debug System Example Postgres EventStore",
+        "type": "node",
+        "runtimeVersion": "20.18.1",
+        "request": "launch",
+        "runtimeArgs": [
+          "--inspect-brk",
+          "-r",
+          "ts-node/register"
+        ],
+        "cwd": "${workspaceFolder}/examples/system/postgres",
+        "program": "${workspaceFolder}/examples/system/postgres/src/main.ts",
+        "envFile": "${workspaceFolder}/examples/system/postgres/.env",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/examples/system/postgres/tsconfig.json"
+        },
+      }
     ]
 }
   

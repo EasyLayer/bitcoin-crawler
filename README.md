@@ -2,20 +2,20 @@
   <img width="800" src="https://github.com/user-attachments/assets/96e47109-f9a3-47f6-87ed-ed5c3781c1a2" alt="EasyLayer How It Works"/>
 </p>
 <p align="center">
-  <b>Bitcoin Crawler</b> is a self-hosted application that enables monitoring of the blockchain state both historically and in real-time
+  <b>Bitcoin Crawler</b> is a self-hosted framework for building custom blockchain indexers and parsers. Monitor and index Bitcoin blockchain data - both historical and real-time.
 </p>
 <br>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@easylayer/bitcoin-crawler"><img alt="npm version" src="https://img.shields.io/npm/v/@easylayer/bitcoin-crawler.svg?style=flat-square"></a>
   <a href="https://www.npmjs.com/package/@easylayer/bitcoin-crawler"><img alt="npm downloads" src="https://img.shields.io/npm/dm/@easylayer/bitcoin-crawler.svg?style=flat-square"></a>
-  <a href="https://github.com/easylayer/bitcoin-crawler/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/github/license/easylayer/bitcoin-crawler?style=flat-square"></a>
+  <a href="./LICENSE">License: AGPL-3.0</a>
 </p>
 
 ---
 
 <p align="center">
-  <a href="https://easylayer.io">Website</a> | <a href="https://easylayer.io/docs">Docs</a> | <a href="https://github.com/easylayer/core/discusstions">Discussions</a>
+  <a href="https://easylayer.io">Website</a> | <a href="https://easylayer.io/docs">Docs</a> | <a href="https://github.com/easylayer/core/discussions">Discussions</a>
 </p>
 
 <br>
@@ -26,12 +26,12 @@
 
 ## Table of Contents
 - [Monorepo Overview](#monorepo-overview)
+- [Architecture Overview](#architecture-overview)
 - [Developer Setup](#developer-setup)
+- [Development Workflow](#development-workflow)
 - [Contributing](#contributing)
 - [Issue Reporting](#issue-reporting)
 - [License](#license)
-
-**Note:** The sections below are intended for `contributors`. If you are a `user` and just want to use this application, please visit our [documentation site](https://easylayer.io/docs) for usage instructions.
 
 ## Monorepo Overview
 
@@ -39,12 +39,21 @@
 |---------------------|---------------------------------------------------------------------|
 | 📦 `package/`       | Source code of the SDK                                              |
 | 🚀 `examples/`      | Apps examples                                                |
-| 🧪 `e2e-tests/`     | End-to-end test suites                                              |
+| 🧪 `e2e-tests-server/`     | End-to-end test suites                                              |
 | 🔌 `integration-tests/` | Integration test suites                                     |
+
+## Architecture Overview
+
+<!-- TODO: Add architecture overview
+- Core components (models, providers, event store)
+- Event Sourcing and CQRS patterns
+- Key modules and their responsibilities
+- How components interact
+-->
 
 ## Developer Setup
 
-> <b>Node.js version:</b> 17 or higher is required. We recommend using the latest LTS (currently 22+).<br>
+> <b>Node.js version:</b> 20 or higher is required. We recommend using the latest LTS (currently 22+).<br>
 > <b>Yarn version:</b> 4.5+ is required (Yarn Berry).  
 > Yarn is included in the repository under <code>.yarn/releases/</code>, so you do not need to install it globally.  
 > You can run all commands using <code>yarn</code> if you have Yarn 4+ or Corepack enabled, or use <code>node .yarn/releases/yarn-4.5.0.cjs &lt;command&gt;</code> directly.
@@ -88,24 +97,23 @@ yarn test:integration
 ```
 
 8. **Run example app**
-
-- **Copy environment configuration:**
 ```bash
+cd examples/<app_name>
 cp .env.example .env
-```
-
-- **Configure environment:**
-- TODO
-- Navigate to `examples` folder
-- Open `.env` file and set the required parameters
-- For additional configuration options, refer to the documentation in the `docs/` directory
-
-- **Run an example:**
-```bash
 yarn start
 ```
-TODO
+- For additional configuration options, refer to the documentation in the `docs/` directory
+
 > **Note:** You can explore more examples in the `examples/` directory or check available commands in the root `package.json`.
+
+## Development Workflow
+
+<!-- TODO: Add development workflow guidelines
+- How to create a new feature
+- How to write and run tests
+- Debugging tips
+- Code review process
+-->
 
 ## Contributing
 
@@ -123,5 +131,4 @@ If you encounter a bug or have a feature request related to the `bitcoin-crawler
 
 ## License
 
-This project is licensed under the [MIT License](./package/LICENSE).
-
+This project is licensed under the [GNU Affero General Public License v3.0](./LICENSE).

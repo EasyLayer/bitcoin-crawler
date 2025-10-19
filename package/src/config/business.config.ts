@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { Transform } from 'class-transformer';
-import { IsString, IsNumber, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsBoolean, IsOptional, IsIn } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
+
+type NetworkType = 'mainnet' | 'testnet' | 'regtest' | 'signet';
 
 @Injectable()
 export class BusinessConfig {
@@ -14,7 +16,7 @@ export class BusinessConfig {
     description: 'Maximum block height to be processed. Defaults to infinity.',
     default: Number.MAX_SAFE_INTEGER,
   })
-  BITCOIN_CRAWLER_MAX_BLOCK_HEIGHT: number = Number.MAX_SAFE_INTEGER;
+  MAX_BLOCK_HEIGHT: number = Number.MAX_SAFE_INTEGER;
 
   @Transform(({ value }) => {
     if (!value || value === '') return undefined;
@@ -27,21 +29,27 @@ export class BusinessConfig {
     description: 'The block height from which processing begins. If not set, only listen to new blocks.',
     default: undefined,
   })
-  BITCOIN_CRAWLER_START_BLOCK_HEIGHT?: number;
+  START_BLOCK_HEIGHT?: number;
 
-  @Transform(({ value }) => (value?.length ? value : 'mainnet'))
-  @IsString()
-  @JSONSchema({
-    description: 'Bitcoin network type (mainnet, testnet, regtest, signet)',
+  @Transform(({ value }) => {
+    const v = String(value ?? '').toLowerCase();
+    return (['mainnet', 'testnet', 'regtest', 'signet'] as const).includes(v as any) ? (v as NetworkType) : 'mainnet';
   })
-  BITCOIN_CRAWLER_NETWORK_TYPE: string = 'mainnet';
+  @IsString()
+  @IsIn(['mainnet', 'testnet', 'regtest', 'signet'])
+  @JSONSchema({
+    description: 'Bitcoin network type',
+    enum: ['mainnet', 'testnet', 'regtest', 'signet'],
+    default: 'mainnet',
+  })
+  NETWORK_TYPE: NetworkType = 'mainnet';
 
   @Transform(({ value }) => (value?.length ? value : 'BTC'))
   @IsString()
   @JSONSchema({
     description: 'Symbol of the native currency (BTC, LTC, DOGE, etc.)',
   })
-  BITCOIN_CRAWLER_NETWORK_NATIVE_CURRENCY_SYMBOL: string = 'BTC';
+  NETWORK_NATIVE_CURRENCY_SYMBOL: string = 'BTC';
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -51,52 +59,52 @@ export class BusinessConfig {
   @JSONSchema({
     description: 'Decimals of the native currency',
   })
-  BITCOIN_CRAWLER_NETWORK_NATIVE_CURRENCY_DECIMALS: number = 8;
+  NETWORK_NATIVE_CURRENCY_DECIMALS: number = 8;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
-    return n || 600; // 10 minutes for Bitcoin
+    return n || 600000;
   })
   @IsNumber()
   @JSONSchema({
-    description: 'Target block time in seconds (600=Bitcoin, 150=Litecoin, 60=Dogecoin)',
+    description: 'Target block time in milliseconds',
   })
-  BITCOIN_CRAWLER_NETWORK_TARGET_BLOCK_TIME: number = 600;
+  NETWORK_TARGET_BLOCK_TIME: number = 600000;
 
   @Transform(({ value }) => value !== 'false')
   @IsBoolean()
   @JSONSchema({
     description: 'Whether the network supports SegWit',
   })
-  BITCOIN_CRAWLER_NETWORK_HAS_SEGWIT: boolean = true;
+  NETWORK_HAS_SEGWIT: boolean = true;
 
   @Transform(({ value }) => value !== 'false')
   @IsBoolean()
   @JSONSchema({
     description: 'Whether the network supports Taproot',
   })
-  BITCOIN_CRAWLER_NETWORK_HAS_TAPROOT: boolean = true;
+  NETWORK_HAS_TAPROOT: boolean = true;
 
   @Transform(({ value }) => value !== 'false')
   @IsBoolean()
   @JSONSchema({
     description: 'Whether the network supports Replace-by-Fee',
   })
-  BITCOIN_CRAWLER_NETWORK_HAS_RBF: boolean = true;
+  NETWORK_HAS_RBF: boolean = true;
 
   @Transform(({ value }) => value !== 'false')
   @IsBoolean()
   @JSONSchema({
     description: 'Whether the network supports CheckSequenceVerify',
   })
-  BITCOIN_CRAWLER_NETWORK_HAS_CSV: boolean = true;
+  NETWORK_HAS_CSV: boolean = true;
 
   @Transform(({ value }) => value !== 'false')
   @IsBoolean()
   @JSONSchema({
     description: 'Whether the network supports CheckLockTimeVerify',
   })
-  BITCOIN_CRAWLER_NETWORK_HAS_CLTV: boolean = true;
+  NETWORK_HAS_CLTV: boolean = true;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -106,7 +114,7 @@ export class BusinessConfig {
   @JSONSchema({
     description: 'Maximum block size in bytes (1MB for Bitcoin, 32MB for BCH)',
   })
-  BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_SIZE: number = 1000000;
+  NETWORK_MAX_BLOCK_SIZE: number = 1000000;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -116,7 +124,7 @@ export class BusinessConfig {
   @JSONSchema({
     description: 'Maximum block weight in weight units',
   })
-  BITCOIN_CRAWLER_NETWORK_MAX_BLOCK_WEIGHT: number = 4000000;
+  NETWORK_MAX_BLOCK_WEIGHT: number = 4000000;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
@@ -126,5 +134,35 @@ export class BusinessConfig {
   @JSONSchema({
     description: 'Difficulty adjustment interval in blocks',
   })
-  BITCOIN_CRAWLER_NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL: number = 2016;
+  NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL: number = 2016;
+
+  @Transform(({ value }) => {
+    const n = parseInt(value, 10);
+    return n || 1;
+  })
+  @IsNumber()
+  @JSONSchema({
+    description: 'Minimum fee rate for caching transactions in sat/vB',
+  })
+  MEMPOOL_MIN_FEE_RATE: number = 1;
+
+  /**
+   * Returns normalized network configuration built from this config.
+   */
+  getNetworkConfig() {
+    return {
+      network: this.NETWORK_TYPE,
+      nativeCurrencySymbol: this.NETWORK_NATIVE_CURRENCY_SYMBOL,
+      nativeCurrencyDecimals: this.NETWORK_NATIVE_CURRENCY_DECIMALS,
+      hasSegWit: this.NETWORK_HAS_SEGWIT,
+      hasTaproot: this.NETWORK_HAS_TAPROOT,
+      hasRBF: this.NETWORK_HAS_RBF,
+      hasCSV: this.NETWORK_HAS_CSV,
+      hasCLTV: this.NETWORK_HAS_CLTV,
+      maxBlockSize: this.NETWORK_MAX_BLOCK_SIZE,
+      maxBlockWeight: this.NETWORK_MAX_BLOCK_WEIGHT,
+      difficultyAdjustmentInterval: this.NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL,
+      targetBlockTime: this.NETWORK_TARGET_BLOCK_TIME,
+    };
+  }
 }

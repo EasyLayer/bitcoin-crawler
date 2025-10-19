@@ -1,10 +1,13 @@
+import { Injectable } from '@nestjs/common';
 import { EventsHandler, IEventHandler } from '@easylayer/common/cqrs';
-import { AppLogger } from '@easylayer/common/logger';
-import { BitcoinNetworkReorganizedEvent } from '@easylayer/bitcoin';
+import { BitcoinNetworkReorganizedEvent, BlocksQueueService } from '@easylayer/bitcoin';
 
+@Injectable()
 @EventsHandler(BitcoinNetworkReorganizedEvent)
 export class BitcoinNetworkReorganizedEventHandler implements IEventHandler<BitcoinNetworkReorganizedEvent> {
-  constructor(private readonly log: AppLogger) {}
+  constructor(private readonly blocksQueueService: BlocksQueueService) {}
 
-  async handle(event: BitcoinNetworkReorganizedEvent) {}
+  async handle(event: BitcoinNetworkReorganizedEvent) {
+    await this.blocksQueueService.reorganizeBlocks(event.blockHeight);
+  }
 }
