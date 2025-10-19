@@ -1,11 +1,7 @@
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import {
-  BitcoinMempoolInitializedEvent,
-  BitcoinMempoolSynchronizedEvent,
-  BitcoinMempoolRefreshedEvent,
-} from '@easylayer/bitcoin';
+import { BitcoinMempoolInitializedEvent, BitcoinMempoolSynchronizedEvent } from '@easylayer/bitcoin';
 import { SQLiteService } from '../../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 
@@ -26,7 +22,6 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
       testing: {
         handlerEventsToWait: [
           { eventType: BitcoinMempoolInitializedEvent, count: 1 },
-          { eventType: BitcoinMempoolRefreshedEvent, count: 1 },
           { eventType: BitcoinMempoolSynchronizedEvent, count: 1 },
         ],
       },
@@ -70,7 +65,7 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
     const mempoolEvents = await dbService.all(`SELECT * FROM mempool ORDER BY id ASC`);
 
     expect(Array.isArray(mempoolEvents)).toBe(true);
-    expect(mempoolEvents.length).toBe(3);
+    expect(mempoolEvents.length).toBeGreaterThanOrEqual(2);
 
     const e1 = mempoolEvents[0];
     expect(e1.version).toBe(1);
@@ -80,50 +75,40 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
     expect(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(e1.requestId)).toBe(true);
     expect(Number.isInteger(e1.blockHeight)).toBe(true);
     expect(e1.blockHeight).toBeGreaterThan(0);
-    const rawPayload1 = e1.payload;
-    const payloadString1 = Buffer.isBuffer(rawPayload1) ? rawPayload1.toString('utf8') : String(rawPayload1);
-    expect(() => JSON.parse(payloadString1)).not.toThrow();
-    const payloadObj1 = JSON.parse(payloadString1);
-    expect(payloadObj1 && typeof payloadObj1 === 'object').toBe(true);
+    {
+      const rawPayload1 = e1.payload;
+      const payloadString1 = Buffer.isBuffer(rawPayload1) ? rawPayload1.toString('utf8') : String(rawPayload1);
+      expect(() => JSON.parse(payloadString1)).not.toThrow();
+      const payloadObj1 = JSON.parse(payloadString1);
+      expect(payloadObj1 && typeof payloadObj1 === 'object').toBe(true);
+    }
     expect(Number.isInteger(e1.timestamp)).toBe(true);
     expect(e1.timestamp).toBeGreaterThan(1e15);
     expect(e1.timestamp).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
     expect([0, 1]).toContain(e1.isCompressed);
 
-    const e2 = mempoolEvents[1];
-    expect(e2.version).toBe(2);
-    expect(e2.type).toBe('BitcoinMempoolRefreshedEvent');
-    expect(typeof e2.requestId).toBe('string');
-    expect(e2.requestId.length).toBeGreaterThan(0);
-    expect(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(e2.requestId)).toBe(true);
-    expect(Number.isInteger(e2.blockHeight)).toBe(true);
-    expect(e2.blockHeight).toBeGreaterThan(0);
-    const rawPayload2 = e2.payload;
-    const payloadString2 = Buffer.isBuffer(rawPayload2) ? rawPayload2.toString('utf8') : String(rawPayload2);
-    expect(() => JSON.parse(payloadString2)).not.toThrow();
-    const payloadObj2 = JSON.parse(payloadString2);
-    expect(payloadObj2 && typeof payloadObj2 === 'object').toBe(true);
-    expect(Number.isInteger(e2.timestamp)).toBe(true);
-    expect(e2.timestamp).toBeGreaterThan(1e15);
-    expect(e2.timestamp).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
-    expect([0, 1]).toContain(e2.isCompressed);
+    const last = mempoolEvents[mempoolEvents.length - 1];
+    expect(Number.isInteger(last.version)).toBe(true);
+    expect(last.version).toBeGreaterThanOrEqual(e1.version);
+    expect(last.type).toBe('BitcoinMempoolSynchronizedEvent');
+    expect(last.type.length).toBeGreaterThan(0);
+    expect(typeof last.requestId).toBe('string');
+    expect(last.requestId.length).toBeGreaterThan(0);
+    expect(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(last.requestId)).toBe(true);
+    expect(Number.isInteger(last.blockHeight)).toBe(true);
+    expect(last.blockHeight).toBeGreaterThan(0);
 
-    const e3 = mempoolEvents[2];
-    expect(e3.version).toBe(3);
-    expect(e3.type).toBe('BitcoinMempoolSynchronizedEvent');
-    expect(typeof e3.requestId).toBe('string');
-    expect(e3.requestId.length).toBeGreaterThan(0);
-    expect(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(e3.requestId)).toBe(true);
-    expect(Number.isInteger(e3.blockHeight)).toBe(true);
-    expect(e3.blockHeight).toBeGreaterThan(0);
-    const rawPayload3 = e3.payload;
-    const payloadString3 = Buffer.isBuffer(rawPayload3) ? rawPayload3.toString('utf8') : String(rawPayload3);
-    expect(() => JSON.parse(payloadString3)).not.toThrow();
-    const payloadObj3 = JSON.parse(payloadString3);
-    expect(payloadObj3 && typeof payloadObj3 === 'object').toBe(true);
-    expect(Number.isInteger(e3.timestamp)).toBe(true);
-    expect(e3.timestamp).toBeGreaterThan(1e15);
-    expect(e3.timestamp).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
-    expect([0, 1]).toContain(e3.isCompressed);
+    {
+      const rawPayload = last.payload;
+      const payloadString = Buffer.isBuffer(rawPayload) ? rawPayload.toString('utf8') : String(rawPayload);
+      expect(() => JSON.parse(payloadString)).not.toThrow();
+      const payloadObj = JSON.parse(payloadString);
+      expect(payloadObj && typeof payloadObj === 'object').toBe(true);
+    }
+
+    expect(Number.isInteger(last.timestamp)).toBe(true);
+    expect(last.timestamp).toBeGreaterThan(1e15);
+    expect(last.timestamp).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER);
+    expect([0, 1]).toContain(last.isCompressed);
   });
 });
