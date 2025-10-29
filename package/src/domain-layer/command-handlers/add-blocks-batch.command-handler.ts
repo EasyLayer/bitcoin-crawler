@@ -7,9 +7,9 @@ import {
   BlockchainProviderService,
   BlockchainValidationError,
 } from '@easylayer/bitcoin';
-import { ExecutionContext } from '@easylayer/common/framework';
 import { NetworkModelFactoryService, MempoolModelFactoryService } from '../services';
 import { ModelFactoryService, Model, NormalizedModelCtor } from '../framework';
+import type { ProcessBlockExecutionContext } from '../framework';
 
 function deepFreeze<T>(obj: T): T {
   Object.getOwnPropertyNames(obj).forEach((name) => {
@@ -22,7 +22,6 @@ function deepFreeze<T>(obj: T): T {
 
   return Object.freeze(obj);
 }
-
 @Injectable()
 @CommandHandler(AddBlocksBatchCommand)
 export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBatchCommand> {
@@ -53,7 +52,7 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
 
       for (const block of batch) {
         const frozen = deepFreeze(block);
-        const ctx: ExecutionContext = {
+        const ctx: ProcessBlockExecutionContext = {
           block: frozen,
           mempool: this.mempoolModelFactory,
           services: {

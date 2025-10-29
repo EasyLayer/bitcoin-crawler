@@ -13,11 +13,9 @@ type InputRef  = { txid: string; n: number };
 export const AddressUtxoWatcherModel: DeclarativeModel<any> = {
   modelId: 'my-model-name',
 
-  state() {
-    return {
-      wallets: new Set(ADDRESSES) as ReadonlySet<string>,
-      unspent: new Map<string, Utxo[]>(),
-    };
+  state: {
+    wallets: new Set(ADDRESSES) as ReadonlySet<string>,
+    unspent: new Map<string, Utxo[]>(),
   },
 
   sources: {

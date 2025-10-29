@@ -1,8 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
 import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import { SyncMempoolCommand, Mempool, BlockchainProviderService } from '@easylayer/bitcoin';
 import { MempoolModelFactoryService } from '../services';
+import { ModelFactoryService, Model, NormalizedModelCtor } from '../framework';
+import type { MempoolTickExecutionContext } from '../framework';
 
 @Injectable()
 @CommandHandler(SyncMempoolCommand)
@@ -10,8 +12,11 @@ export class SyncMempoolCommandHandler implements ICommandHandler<SyncMempoolCom
   log = new Logger(SyncMempoolCommandHandler.name);
   constructor(
     private readonly eventStore: EventStoreWriteService,
+    @Inject('FrameworkModelsConstructors')
+    private Models: NormalizedModelCtor[],
+    private readonly modelFactoryService: ModelFactoryService,
     private readonly mempoolModelFactory: MempoolModelFactoryService,
-    private readonly blockchainProviderService: BlockchainProviderService
+    private readonly blockchainProvider: BlockchainProviderService
   ) {}
 
   async execute({ payload }: SyncMempoolCommand) {
@@ -19,14 +24,33 @@ export class SyncMempoolCommandHandler implements ICommandHandler<SyncMempoolCom
 
     const mempoolModel: Mempool = await this.mempoolModelFactory.initModel();
 
+    const models: Model[] = [];
+
+    for (const m of this.Models) {
+      models.push(await this.modelFactoryService.restoreByCtor(m));
+    }
+
     try {
       await mempoolModel.sync({
         requestId,
-        service: this.blockchainProviderService,
+        service: this.blockchainProvider,
         logger: this.log,
       });
 
-      await this.eventStore.save(mempoolModel);
+      const ctx: MempoolTickExecutionContext = {
+        mempool: this.mempoolModelFactory,
+        networkConfig: this.blockchainProvider.config,
+        services: {
+          nodeProvider: this.blockchainProvider,
+          userModelService: this.modelFactoryService,
+        },
+      };
+
+      for (const m of models) {
+        await m.mempoolTick?.(ctx);
+      }
+
+      await this.eventStore.save([...models, mempoolModel]);
 
       this.log.verbose('Mempool saved into eventstore');
     } catch (error) {

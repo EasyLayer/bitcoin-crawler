@@ -1,5 +1,6 @@
 import { Model } from '@easylayer/bitcoin-crawler';
-import { ScriptUtilService, type Block, type NetworkConfig } from '@easylayer/bitcoin';
+import type { ProcessBlockExecutionContext, MempoolTickExecutionContext } from '@easylayer/bitcoin-crawler';
+import { ScriptUtilService, type NetworkConfig } from '@easylayer/bitcoin';
 
 const ADDRESSES = ['1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa'];
 
@@ -32,20 +33,21 @@ export class AdvancedWalletWatcher extends Model {
   private outpointToTx = new Map<UtxoKey, string>();
   private lastMempoolTxCount = -1;
 
-  public async processBlock(
-    ctx: any & { block: Block; networkConfig?: NetworkConfig; mempool?: any }
-  ): Promise<void> {
+  /**
+   * Block path: emit confirmations for transactions that touch watched addresses.
+   * No mempool scanning here; mempool is handled in mempoolTick().
+   */
+  public async processBlock(ctx: ProcessBlockExecutionContext): Promise<void> {
     const block = ctx.block; if (!block) return;
     const { tx = [], height, hash } = block;
-    const net = (ctx as any).networkConfig?.network as NetworkConfig['network'] | undefined;
-
-    if (ctx.mempool) await this.observeMempool(ctx.mempool, height, net);
+    const net = ctx.networkConfig.network;
 
     for (let index = 0; index < tx.length; index++) {
       const t = tx[index];
       const parsed = this.parseTxGeneric(t, net);
       if (!parsed) continue;
 
+      // First seen in block (rare but possible if mempool phase was skipped)
       if (!this.seenTx.has(parsed.txid)) {
         this.applyEvent('TxSeen', height, {
           txid: parsed.txid,
@@ -57,6 +59,7 @@ export class AdvancedWalletWatcher extends Model {
         });
       }
 
+      // Confirmation event for any touching tx
       this.applyEvent('TxConfirmed', height, {
         txid: parsed.txid,
         height,
@@ -64,108 +67,113 @@ export class AdvancedWalletWatcher extends Model {
         index,
       });
 
+      // Wallet-specific confirmation (separate from generic TxConfirmed)
       if (parsed.touches.length) {
-        for (const i of parsed.inputs) {
-          const op: UtxoKey = `${i.txid}_${i.n}`;
-          const prevTx = this.outpointToTx.get(op);
-          if (prevTx && prevTx !== parsed.txid) {
-            const prev = this.seenTx.get(prevTx);
-            if (prev?.signaledRbf) {
-              this.applyEvent('TxReplacedByRbf', height, {
-                replacedTxid: prevTx,
-                replacementTxid: parsed.txid,
-                outpoint: op,
-                winner: 'block',
-              });
-            }
-            this.applyEvent('DoubleSpendDetected', height, {
-              outpoint: op,
-              txids: [prevTx, parsed.txid],
-              scope: 'block_conflict',
-            });
-          }
-        }
+        this.applyEvent('WalletCreditConfirmed', height, {
+          txid: parsed.txid,
+          addresses: parsed.touches,
+          height,
+          blockHash: hash,
+          index,
+        });
       }
     }
   }
 
-  // ===== Mempool read-only (expects verbose outputs available) =====
-  private async observeMempool(mp: any, tipHeight: number, net?: NetworkConfig['network']) {
-    const txids: string[] = await this.safeCall(() => mp.getCurrentTxids());
-    if (!txids?.length) return;
+  /**
+   * Mempool path: stream transactions and emit WalletCreditSeen for new touches.
+   * Uses provider streaming APIs; no full snapshot materialization.
+   */
+  public async mempoolTick(ctx: MempoolTickExecutionContext): Promise<void> {
+    const mp = ctx.mempool;
+    if (!mp) return;
 
-    // Optional micro-guard to avoid full pass when obviously unchanged
-    if (this.lastMempoolTxCount === txids.length && this.outpointToTx.size > 0) return;
+    const net = ctx.networkConfig.network;
+    const tipHeight = typeof mp.getLastHeight === 'function' ? await mp.getLastHeight() : -1;
 
-    // Prefer a batch verbose method if you add it; otherwise per-tx fallback.
-    // Expected shape for each tx.vout: scriptPubKey.addresses[] OR scriptPubKey.hex.
-    const getVerboseBatch = typeof mp.getVerboseTransactions === 'function'
-      ? (ids: string[]) => mp.getVerboseTransactions(ids) // you add this (recommended)
-      : null;
-
-    const BATCH = 500;
-    const outConflicts = new Map<UtxoKey, string[]>();
-
-    for (let i = 0; i < txids.length; i += BATCH) {
-      const slice = txids.slice(i, i + BATCH);
-
-      let raws: any[] | undefined;
-      if (getVerboseBatch) {
-        raws = await this.safeCall(() => getVerboseBatch!(slice));
-      } else {
-        // fallback: single calls; still must return vout with addresses or hex
-        raws = [];
-        for (const id of slice) {
-          const full = await this.safeCall(() => mp.getFullTransaction(id));
-          if (full) raws.push(full);
-          else {
-            const meta = await this.safeCall(() => mp.getTransactionMetadata(id));
-            if (meta) raws.push(meta);
-          }
+    // Optional early-exit guard if provider exposes a cheap size endpoint
+    try {
+      if (typeof mp.getMempoolSize === 'function') {
+        const sz = await this.safeCall(() => mp.getMempoolSize());
+        const cnt = sz?.transactionCount ?? sz?.txidCount ?? undefined;
+        if (typeof cnt === 'number' && cnt >= 0) {
+          if (this.lastMempoolTxCount === cnt && this.outpointToTx.size > 0) return;
+          this.lastMempoolTxCount = cnt;
         }
       }
-      if (!raws) continue;
+    } catch {
+      // ignore
+    }
 
-      for (const raw of raws) {
-        const parsed = this.parseTxGeneric(raw, net);
-        if (!parsed) continue;
+    // Single-tx processing routine to avoid memory spikes
+    const feedTx = async (tx: any) => {
+      const parsed = this.parseTxGeneric(tx, net);
+      if (!parsed) return;
 
-        if (!this.seenTx.has(parsed.txid)) {
-          this.applyEvent('TxSeen', tipHeight, {
+      // Generic "first seen" (idempotent-safe)
+      if (!this.seenTx.has(parsed.txid)) {
+        this.applyEvent('TxSeen', tipHeight, {
+          txid: parsed.txid,
+          touches: parsed.touches,
+          inputs: parsed.inputs,
+          outputs: parsed.outputs,
+          signaledRbf: parsed.signaledRbf,
+          source: 'mempool',
+        });
+      }
+
+      // Wallet-specific "credit observed" only if touches exist and delta detected
+      if (parsed.touches.length) {
+        const prev = this.seenTx.get(parsed.txid);
+        const prevTouches = new Set(prev?.touches ?? []);
+        const delta = parsed.touches.filter(a => !prevTouches.has(a));
+        if (delta.length) {
+          this.applyEvent('WalletCreditSeen', tipHeight, {
             txid: parsed.txid,
-            touches: parsed.touches,
-            inputs: parsed.inputs,
-            outputs: parsed.outputs,
+            addresses: delta,
             signaledRbf: parsed.signaledRbf,
-            source: 'mempool',
           });
         }
 
-        if (parsed.touches.length) {
-          for (const ii of parsed.inputs) {
-            const op: UtxoKey = `${ii.txid}_${ii.n}`;
-            const arr = outConflicts.get(op) ?? [];
-            arr.push(parsed.txid);
-            outConflicts.set(op, arr);
+        // Mempool-only conflict/RBF detection
+        for (const ii of parsed.inputs) {
+          const op: UtxoKey = `${ii.txid}_${ii.n}`;
+
+          const prevTx = this.outpointToTx.get(op);
+          if (prevTx && prevTx !== parsed.txid) {
+            const prevSeen = this.seenTx.get(prevTx);
+            if (prevSeen?.signaledRbf) {
+              this.applyEvent('TxReplacedByRbf', tipHeight, {
+                replacedTxid: prevTx,
+                replacementTxid: parsed.txid,
+                outpoint: op,
+                winner: 'mempool',
+              });
+            }
+            this.applyEvent('DoubleSpendDetected', tipHeight, {
+              outpoint: op,
+              txids: [prevTx, parsed.txid],
+              scope: 'mempool',
+            });
           }
+
+          // Current tx becomes the latest user of the outpoint
+          this.outpointToTx.set(op, parsed.txid);
         }
       }
-    }
+    };
 
-    this.outpointToTx.clear();
-    for (const [op, list] of outConflicts) {
-      const uniq = Array.from(new Set(list));
-      if (uniq.length > 1) {
-        this.applyEvent('DoubleSpendDetected', tipHeight, {
-          outpoint: op,
-          txids: uniq,
-          scope: 'mempool',
-        });
+    // Preferred streaming APIs from the provider service
+    if (typeof mp.forEachLoadedTx === 'function') {
+      await mp.forEachLoadedTx(feedTx);
+      return;
+    }
+    if (typeof mp.iterLoadedTx === 'function') {
+      for await (const tx of mp.iterLoadedTx()) {
+        await feedTx(tx);
       }
-      this.outpointToTx.set(op, uniq[uniq.length - 1]!);
+      return;
     }
-
-    this.lastMempoolTxCount = txids.length;
   }
 
   // ===== TX parsing (requires addresses[] or hex in outputs) =====
@@ -248,10 +256,18 @@ export class AdvancedWalletWatcher extends Model {
     }
   }
 
+  protected onWalletCreditSeen(_e: any) {
+    // no-op reducer (events are observable via outbox); extend if you keep derived state
+  }
+
+  protected onWalletCreditConfirmed(_e: any) {
+    // no-op reducer; extend if you keep derived state
+  }
+
   protected onTxReplacedByRbf(_e: any) {}
   protected onDoubleSpendDetected(_e: any) {}
 
-  // ===== Read helpers for queries =====
+  // ===== Read helpers =====
   public getTxStatus(txid: string) {
     const s = this.seenTx.get(txid);
     if (!s) return null;

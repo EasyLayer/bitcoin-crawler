@@ -1,5 +1,8 @@
 import { Model as FrameworkModel } from '@easylayer/common/framework';
 import type { AggregateOptions } from '@easylayer/common/cqrs';
+import type { ProcessBlockExecutionContext, MempoolTickExecutionContext } from './types';
+
+export type ZeroArgModelCtor<T extends Model = Model> = new () => T;
 
 /**
  * Minimal base for zero-args models:
@@ -29,4 +32,7 @@ export abstract class Model extends FrameworkModel {
 
     super(id, h, opts);
   }
+
+  public async processBlock(ctx: ProcessBlockExecutionContext): Promise<void> {}
+  public async mempoolTick?(ctx: MempoolTickExecutionContext): Promise<void> {}
 }
