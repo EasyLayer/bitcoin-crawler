@@ -1,6 +1,7 @@
-import type { Model, ZeroArgModelCtor, ExecutionContext } from '@easylayer/common/framework';
+import type { Model, ZeroArgModelCtor } from '@easylayer/common/framework';
 import type { AggregateOptions } from '@easylayer/common/cqrs';
 import { StateModel } from './state-model';
+import type { ProcessBlockExecutionContext, MempoolTickExecutionContext } from '../types';
 
 // Emits a compiled zero-args class with { state } on the instance
 export type CompiledModelClass<State, T extends Model = Model> = ZeroArgModelCtor<T & { state: State }>;
@@ -14,9 +15,9 @@ export type SelectorFn<State, R = any> = (state: Readonly<State>, ...args: any[]
 export type SelectorsMap<State> = Record<string, SelectorFn<State, any>>;
 
 // Walker signature remains generic (we stream sub-contexts)
-export type Walker = (from: string, block: any, fn: (ctx: any) => void | Promise<void>) => Promise<void>;
+export type Walker = (from: string, source: any, fn: (ctx: any) => void | Promise<void>) => Promise<void>;
 
-/** Per-block shared accumulator (not persisted). */
+/** Per-block accumulator (not persisted). */
 export type Locals = {
   vout: any[];
   vin: any[];
@@ -26,33 +27,53 @@ export type Locals = {
 // Minimal, read-only state wrapper for sources (compile-time only)
 type R<State> = Readonly<State>;
 
-// Base ctx that user handlers will see. It is prototype-chained to real ExecutionContext at runtime.
-export interface BaseCtx<State> extends ExecutionContext {
+/** Base ctx for block-phase handlers; `locals` is per-block. */
+export interface BlockBaseCtx<State> extends ProcessBlockExecutionContext {
   /** Read-only view of model state; do not mutate here. */
   state: R<State>;
   /** Emit domain events; users call this manually where needed. */
   applyEvent: (eventName: string, blockHeight: number, payload?: any) => void;
-  /** Per-block accumulator shared across all source handlers; not persisted. */
+  /** Per-block accumulator; not persisted. */
   locals: Locals;
 }
 
-// Phase-specific contexts the user will receive in handlers
-export interface VoutCtx<State> extends BaseCtx<State> {
+/** Base ctx for mempool-phase handlers; reuses the same Locals shape. */
+export interface MempoolBaseCtx<State> extends MempoolTickExecutionContext {
+  /** Read-only view of model state; do not mutate here. */
+  state: R<State>;
+  /** Emit domain events; users call this manually where needed. */
+  applyEvent: (eventName: string, blockHeight: number, payload?: any) => void;
+  /** Per-tick accumulator; not persisted. */
+  locals: Locals;
+}
+
+// Block-phase contexts
+export interface VoutCtx<State> extends BlockBaseCtx<State> {
   block: any;
   tx: any;
   vout: any;
 }
-export interface VinCtx<State> extends BaseCtx<State> {
+export interface VinCtx<State> extends BlockBaseCtx<State> {
   block: any;
   tx: any;
   vin: any;
 }
-export interface TxCtx<State> extends BaseCtx<State> {
+export interface TxCtx<State> extends BlockBaseCtx<State> {
   block: any;
   tx: any;
 }
-export interface BlockCtx<State> extends BaseCtx<State> {
+export interface BlockCtx<State> extends BlockBaseCtx<State> {
   block: any;
+}
+
+// Mempool-phase contexts (no block snapshot)
+export interface MempoolCtx<State> extends MempoolBaseCtx<State> {
+  /** Full mempool snapshot object with tx: any[] */
+  mempool: any;
+}
+export interface MempoolTxCtx<State> extends MempoolBaseCtx<State> {
+  /** Single unconfirmed transaction from mempool. */
+  tx: any;
 }
 
 // High-level source handlers; returned values will be appended into ctx.locals.<phase>
@@ -61,6 +82,11 @@ export type SourceHandlers<State> = {
   vin?: (ctx: VinCtx<State>) => any | any[] | void | Promise<any | any[] | void>;
   tx?: (ctx: TxCtx<State>) => any | any[] | void | Promise<any | any[] | void>;
   block?: (ctx: BlockCtx<State>) => void | Promise<void>;
+
+  /** Mempool tick: whole-mempool handler (called once per tick). */
+  mempool?: (ctx: MempoolCtx<State>) => any | any[] | void | Promise<any | any[] | void>;
+  /** Mempool tick: per-transaction handler (called for each tx). */
+  mempoolTx?: (ctx: MempoolTxCtx<State>) => any | any[] | void | Promise<any | any[] | void>;
 };
 
 /** Declarative model descriptor. */
@@ -73,7 +99,7 @@ export type DeclarativeModel<State> = {
   reducers?: ReducersMap<State>;
   /** Source handlers; order is enforced by the compiler. */
   sources?: SourceHandlers<State>;
-  /** Public read helpers; available as instance.selectors.<name>(...). */
+  /** Public read helpers; available as instance.<name>(...). */
   selectors?: SelectorsMap<State>;
   /** Options forwarded to the base aggregate (snapshots/pruning/etc). */
   options?: AggregateOptions;
@@ -99,7 +125,7 @@ function pushTo(arr: any[], ret: any | any[] | void): void {
  * Order: vout (reverse) → vin (reverse) → tx (forward) → block (once).
  * Returns from handlers are appended into ctx.locals.<phase>.
  * Reducers invoked as reducer(this.state, event).
- * Selectors exposed as `this.selectors.<name>(...args)`; internally call selector(this.state, ...args).
+ * Public selectors are exposed as instance methods defined from `selectors`.
  */
 export function compileStateModel<State>(
   declarative: DeclarativeModel<State>,
@@ -162,14 +188,15 @@ export function compileStateModel<State>(
       // }
     }
 
-    public async processBlock(ctx: any): Promise<void> {
+    // precise context type for block phase
+    public async processBlock(ctx: ProcessBlockExecutionContext): Promise<void> {
       const block = ctx?.block;
       if (!block) return;
 
       // Base context: prototype-chain to original ctx (no deep copies)
       const baseCtx = Object.create(ctx);
 
-      // Per-block accumulator; single object; not persisted
+      // Per-block accumulator; not persisted
       const locals: Locals = { vout: [], vin: [], tx: [] };
 
       // Inject stable references into baseCtx
@@ -222,6 +249,80 @@ export function compileStateModel<State>(
       // 4) block — forward (once)
       if (has('block')) {
         const subctx = { block } as BlockCtx<State>;
+        Object.setPrototypeOf(subctx, baseCtx);
+        await (sources!.block as any)(subctx);
+      }
+    }
+
+    /**
+     * Optional mempool tick.
+     *
+     * Order per tick:
+     *  - walker('mempool', mempool) → sources.mempool(ctx) once (if provided)
+     *  - walker('mempool.tx', mempool) → sources.mempoolTx(ctx) for each tx (if provided)
+     * Returns from handlers are appended into locals.mempool / locals.mempoolTx respectively.
+     * Keep handlers idempotent for the same input tick.
+     */
+    public async mempoolTick(ctx: MempoolTickExecutionContext): Promise<void> {
+      const mempool = ctx?.mempool;
+      if (!mempool) return;
+
+      // Base context: prototype-chain to original ctx (no deep copies)
+      const baseCtx = Object.create(ctx);
+
+      // Per-tick accumulator for mempool; not persisted
+      const locals: Locals = { vout: [], vin: [], tx: [] };
+
+      // Inject stable references into baseCtx
+      Object.defineProperty(baseCtx, 'state', { value: this.state, writable: false, enumerable: false });
+      Object.defineProperty(baseCtx, 'applyEvent', {
+        value: this.applyEvent.bind(this),
+        writable: false,
+        enumerable: false,
+      });
+      Object.defineProperty(baseCtx, 'locals', { value: locals, writable: false, enumerable: false });
+
+      // 1) vout — reverse
+      if (has('vout')) {
+        const bag: any[] = [];
+        await walker('mempool.tx.vout', mempool, (subctx) => {
+          bag.push(subctx);
+        });
+        for (let i = bag.length - 1; i >= 0; i--) {
+          const subctx = bag[i] as VoutCtx<State>;
+          Object.setPrototypeOf(subctx, baseCtx);
+          const ret = await (sources!.vout as any)(subctx);
+          pushTo(locals.vout, ret);
+        }
+      }
+
+      // 2) vin — reverse
+      if (has('vin')) {
+        const bag: any[] = [];
+        await walker('mempool.tx.vin', mempool, (subctx) => {
+          bag.push(subctx);
+        });
+        for (let i = bag.length - 1; i >= 0; i--) {
+          const subctx = bag[i] as VinCtx<State>;
+          Object.setPrototypeOf(subctx, baseCtx);
+          const ret = await (sources!.vin as any)(subctx);
+          pushTo(locals.vin, ret);
+        }
+      }
+
+      // 3) tx — forward
+      if (has('tx')) {
+        await walker('mempool.tx', mempool, async (subctx) => {
+          const ctxTx = subctx as MempoolTxCtx<State>;
+          Object.setPrototypeOf(ctxTx, baseCtx);
+          const ret = await (sources!.tx as any)(ctxTx);
+          pushTo(locals.tx, ret);
+        });
+      }
+
+      // 4) block — forward (once)
+      if (has('block')) {
+        const subctx = { mempool } as MempoolCtx<State>;
         Object.setPrototypeOf(subctx, baseCtx);
         await (sources!.block as any)(subctx);
       }

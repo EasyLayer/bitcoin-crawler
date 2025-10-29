@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EventStoreReadService } from '@easylayer/common/eventstore';
-import { Model, ZeroArgModelCtor } from '@easylayer/common/framework';
+import { Model } from '../framework';
+import type { ZeroArgModelCtor } from '../framework';
 import { BusinessConfig } from '../../config';
 
 export interface IModelFactoryService {

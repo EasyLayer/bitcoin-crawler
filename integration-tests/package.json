@@ -1,6 +1,6 @@
 {
     "name": "integration-tests",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "",
     "private": true,
     "type": "commonjs",
@@ -16,8 +16,8 @@
     "license": "",
     "packageManager": "yarn@4.5.0",
     "dependencies": {
-        "@easylayer/bitcoin-crawler": "0.2.0",
-        "@easylayer/common": "1.0.3",
+        "@easylayer/bitcoin-crawler": "0.2.1",
+        "@easylayer/common": "1.0.4",
         "@easylayer/transport-sdk": "1.2.0",
         "dotenv": "16.4.5",
         "sqlite3": "5.1.7",

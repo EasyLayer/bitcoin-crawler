@@ -1,6 +1,6 @@
 {
   "name": "@easylayer/bitcoin-crawler",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "",
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -46,8 +46,8 @@
   "license": "AGPL-3.0-only",
   "packageManager": "yarn@4.5.0",
   "dependencies": {
-    "@easylayer/bitcoin": "1.0.3",
-    "@easylayer/common": "1.0.3",
+    "@easylayer/bitcoin": "1.0.4",
+    "@easylayer/common": "1.0.4",
     "@nestjs/common": "10.2.10",
     "@nestjs/core": "10.2.10",
     "check-node-version": "4.2.1",

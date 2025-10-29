@@ -51,6 +51,27 @@ export class MempoolModelFactoryService {
 
   // ========== Read API ==========
 
+  public async getLastHeight(): Promise<number> {
+    const model = await this.initModel();
+    return model.lastBlockHeight;
+  }
+
+  /** Iterate through ONLY loaded slim transactions (fast, memory-safe). */
+  public async forEachLoadedTx(fn: (tx: LightTransaction) => Promise<void> | void): Promise<void> {
+    const model = await this.initModel();
+    for (const tx of model.loadedTransactions()) {
+      await fn(tx);
+    }
+  }
+
+  /** Asynchronous generator of loaded slim transactions. */
+  public async *iterLoadedTx(): AsyncGenerator<LightTransaction> {
+    const model = await this.initModel();
+    for (const tx of model.loadedTransactions()) {
+      yield tx;
+    }
+  }
+
   /** O(1) */
   public async getMempoolSize(): Promise<{
     txidCount: number;

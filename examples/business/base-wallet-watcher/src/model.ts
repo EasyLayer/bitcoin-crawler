@@ -1,4 +1,5 @@
 import { Model } from '@easylayer/bitcoin-crawler';
+import type { ProcessBlockExecutionContext } from '@easylayer/bitcoin-crawler';
 import { ScriptUtilService, type Block, type NetworkConfig } from '@easylayer/bitcoin';
 import { Money, type Currency } from '@easylayer/common/arithmetic';
 
@@ -28,12 +29,10 @@ export class BaseWalletWatcher extends Model {
   public addressUtxos = new Map<string, UtxoKey[]>();
   public addressTxids = new Map<string, Set<string>>();
 
-  public async processBlock(
-    ctx: any & { block: Block; networkConfig?: NetworkConfig }
-  ): Promise<void> {
+  public async processBlock(ctx: ProcessBlockExecutionContext): Promise<void> {
     const block = ctx.block; if (!block) return;
     const { tx = [], height } = block;
-    const net = (ctx as any).networkConfig?.network as NetworkConfig['network'] | undefined;
+    const net = ctx.networkConfig.network as NetworkConfig['network'] | undefined;
 
     const outputs: OutputHit[] = [];
     const inputs: InputRef[] = [];

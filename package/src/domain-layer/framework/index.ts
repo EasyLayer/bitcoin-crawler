@@ -4,3 +4,4 @@ export * from './walker';
 export * from './model';
 export * from './declarative';
 export * from './normalizer';
+export * from './types';
