@@ -1,3 +1,12 @@
+## [0.2.1](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.2.0...v0.2.1) (2025-10-29)
+
+
+### Features
+
+* added mempool tick fn into model; ([1eeb619](https://github.com/EasyLayer/bitcoin-crawler/commit/1eeb61984f7c6042b2a9ab46d75966407b5b101d))
+
+
+
 # [0.2.0](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.1.3...v0.2.0) (2025-10-19)
 
 

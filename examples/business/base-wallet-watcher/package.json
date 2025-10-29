@@ -1,7 +1,7 @@
 {
   "name": "base-wallet-watcher",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "This is an example app for development",
   "type": "commonjs",
   "scripts": {
@@ -10,7 +10,7 @@
     "start": "node --inspect -r ts-node/register src/main.ts"
   },
   "dependencies": {
-    "@easylayer/bitcoin-crawler": "0.2.0",
+    "@easylayer/bitcoin-crawler": "0.2.1",
     "@easylayer/common": "1.0.4",
     "@easylayer/transport-sdk": "1.2.0",
     "express": "5.1.0",
