@@ -30,7 +30,11 @@ export const bootstrap = async ({
 
   const loggerLevel = allowedLevels.has(envLevel) ? (envLevel as any) : process.env.DEBUG === '1' ? 'debug' : 'info';
 
-  const commonFactoryOpts = { bufferLogs: false, logger: ['fatal'] as any };
+  const commonFactoryOpts = {
+    bufferLogs: false,
+    logger: ['fatal'] as any,
+    abortOnError: false,
+  };
 
   const rootModule = await ContainerModule.register({
     Models,

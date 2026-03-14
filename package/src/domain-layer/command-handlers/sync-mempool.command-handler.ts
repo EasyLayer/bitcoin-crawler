@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
 import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import { SyncMempoolCommand, Mempool, BlockchainProviderService } from '@easylayer/bitcoin';
-import { MempoolModelFactoryService } from '../services';
+import { MempoolModelFactoryService, NetworkReadService, MempoolReadService } from '../services';
 import { ModelFactoryService, Model, NormalizedModelCtor } from '../framework';
 import type { MempoolTickExecutionContext } from '../framework';
 
@@ -16,7 +16,9 @@ export class SyncMempoolCommandHandler implements ICommandHandler<SyncMempoolCom
     private Models: NormalizedModelCtor[],
     private readonly modelFactoryService: ModelFactoryService,
     private readonly mempoolModelFactory: MempoolModelFactoryService,
-    private readonly blockchainProvider: BlockchainProviderService
+    private readonly blockchainProvider: BlockchainProviderService,
+    private readonly networkReadService: NetworkReadService,
+    private readonly mempoolReadService: MempoolReadService
   ) {}
 
   async execute({ payload }: SyncMempoolCommand) {
@@ -38,7 +40,8 @@ export class SyncMempoolCommandHandler implements ICommandHandler<SyncMempoolCom
       });
 
       const ctx: MempoolTickExecutionContext = {
-        mempool: this.mempoolModelFactory,
+        network: this.networkReadService,
+        mempool: this.mempoolReadService,
         networkConfig: this.blockchainProvider.config,
         services: {
           nodeProvider: this.blockchainProvider,

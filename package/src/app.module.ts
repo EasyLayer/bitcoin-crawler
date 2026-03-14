@@ -15,6 +15,8 @@ import {
   NetworkModelFactoryService,
   ConsolePromptService,
   MempoolModelFactoryService,
+  MempoolReadService,
+  NetworkReadService,
   NETWORK_AGGREGATE_ID,
   MEMPOOL_AGGREGATE_ID,
 } from './domain-layer/services';
@@ -196,6 +198,8 @@ export class AppModule {
         ConsolePromptService,
         MempoolCommandFactoryService,
         MempoolModelFactoryService,
+        MempoolReadService,
+        NetworkReadService,
         ...Providers,
       ],
       exports: [
@@ -215,6 +219,8 @@ export class AppModule {
         ModelFactoryService,
         BlocksQueueModule,
         EventStoreModule,
+        MempoolReadService,
+        NetworkReadService,
         ...Providers,
       ],
     };

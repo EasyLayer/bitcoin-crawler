@@ -7,7 +7,7 @@ import {
   BlockchainProviderService,
   BlockchainValidationError,
 } from '@easylayer/bitcoin';
-import { NetworkModelFactoryService, MempoolModelFactoryService } from '../services';
+import { NetworkModelFactoryService, NetworkReadService, MempoolReadService } from '../services';
 import { ModelFactoryService, Model, NormalizedModelCtor } from '../framework';
 import type { ProcessBlockExecutionContext } from '../framework';
 
@@ -28,12 +28,13 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
   log = new Logger(AddBlocksBatchCommandHandler.name);
   constructor(
     private readonly networkModelFactory: NetworkModelFactoryService,
-    private readonly mempoolModelFactory: MempoolModelFactoryService,
     private readonly blockchainProvider: BlockchainProviderService,
     private readonly eventStore: EventStoreWriteService,
     @Inject('FrameworkModelsConstructors')
     private Models: NormalizedModelCtor[],
-    private readonly modelFactoryService: ModelFactoryService
+    private readonly modelFactoryService: ModelFactoryService,
+    private readonly networkReadService: NetworkReadService,
+    private readonly mempoolReadService: MempoolReadService
   ) {}
 
   async execute({ payload }: AddBlocksBatchCommand) {
@@ -54,7 +55,8 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
         const frozen = deepFreeze(block);
         const ctx: ProcessBlockExecutionContext = {
           block: frozen,
-          mempool: this.mempoolModelFactory,
+          network: this.networkReadService,
+          mempool: this.mempoolReadService,
           services: {
             nodeProvider: this.blockchainProvider,
             networkModelService: this.networkModelFactory,
