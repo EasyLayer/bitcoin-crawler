@@ -3,7 +3,7 @@ import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
 import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import { InitNetworkCommand, Network, BlockchainProviderService } from '@easylayer/bitcoin';
 import { NetworkModelFactoryService } from '../services';
-import { BusinessConfig, BOOTSTRAP_CONFIG, type BootstrapConfig } from '../../config';
+import { BusinessConfig, BootstrapConfig } from '../../config';
 import { ConsolePromptService } from '../services/console-prompt.service';
 import { ModelFactoryService, NormalizedModelCtor } from '../framework';
 
@@ -20,7 +20,7 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
     @Inject('FrameworkModelsConstructors')
     private Models: NormalizedModelCtor[],
     private readonly modelFactoryService: ModelFactoryService,
-    @Inject(BOOTSTRAP_CONFIG)
+    @Inject('BootstrapConfig')
     private readonly bootstrapConfig: BootstrapConfig
   ) {}
 

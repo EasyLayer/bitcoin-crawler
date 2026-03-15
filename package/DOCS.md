@@ -791,6 +791,11 @@ If ACK not received within timeout:
 |---|---|---|---|:---:|
 | `BLOCKS_QUEUE_LOADER_STRATEGY_NAME` | string | Loader strategy name for the Bitcoin blocks queue. | `"rpc"` | ✅ |
 
+### BootstrapConfig
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
+
 ### BusinessConfig
 
 | Property | Type | Description | Default | Required |

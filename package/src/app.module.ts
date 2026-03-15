@@ -28,7 +28,6 @@ import {
   ProvidersConfig,
   TransportConfig,
   BootstrapConfig,
-  BOOTSTRAP_CONFIG,
 } from './config';
 import { ModelFactoryService, normalizeModelsBTC, ModelInput } from './domain-layer/framework';
 
@@ -189,7 +188,7 @@ export class AppModule {
           useValue: transportConfig,
         },
         {
-          provide: BOOTSTRAP_CONFIG,
+          provide: 'BootstrapConfig',
           useValue: config,
         },
         {
@@ -228,7 +227,7 @@ export class AppModule {
         BlocksQueueConfig,
         ProvidersConfig,
         'FrameworkModelsConstructors',
-        BOOTSTRAP_CONFIG,
+        'BootstrapConfig',
         ModelFactoryService,
         BlocksQueueModule,
         EventStoreModule,
