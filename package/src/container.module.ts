@@ -18,6 +18,7 @@ export class ContainerModule {
     appName,
     Models,
     Providers,
+    config,
     QueryHandlers: UserQueryHandlers = [],
     EventHandlers: UserEventHandlers = [],
   }: ContainerModuleOptions): Promise<DynamicModule> {
@@ -25,6 +26,7 @@ export class ContainerModule {
       appName,
       Models: Models,
       Providers: Providers,
+      config,
     });
 
     const cqrs = CqrsModule.forRoot({

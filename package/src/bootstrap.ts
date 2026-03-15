@@ -17,10 +17,11 @@ export const bootstrap = async ({
   EventHandlers,
   Providers,
   testing = {},
+  config = {},
 }: BootstrapOptions): Promise<INestApplicationContext | INestApplication> => {
   const appName = process.env.APPLICATION_NAME || 'bitcoin';
-  const httpPort = Number(process.env.HTTP_PORT ?? '0');
-  const wsPort = Number(process.env.WS_PORT ?? '0');
+  const httpPort = Number(process.env.TRANSPORT_HTTP_PORT ?? '0');
+  const wsPort = Number(process.env.TRANSPORT_WS_PORT ?? '0');
   const hasNetworkTransports = httpPort > 0 || wsPort > 0;
   const isTest = process.env.NODE_ENV === 'test';
 
@@ -42,6 +43,7 @@ export const bootstrap = async ({
     EventHandlers,
     Providers,
     appName,
+    config,
   });
 
   let appContext: INestApplicationContext | INestApplication;

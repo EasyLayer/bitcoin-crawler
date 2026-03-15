@@ -3,7 +3,7 @@ import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
 import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import { InitNetworkCommand, Network, BlockchainProviderService } from '@easylayer/bitcoin';
 import { NetworkModelFactoryService } from '../services';
-import { BusinessConfig } from '../../config';
+import { BusinessConfig, BOOTSTRAP_CONFIG, type BootstrapConfig } from '../../config';
 import { ConsolePromptService } from '../services/console-prompt.service';
 import { ModelFactoryService, NormalizedModelCtor } from '../framework';
 
@@ -19,7 +19,9 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
     private readonly consolePromptService: ConsolePromptService,
     @Inject('FrameworkModelsConstructors')
     private Models: NormalizedModelCtor[],
-    private readonly modelFactoryService: ModelFactoryService
+    private readonly modelFactoryService: ModelFactoryService,
+    @Inject(BOOTSTRAP_CONFIG)
+    private readonly bootstrapConfig: BootstrapConfig
   ) {}
 
   async execute({ payload }: InitNetworkCommand) {
@@ -29,13 +31,15 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
 
     const currentNetworkHeight = await this.blockchainProviderService.getCurrentBlockHeightFromNetwork();
     const configStartHeight = this.businessConfig.START_BLOCK_HEIGHT;
+    const bootstrapLastBlockHeight = this.bootstrapConfig.lastBlockHeight;
     const currentDbHeight = networkModel.lastBlockHeight;
 
     try {
       const finalStartHeight = await this.determineStartHeight(
         currentDbHeight,
         configStartHeight,
-        currentNetworkHeight
+        currentNetworkHeight,
+        bootstrapLastBlockHeight
       );
 
       // Initialize the network with the determined start height
@@ -79,10 +83,31 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
   private async determineStartHeight(
     currentDbHeight: number,
     configStartHeight: number | undefined,
-    currentNetworkHeight: number
+    currentNetworkHeight: number,
+    bootstrapLastBlockHeight: number | undefined
   ): Promise<number> {
     // Database is considered empty if currentDbHeight is -1
     const isEmpty = currentDbHeight < 0;
+
+    // Bootstrap runtime config has priority over START_BLOCK_HEIGHT from env.
+    if (bootstrapLastBlockHeight !== undefined) {
+      if (bootstrapLastBlockHeight < -1) {
+        throw new Error('lastBlockHeight cannot be less than -1');
+      }
+
+      if (isEmpty) {
+        return bootstrapLastBlockHeight;
+      }
+
+      if (currentDbHeight === bootstrapLastBlockHeight) {
+        return currentDbHeight;
+      }
+
+      this.log.warn(
+        `Database height (${currentDbHeight}) does not match bootstrap lastBlockHeight (${bootstrapLastBlockHeight}). Reset is required.`
+      );
+      throw new Error('DATA_RESET_REQUIRED');
+    }
 
     if (isEmpty) {
       // First launch: choose between live listen mode or historical mode

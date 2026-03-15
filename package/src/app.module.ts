@@ -27,6 +27,8 @@ import {
   BlocksQueueConfig,
   ProvidersConfig,
   TransportConfig,
+  BootstrapConfig,
+  BOOTSTRAP_CONFIG,
 } from './config';
 import { ModelFactoryService, normalizeModelsBTC, ModelInput } from './domain-layer/framework';
 
@@ -34,12 +36,18 @@ export interface AppModuleOptions {
   appName: string;
   Models?: ModelInput[];
   Providers?: Array<new (...args: any[]) => Provider>;
+  config?: BootstrapConfig;
 }
 
 @Global()
 @Module({})
 export class AppModule {
-  static async forRootAsync({ appName, Models = [], Providers = [] }: AppModuleOptions): Promise<DynamicModule> {
+  static async forRootAsync({
+    appName,
+    Models = [],
+    Providers = [],
+    config = {},
+  }: AppModuleOptions): Promise<DynamicModule> {
     const eventstoreConfig = await transformAndValidate(EventStoreConfig, process.env, {
       validator: { whitelist: true },
     });
@@ -181,6 +189,10 @@ export class AppModule {
           useValue: transportConfig,
         },
         {
+          provide: BOOTSTRAP_CONFIG,
+          useValue: config,
+        },
+        {
           provide: 'FrameworkModelsConstructors',
           useValue: NormalizedModels,
         },
@@ -216,6 +228,7 @@ export class AppModule {
         BlocksQueueConfig,
         ProvidersConfig,
         'FrameworkModelsConstructors',
+        BOOTSTRAP_CONFIG,
         ModelFactoryService,
         BlocksQueueModule,
         EventStoreModule,

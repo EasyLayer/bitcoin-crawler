@@ -444,8 +444,8 @@ Configure webhook to receive event batches:
 
 ```bash
 # .env
-HTTP_HOST=0.0.0.0
-HTTP_PORT=3000
+TRANSPORT_HTTP_HOST=0.0.0.0
+TRANSPORT_HTTP_PORT=3000
 HTTP_WEBHOOK_URL=https://your-server.com/events
 HTTP_WEBHOOK_PING_URL=https://your-server.com/ping
 HTTP_WEBHOOK_TOKEN=optional-auth-token
@@ -527,10 +527,9 @@ Client connects to WebSocket and receives both event batches and can send querie
 
 ```bash
 # .env
-WS_HOST=0.0.0.0
-WS_PORT=3001
-WS_PATH=/
-WS_PASSWORD=ping-pong-password
+TRANSPORT_WS_HOST=0.0.0.0
+TRANSPORT_WS_PORT=3001
+TRANSPORT_WS_PATH=/
 ```
 
 **Client example:**

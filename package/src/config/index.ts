@@ -5,3 +5,4 @@ export * from './blocks-queue.config';
 export * from './providers.config';
 export * from './transport.config';
 // export * from './unified-env';
+export * from './bootstrap-config';
