@@ -97,9 +97,19 @@ const PORT = Number(3000);
 const server = app.listen(PORT, () => {
   console.log('\n🚀 Bitcoin Address UTXOx Watcher Started!\n');
   console.log('💡 Example with curl:');
-  console.log(`curl "http://localhost:${PORT}/balance?addresses=bc1qexampleaddr1...,bc1qexampleaddr2..."`);
-  console.log(`curl "http://localhost:${PORT}/model?modelId=my-model-name&blockHeight=100"`);
-  console.log(`curl "http://localhost:${PORT}/events?modelId=my-model-name&limit=10&offset=0"`);
+
+  console.log('curl -X POST http://localhost:3000/query \\');
+  console.log(' -H "Content-Type: application/json" \\');
+  console.log(' -d \'{"name":"GetModelsQuery","dto":{"modelIds":["my-model-name"],"filter":{"blockHeight":100}}}\'\n');
+
+  console.log('curl -X POST http://localhost:3000/query \\');
+  console.log(' -H "Content-Type: application/json" \\');
+  console.log(' -d \'{"name":"FetchEventsQuery","dto":{"modelIds":["my-model-name"],"filter":{},"paging":{"limit":10}}}\'\n');
+
+  console.log('curl -X POST http://localhost:3000/query \\');
+  console.log(' -H "Content-Type: application/json" \\');
+  console.log(' -d \'{"name":"GetBalanceQuery","dto":{"addresses":["bc1qexampleaddr1...","bc1qexampleaddr2..."]}}}\'\n');
+
   console.log('\n═══════════════════════════════════════════════════════════════\n');
 });
 

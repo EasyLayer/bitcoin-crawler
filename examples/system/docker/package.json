@@ -1,5 +1,5 @@
 {
-  "name": "docker",
+  "name": "bitcoin-crawler-docker-example",
   "private": true,
   "version": "0.2.1",
   "description": "This is an example app for development",
@@ -8,15 +8,15 @@
     "clear": "yarn clear cache && clear:node_modules",
     "clear:node_modules": "rimraf node_module",
     "start": "node -r ts-node/register/transpile-only src/main.ts",
-    "docker:build": "docker build -t bitcoin-crawler-example .",
-    "docker:run": "docker run --rm --name bitcoin-crawler-docker-example --env-file .env -p 3000:3000 bitcoin-crawler-docker-example",
-    "docker:run:detached": "docker run -d --name bitcoin-crawler-docker-example --env-file .env -p 3000:3000 bitcoin-crawler-docker-example",
+    "docker:build": "docker build -t bitcoin-crawler-docker-example .",
+    "docker:run": "docker run --rm --add-host=host.docker.internal:host-gateway --name bitcoin-crawler-docker-example --env-file .env -p 3000:3000 bitcoin-crawler-docker-example",
+    "docker:run:detached": "docker run -d --add-host=host.docker.internal:host-gateway --name bitcoin-crawler-docker-example --env-file .env -p 3000:3000 bitcoin-crawler-docker-example",
     "docker:stop": "docker stop bitcoin-crawler-docker-example",
     "docker:logs": "docker logs -f bitcoin-crawler-docker-example"
   },
   "dependencies": {
     "@easylayer/bitcoin-crawler": "0.2.1",
-    "@easylayer/common": "1.0.4",
+    "@easylayer/common": "1.1.1",
     "@easylayer/transport-sdk": "1.2.0",
     "express": "5.1.0",
     "uuid": "9.0.1"

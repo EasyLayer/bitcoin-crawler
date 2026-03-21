@@ -1,0 +1,216 @@
+import { Global, Module, DynamicModule, Provider } from '@nestjs/common';
+import { transformAndValidate } from 'class-transformer-validator';
+import { CqrsTransportModule } from '@easylayer/common/cqrs-transport';
+import { ArithmeticService } from '@easylayer/common/arithmetic';
+import { EventStoreModule, EventStoreReadService } from '@easylayer/common/eventstore';
+import { NetworkTransportModule } from '@easylayer/common/network-transport';
+import { Network, Mempool, BlockchainProviderModule, BlocksQueueModule } from '@easylayer/bitcoin';
+import { AppService } from '../app.service';
+import {
+  NetworkCommandFactoryService,
+  ReadStateExceptionHandlerService,
+  MempoolCommandFactoryService,
+} from '../application-layer/services';
+import {
+  NetworkModelFactoryService,
+  MempoolModelFactoryService,
+  MempoolReadService,
+  NetworkReadService,
+  NETWORK_AGGREGATE_ID,
+  MEMPOOL_AGGREGATE_ID,
+} from '../domain-layer/services';
+import {
+  AppConfig,
+  BusinessConfig,
+  EventStoreConfig,
+  BlocksQueueConfig,
+  ProvidersConfig,
+  BootstrapConfig,
+} from '../config';
+import { TransportConfig } from './config';
+import { ModelFactoryService, normalizeModelsBTC, ModelInput } from '../domain-layer/framework';
+import { ConsolePromptService } from './console-prompt.service';
+
+export interface AppModuleOptions {
+  appName: string;
+  Models?: ModelInput[];
+  Providers?: Array<new (...args: any[]) => Provider>;
+  config?: BootstrapConfig;
+}
+
+@Global()
+@Module({})
+export class AppModule {
+  static async forRootAsync({
+    appName,
+    Models = [],
+    Providers = [],
+    config = {},
+  }: AppModuleOptions): Promise<DynamicModule> {
+    // Read from process.env (Node environment)
+    const env = process.env;
+
+    const eventstoreConfig = await transformAndValidate(EventStoreConfig, env, {
+      validator: { whitelist: true },
+    });
+    const appConfig = await transformAndValidate(AppConfig, env, {
+      validator: { whitelist: true },
+    });
+    const businessConfig = await transformAndValidate(BusinessConfig, env, {
+      validator: { whitelist: true },
+    });
+    const blocksQueueConfig = await transformAndValidate(BlocksQueueConfig, env, {
+      validator: { whitelist: true },
+    });
+    const providersConfig = await transformAndValidate(ProvidersConfig, env, {
+      validator: { whitelist: true },
+    });
+    const transportConfig = await transformAndValidate(TransportConfig, env, {
+      validator: { whitelist: true },
+    });
+
+    const queueIteratorBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
+    const queueLoaderRequestBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
+    const maxQueueSize = queueIteratorBlocksBatchSize * 10;
+
+    // This models will not be used, only for run event store
+    const networkModel = new Network({ aggregateId: NETWORK_AGGREGATE_ID, maxSize: 0, blockHeight: -1 });
+    const mempoolModel = new Mempool({ aggregateId: MEMPOOL_AGGREGATE_ID, blockHeight: -1 });
+
+    const NormalizedModels = normalizeModelsBTC(Models);
+    const userModels = NormalizedModels.map((ModelCtr) => new ModelCtr());
+
+    const networkConnections: any = providersConfig.PROVIDER_NETWORK_RPC_URLS?.map((item) => ({
+      baseUrl: item,
+    }));
+
+    const mempoolConnections: any = providersConfig.PROVIDER_MEMPOOL_RPC_URLS?.map((item) => ({
+      baseUrl: item,
+    }));
+
+    return {
+      module: AppModule,
+      controllers: [],
+      imports: [
+        CqrsTransportModule.forRoot({ isGlobal: true, systemAggregates: [NETWORK_AGGREGATE_ID, MEMPOOL_AGGREGATE_ID] }),
+        NetworkTransportModule.forRoot({
+          isGlobal: true,
+          transports: transportConfig.getEnabledTransports(),
+          outbox: transportConfig.getOutboxOptions(),
+        }),
+        BlockchainProviderModule.forRootAsync({
+          isGlobal: true,
+          network: businessConfig.getNetworkConfig(),
+          rateLimits: providersConfig.getRateLimits(),
+          networkProviders: {
+            type: providersConfig.NETWORK_PROVIDER_TYPE,
+            connections: networkConnections,
+          },
+          mempoolProviders: {
+            type: providersConfig.MEMPOOL_PROVIDER_TYPE,
+            connections: mempoolConnections,
+          },
+        }),
+        EventStoreModule.forRootAsync({
+          isGlobal: true,
+          name: `${appName}-eventstore`,
+          aggregates: [...userModels, networkModel, mempoolModel],
+          logging: eventstoreConfig.isLogging(),
+          type: eventstoreConfig.EVENTSTORE_DB_TYPE as any,
+          database: eventstoreConfig.EVENTSTORE_DB_NAME,
+          ...(eventstoreConfig.EVENTSTORE_DB_HOST && {
+            host: eventstoreConfig.EVENTSTORE_DB_HOST,
+          }),
+          ...(eventstoreConfig.EVENTSTORE_DB_PORT && {
+            port: eventstoreConfig.EVENTSTORE_DB_PORT,
+          }),
+          ...(eventstoreConfig.EVENTSTORE_DB_USERNAME && {
+            username: eventstoreConfig.EVENTSTORE_DB_USERNAME,
+          }),
+          ...(eventstoreConfig.EVENTSTORE_DB_PASSWORD && {
+            password: eventstoreConfig.EVENTSTORE_DB_PASSWORD,
+          }),
+          ...(eventstoreConfig.EVENTSTORE_PG_POOL_MAX && {
+            extra: {
+              min: eventstoreConfig.EVENTSTORE_PG_POOL_MIN,
+              max: eventstoreConfig.EVENTSTORE_PG_POOL_MAX,
+            },
+          }),
+          ...(eventstoreConfig.EVENTSTORE_PG_QUERY_TIMEOUT && {
+            maxQueryExecutionTime: eventstoreConfig.EVENTSTORE_PG_QUERY_TIMEOUT,
+          }),
+          ...(eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT &&
+            ({
+              extra: {
+                idleTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT,
+                ...(eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT && {
+                  connectionTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT,
+                }),
+              },
+            } as any)),
+        }),
+        BlocksQueueModule.forRootAsync({
+          mempoolCommandExecutor: MempoolCommandFactoryService,
+          blocksCommandExecutor: NetworkCommandFactoryService,
+          maxBlockHeight: businessConfig.MAX_BLOCK_HEIGHT,
+          queueLoaderStrategyName: blocksQueueConfig.BLOCKS_QUEUE_LOADER_STRATEGY_NAME,
+          basePreloadCount: blocksQueueConfig.BLOCKS_QUEUE_LOADER_PRELOADER_BASE_COUNT,
+          blockSize: businessConfig.NETWORK_MAX_BLOCK_WEIGHT,
+          queueLoaderRequestBlocksBatchSize,
+          queueIteratorBlocksBatchSize,
+          maxQueueSize,
+          blockTimeMs: businessConfig.NETWORK_TARGET_BLOCK_TIME,
+        }),
+      ],
+      providers: [
+        { provide: AppConfig, useValue: appConfig },
+        { provide: BusinessConfig, useValue: businessConfig },
+        { provide: BlocksQueueConfig, useValue: blocksQueueConfig },
+        { provide: EventStoreConfig, useValue: eventstoreConfig },
+        { provide: ProvidersConfig, useValue: providersConfig },
+        { provide: TransportConfig, useValue: transportConfig },
+        { provide: 'BootstrapConfig', useValue: config },
+        { provide: 'FrameworkModelsConstructors', useValue: NormalizedModels },
+        { provide: 'ConsolePromptService', useClass: ConsolePromptService },
+        {
+          provide: ModelFactoryService,
+          useFactory: (eventStoreService: EventStoreReadService) =>
+            new ModelFactoryService(businessConfig, eventStoreService),
+          inject: [EventStoreReadService],
+        },
+        AppService,
+        ArithmeticService,
+        NetworkCommandFactoryService,
+        NetworkModelFactoryService,
+        ReadStateExceptionHandlerService,
+        MempoolCommandFactoryService,
+        MempoolModelFactoryService,
+        MempoolReadService,
+        NetworkReadService,
+        ...Providers,
+      ],
+      exports: [
+        AppService,
+        NetworkCommandFactoryService,
+        NetworkModelFactoryService,
+        ReadStateExceptionHandlerService,
+        MempoolCommandFactoryService,
+        MempoolModelFactoryService,
+        AppConfig,
+        BusinessConfig,
+        EventStoreConfig,
+        BlocksQueueConfig,
+        ProvidersConfig,
+        'FrameworkModelsConstructors',
+        'BootstrapConfig',
+        'ConsolePromptService',
+        ModelFactoryService,
+        BlocksQueueModule,
+        EventStoreModule,
+        MempoolReadService,
+        NetworkReadService,
+        ...Providers,
+      ],
+    };
+  }
+}

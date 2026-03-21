@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Transform } from 'class-transformer';
 import { IsString, IsBoolean, IsOptional, IsNumber } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
+import { getUnifiedEnv } from './unified-env';
 
 type DatabaseTypes = 'sqlite' | 'postgres' | 'sqljs';
 
@@ -32,7 +33,7 @@ export class EventStoreConfig {
       'For Postgres: name of the database to connect to.',
     default: `resolve(process.cwd(), 'eventstore`,
   })
-  EVENTSTORE_DB_NAME: string = defaultDbName(process.env.EVENTSTORE_DB_TYPE, process.env.EVENTSTORE_DB_NAME);
+  EVENTSTORE_DB_NAME: string = defaultDbName(getUnifiedEnv().EVENTSTORE_DB_TYPE, getUnifiedEnv().EVENTSTORE_DB_NAME);
 
   @IsString()
   @JSONSchema({
@@ -145,6 +146,7 @@ export class EventStoreConfig {
   EVENTSTORE_PG_QUERY_TIMEOUT?: number;
 
   isLogging(): boolean {
-    return process?.env?.DB_DEBUG === '1';
+    // Safe for both Node and browser
+    return getUnifiedEnv().DB_DEBUG === '1';
   }
 }

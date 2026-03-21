@@ -7,7 +7,7 @@ import { MempoolModelFactoryService } from '../services';
 @Injectable()
 @CommandHandler(RefreshMempoolCommand)
 export class RefreshMempoolCommandHandler implements ICommandHandler<RefreshMempoolCommand> {
-  log = new Logger(RefreshMempoolCommandHandler.name);
+  private readonly logger = new Logger(RefreshMempoolCommandHandler.name);
   constructor(
     private readonly eventStore: EventStoreWriteService,
     private readonly mempoolModelFactory: MempoolModelFactoryService
@@ -23,14 +23,14 @@ export class RefreshMempoolCommandHandler implements ICommandHandler<RefreshMemp
         requestId,
         height,
         perProvider,
-        logger: this.log,
+        logger: this.logger,
       });
 
       await this.eventStore.save(mempoolModel);
 
-      this.log.verbose('Mempool saved into eventstore');
+      this.logger.verbose('Mempool saved into eventstore');
     } catch (error) {
-      this.log.warn('Error while refreshing mempool', '', { args: { message: (error as any)?.message } });
+      this.logger.warn('Error while refreshing mempool', '', { args: { message: (error as any)?.message } });
       throw error;
     }
   }

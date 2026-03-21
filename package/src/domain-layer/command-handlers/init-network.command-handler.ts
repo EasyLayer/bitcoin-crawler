@@ -4,19 +4,19 @@ import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import { InitNetworkCommand, Network, BlockchainProviderService } from '@easylayer/bitcoin';
 import { NetworkModelFactoryService } from '../services';
 import { BusinessConfig, BootstrapConfig } from '../../config';
-import { ConsolePromptService } from '../services/console-prompt.service';
 import { ModelFactoryService, NormalizedModelCtor } from '../framework';
 
 @Injectable()
 @CommandHandler(InitNetworkCommand)
 export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCommand> {
-  log = new Logger(InitNetworkCommandHandler.name);
+  private readonly logger = new Logger(InitNetworkCommandHandler.name);
   constructor(
     private readonly eventStore: EventStoreWriteService,
     private readonly networkModelFactory: NetworkModelFactoryService,
     private readonly businessConfig: BusinessConfig,
     private readonly blockchainProviderService: BlockchainProviderService,
-    private readonly consolePromptService: ConsolePromptService,
+    @Inject('ConsolePromptService')
+    private readonly consolePromptService: any, // TODO: to add unifed interface
     @Inject('FrameworkModelsConstructors')
     private Models: NormalizedModelCtor[],
     private readonly modelFactoryService: ModelFactoryService,
@@ -49,15 +49,15 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
         requestId,
         currentNetworkHeight,
         startHeight: finalStartHeight,
-        logger: this.log,
+        logger: this.logger,
       });
 
       await this.eventStore.save(networkModel);
 
-      this.log.debug('Network saved into eventstore');
+      this.logger.debug('Network saved into eventstore');
     } catch (error) {
       if ((error as any)?.message === 'DATA_RESET_REQUIRED') {
-        this.log.log('Clearing database as requested by user');
+        this.logger.log('Clearing database as requested by user');
 
         const models = this.Models.map((ModelCtr) => this.modelFactoryService.createNewModel(ModelCtr));
 
@@ -71,11 +71,11 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
           modelsToSave: [networkModel],
         });
 
-        this.log.log('Database cleared successfully, saga will reinitialize network');
+        this.logger.log('Database cleared successfully, saga will reinitialize network');
         return;
       }
 
-      this.log.error('Error while initializing Network', { args: { message: (error as any)?.message } });
+      this.logger.error('Error while initializing Network', { args: { message: (error as any)?.message } });
       throw error;
     }
   }
@@ -103,7 +103,7 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
         return currentDbHeight;
       }
 
-      this.log.warn(
+      this.logger.warn(
         `Database height (${currentDbHeight}) does not match bootstrap lastBlockHeight (${bootstrapLastBlockHeight}). Reset is required.`
       );
       throw new Error('DATA_RESET_REQUIRED');

@@ -1,13 +1,14 @@
 import 'reflect-metadata';
 import 'dotenv/config';
-import './utils';
+import '../utils'; // check-node-version (Node only)
 import { NestFactory } from '@nestjs/core';
 import type { INestApplication, INestApplicationContext } from '@nestjs/common';
 import { NestLogger } from '@easylayer/common/logger';
 import { ContainerModule } from './container.module';
 import type { ContainerModuleOptions } from './container.module';
-import { setupTestEventSubscribers, type TestingOptions } from './utils';
-import { AppService } from './app.service';
+import { setupTestEventSubscribers, type TestingOptions } from '../utils';
+import { AppService } from '../app.service';
+import { ModelFactoryService } from '../domain-layer/framework';
 
 type BootstrapOptions = Omit<ContainerModuleOptions, 'appName'> & { testing?: TestingOptions };
 
@@ -20,20 +21,14 @@ export const bootstrap = async ({
   config = {},
 }: BootstrapOptions): Promise<INestApplicationContext | INestApplication> => {
   const appName = process.env.APPLICATION_NAME || 'bitcoin';
-  const httpPort = Number(process.env.TRANSPORT_HTTP_PORT ?? '0');
-  const wsPort = Number(process.env.TRANSPORT_WS_PORT ?? '0');
-  const hasNetworkTransports = httpPort > 0 || wsPort > 0;
   const isTest = process.env.NODE_ENV === 'test';
 
-  // Allow-list для LOG_LEVEL
-  const allowedLevels = new Set(['trace', 'debug', 'info', 'warn', 'error', 'fatal']);
+  const allowedLevels = new Set(['debug', 'info', 'warn', 'error', 'fatal']);
   const envLevel = (process.env.LOG_LEVEL || '').toLowerCase();
-
-  const loggerLevel = allowedLevels.has(envLevel) ? (envLevel as any) : process.env.DEBUG === '1' ? 'debug' : 'info';
+  const loggerLevel = allowedLevels.has(envLevel) ? (envLevel as any) : process.env.TRACE === '1' ? 'trace' : 'info';
 
   const commonFactoryOpts = {
-    bufferLogs: false,
-    logger: ['fatal'] as any,
+    bufferLogs: true,
     abortOnError: false,
   };
 
@@ -46,12 +41,7 @@ export const bootstrap = async ({
     config,
   });
 
-  let appContext: INestApplicationContext | INestApplication;
-  if (!hasNetworkTransports) {
-    appContext = await NestFactory.createApplicationContext(rootModule, commonFactoryOpts);
-  } else {
-    appContext = await NestFactory.create(rootModule, commonFactoryOpts);
-  }
+  const appContext: INestApplicationContext = await NestFactory.createApplicationContext(rootModule, commonFactoryOpts);
 
   const logger = new NestLogger({
     name: appName,
@@ -60,7 +50,6 @@ export const bootstrap = async ({
   });
 
   appContext.useLogger(logger);
-  // (appContext as any).flushLogs?.();
 
   try {
     if (!isTest) {
@@ -73,6 +62,17 @@ export const bootstrap = async ({
     }
 
     await appContext.init();
+
+    // After init, the DI container has all services. Populate the services ref
+    // so that factory query handlers can access ModelFactoryService at execute() time.
+    const servicesRef = appContext.get<{ value?: any }>('QUERY_FACTORY_SERVICES_REF', {
+      strict: false,
+    });
+    if (servicesRef) {
+      const modelFactory = appContext.get(ModelFactoryService, { strict: false });
+      servicesRef.value = { modelFactory };
+    }
+
     const appService = appContext.get(AppService, { strict: false });
     await appService.init();
 
@@ -94,17 +94,11 @@ export const bootstrap = async ({
   }
 };
 
-/**
- * Sets up graceful shutdown on SIGINT and SIGTERM.
- */
 function setupGracefulShutdownHandlers(app: INestApplicationContext, logger: NestLogger) {
   process.on('SIGINT', () => gracefulShutdown(app, logger));
   process.on('SIGTERM', () => gracefulShutdown(app, logger));
 }
 
-/**
- * Performs graceful shutdown of the application.
- */
 async function gracefulShutdown(app: INestApplicationContext, logger: NestLogger) {
   logger.log('Graceful shutdown initiated...');
   setTimeout(async () => {

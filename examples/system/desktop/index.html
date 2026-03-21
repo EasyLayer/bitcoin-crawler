@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bitcoin Crawler — Electron</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #e0e0e0; }
+    h2 { color: #f59e0b; }
+    .status { margin: 8px 0; padding: 6px 12px; border-radius: 4px; display: inline-block; }
+    .status.loading { background: #374151; color: #9ca3af; }
+    .status.ready   { background: #064e3b; color: #34d399; }
+    button { background: #f59e0b; color: #000; border: none; padding: 8px 20px;
+             border-radius: 4px; cursor: pointer; font-size: 14px; margin: 4px; }
+    button:hover { background: #d97706; }
+    button:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+    input { background: #374151; color: #e0e0e0; border: 1px solid #4b5563;
+            padding: 4px 8px; border-radius: 4px; width: 400px; font-size: 13px; }
+    .panel { background: #111; padding: 12px; border-radius: 4px; margin-top: 12px; }
+    .panel-title { color: #f59e0b; font-size: 11px; margin-bottom: 6px; }
+    .panel pre { margin: 0; white-space: pre-wrap; color: #34d399; font-size: 12px; }
+    .stat { display: inline-block; background: #1f2937; border-radius: 4px;
+            padding: 6px 14px; margin: 4px; font-size: 13px; }
+    .stat-label { color: #9ca3af; font-size: 10px; display: block; }
+    .stat-value { color: #34d399; font-size: 15px; font-weight: bold; }
+    #log { background: #111; padding: 12px; border-radius: 4px; margin-top: 12px;
+           max-height: 200px; overflow-y: auto; font-size: 11px; color: #6ee7b7; }
+    .log-entry { border-bottom: 1px solid #1f2937; padding: 2px 0; }
+  </style>
+</head>
+<body>
+  <h2>Bitcoin Crawler — Electron</h2>
+  <p style="color:#9ca3af;font-size:11px">
+    Crawler in <strong>main process</strong> (Node, SQLite) →
+    <code>ElectronIpcMainService</code> → <code>QueryBus</code>
+  </p>
+
+  <div id="status" class="status loading">⏳ Waiting for crawler...</div>
+
+  <!-- Stats bar: block height + indexing progress -->
+  <div style="margin-top:12px">
+    <span class="stat">
+      <span class="stat-label">Last indexed block</span>
+      <span class="stat-value" id="stat-height">—</span>
+    </span>
+    <span class="stat">
+      <span class="stat-label">Balance (sat)</span>
+      <span class="stat-value" id="stat-balance">—</span>
+    </span>
+  </div>
+
+  <!-- Address input + buttons -->
+  <div style="margin-top:14px">
+    <label style="color:#9ca3af;font-size:12px">
+      Addresses (comma-separated):<br/>
+      <input id="addresses" value="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" />
+    </label>
+  </div>
+  <div style="margin-top:10px">
+    <button id="btn-query" onclick="queryAll()" disabled>🔄 Refresh</button>
+    <button id="btn-live"  onclick="toggleLive()" disabled>▶ Live (3s)</button>
+  </div>
+
+  <!-- Balance result panel -->
+  <div class="panel" style="margin-top:14px">
+    <div class="panel-title">💰 GetBalanceQuery result</div>
+    <pre id="result-balance">—</pre>
+  </div>
+
+  <!-- Log -->
+  <div id="log"></div>
+
+  <script>
+    let liveInterval = null;
+
+    function log(msg) {
+      const el = document.getElementById('log');
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      el.prepend(div);
+      while (el.children.length > 100) el.removeChild(el.lastChild);
+    }
+
+    // ── Query balance via custom QueryHandler ────────────────────────────────
+    async function queryBalance() {
+      const addresses = document.getElementById('addresses').value
+        .split(',').map(s => s.trim()).filter(Boolean);
+
+      try {
+        const result = await window.crawlerAPI.query('GetBalanceQuery', { addresses });
+        document.getElementById('result-balance').textContent =
+          JSON.stringify(result, null, 2);
+
+        // Show total balance in stats bar (sum all values)
+        const total = Object.values(result || {})
+          .reduce((acc, v) => acc + BigInt(v || 0), 0n);
+        document.getElementById('stat-balance').textContent =
+          total.toString() + ' sat';
+
+        log(`← balance: ${JSON.stringify(result)}`);
+      } catch (e) {
+        log(`← balance error: ${e.message}`);
+      }
+    }
+
+    // ── Query network model (built-in) — shows indexing progress ────────────
+    // modelIds: ['network'] is the internal aggregate that tracks the chain.
+    async function queryNetworkModel() {
+      try {
+        const models = await window.crawlerAPI.query('GetModelsQuery', {
+          modelIds: ['network'],
+        });
+
+        const model = Array.isArray(models) ? models[0] : models;
+        // Update stats bar from model payload
+        if (model?.blockHeight != null) {
+          document.getElementById('stat-height').textContent = model.blockHeight;
+        }
+        if (model?.payload?.chain) {
+          // currentNetworkHeight stored in chain metadata if available
+          const chain = model.payload.chain;
+          if (chain.length > 0) {
+            const last = chain[chain.length - 1];
+            document.getElementById('stat-height').textContent =
+              last?.height ?? model.blockHeight;
+          }
+        }
+
+        log(`← network model: blockHeight=${model?.blockHeight}, version=${model?.version}`);
+      } catch (e) {
+        log(`← model error: ${e.message}`);
+      }
+    }
+
+    // ── Run both queries together ────────────────────────────────────────────
+    async function queryAll() {
+      log('→ querying balance + network model...');
+      await Promise.all([queryBalance(), queryNetworkModel()]);
+    }
+
+    function toggleLive() {
+      const btn = document.getElementById('btn-live');
+      if (liveInterval) {
+        clearInterval(liveInterval);
+        liveInterval = null;
+        btn.textContent = '▶ Live (3s)';
+        log('Live updates stopped');
+      } else {
+        queryAll();
+        liveInterval = setInterval(queryAll, 3000);
+        btn.textContent = '⏹ Stop';
+        log('Live updates started (every 3s)');
+      }
+    }
+
+    // ── Wait for crawler ready ───────────────────────────────────────────────
+    async function waitForCrawler() {
+      const statusEl = document.getElementById('status');
+      const btnQuery = document.getElementById('btn-query');
+      const btnLive  = document.getElementById('btn-live');
+
+      log('Waiting for crawler to initialize...');
+
+      while (true) {
+        try {
+          const ready = await window.crawlerAPI.isReady();
+          if (ready) break;
+        } catch (e) {
+          // ipcMain.handle may not be registered yet — keep retrying
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      statusEl.textContent = '✅ Crawler ready';
+      statusEl.className = 'status ready';
+      btnQuery.disabled = false;
+      btnLive.disabled  = false;
+
+      log('Crawler ready — starting live updates');
+
+      // Auto-start live mode
+      queryAll();
+      liveInterval = setInterval(queryAll, 3000);
+      document.getElementById('btn-live').textContent = '⏹ Stop';
+    }
+
+    waitForCrawler();
+  </script>
+</body>
+</html>

@@ -781,9 +781,9 @@ If ACK not received within timeout:
 | Property | Type | Description | Default | Required |
 |---|---|---|---|:---:|
 | `NODE_ENV` | string | Node environment | `"development"` | ✅ |
-| `LOG_LEVEL` | string | Minimum log level to output. Ignored if DEBUG=1. Defaults to "info" when not set. |  |  |
+| `LOG_LEVEL` | string | Minimum log level to output. Ignored if TRACE=1. Defaults to "info" when not set. |  |  |
 | `LOGS_FILE` | string | If set, structured logs (NDJSON) are appended to this file. When unset, logs go to stdout. |  |  |
-| `DEBUG` | string | When set to "1", forces debug-level logging regardless of LOG_LEVEL (except in test). |  |  |
+| `TRACE` | string | When set to "1", forces trace-level logging regardless of LOG_LEVEL (except in test). |  |  |
 
 ### BlocksQueueConfig
 

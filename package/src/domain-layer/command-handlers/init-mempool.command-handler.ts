@@ -8,7 +8,7 @@ import { BusinessConfig } from '../../config';
 @Injectable()
 @CommandHandler(InitMempoolCommand)
 export class InitMempoolCommandHandler implements ICommandHandler<InitMempoolCommand> {
-  log = new Logger(InitMempoolCommandHandler.name);
+  private readonly logger = new Logger(InitMempoolCommandHandler.name);
   constructor(
     private readonly eventStore: EventStoreWriteService,
     private readonly mempoolModelFactory: MempoolModelFactoryService,
@@ -21,7 +21,7 @@ export class InitMempoolCommandHandler implements ICommandHandler<InitMempoolCom
 
     const mempoolModel: Mempool = await this.mempoolModelFactory.initModel();
 
-    const currentNetworkHeight = await this.blockchainProviderService.getCurrentBlockHeightFromMempool();
+    const currentNetworkHeight = await this.blockchainProviderService.getCurrentBlockHeightFromMempool({});
 
     if (this.businessConfig.START_BLOCK_HEIGHT) {
       throw new Error('Mempool cannot be initialized with the specified START_BLOCK_HEIGHT parameter');
@@ -31,14 +31,14 @@ export class InitMempoolCommandHandler implements ICommandHandler<InitMempoolCom
       await mempoolModel.init({
         requestId,
         height: currentNetworkHeight,
-        logger: this.log,
+        logger: this.logger,
       });
 
       await this.eventStore.save(mempoolModel);
 
-      this.log.verbose('Mempool saved into eventstore');
+      this.logger.verbose('Mempool saved into eventstore');
     } catch (error) {
-      this.log.error('Error while initializing Mempool', { args: { message: (error as any)?.message } });
+      this.logger.error('Error while initializing Mempool', { args: { message: (error as any)?.message } });
       throw error;
     }
   }

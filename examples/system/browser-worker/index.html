@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bitcoin Crawler — SharedWorker</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #e0e0e0; }
+    h2 { color: #f59e0b; }
+    .status { margin: 8px 0; padding: 6px 12px; border-radius: 4px; display: inline-block; }
+    .status.loading { background: #374151; color: #9ca3af; }
+    .status.ready   { background: #064e3b; color: #34d399; }
+    button { background: #f59e0b; color: #000; border: none; padding: 8px 20px;
+             border-radius: 4px; cursor: pointer; font-size: 14px; margin: 4px; }
+    button:hover { background: #d97706; }
+    button:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+    #result { background: #111; padding: 12px; border-radius: 4px; margin-top: 12px;
+              min-height: 60px; white-space: pre-wrap; color: #34d399; }
+    #log { background: #111; padding: 12px; border-radius: 4px; margin-top: 12px;
+           max-height: 280px; overflow-y: auto; font-size: 11px; color: #6ee7b7; }
+    .log-entry { border-bottom: 1px solid #1f2937; padding: 2px 0; }
+    input { background: #374151; color: #e0e0e0; border: 1px solid #4b5563;
+            padding: 4px 8px; border-radius: 4px; width: 400px; font-size: 13px; }
+    .info { background: #1e3a5f; padding: 8px 12px; border-radius: 4px;
+            color: #93c5fd; font-size: 11px; margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h2>Bitcoin Crawler — SharedWorker</h2>
+
+  <div class="info">
+    Crawler runs in a <strong>SharedWorker</strong> — one instance shared across all tabs.<br/>
+    This window connects via <code>SharedWorkerClient</code> from transport-sdk and sends queries.
+  </div>
+
+  <div id="status" class="status loading">⏳ Connecting to SharedWorker...</div>
+
+  <div style="margin-top:12px">
+    <label style="color:#9ca3af;font-size:12px">
+      Addresses:<br/>
+      <input id="addresses" value="1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa" />
+    </label>
+  </div>
+
+  <div style="margin-top:12px">
+    <button id="btn-query" onclick="queryBalance()" disabled>
+      💰 Query Balance (window → worker)
+    </button>
+    <button id="btn-live" onclick="toggleLive()">▶ Live (3s)</button>
+    <button onclick="openNewTab()" title="Same SharedWorker serves all tabs">
+      + Open Another Tab
+    </button>
+  </div>
+
+  <div id="result">Waiting for SharedWorker...</div>
+  <div id="log"></div>
+
+  <!-- Vite resolves @easylayer/transport-sdk with browser conditions -->
+  <script type="module" src="./src/app.ts"></script>
+</body>
+</html>
