@@ -372,53 +372,61 @@ const state = await client.query('GetModelsQuery', { modelIds: ['balances'] });
 <!-- QUERY-API-START -->
 ## Query API Reference
 
-All queries are sent as `POST /query` (HTTP transport) or via `client.query(name, dto)` (transport-sdk).
-
-```bash
-curl -X POST http://localhost:3000/query \
-  -H "Content-Type: application/json" \
-  -d '{"name":"<QueryName>","dto":{...}}'
-```
-
----
-
 ### Core Queries
 
 #### FetchEventsQuery
 
-Retrieves events for one or more models with pagination and filtering.
+Retrieves events for one or more models with pagination and filtering options
 
 🔄 **Supports Streaming**
 
-| Parameter | Type | Required | Description | Default |
-|---|---|---|---|---|
-| `modelIds` | `string[]` | ✅ | Model IDs to fetch events for | |
-| `filter` | `object` | | Filter criteria, e.g. `{ blockHeight: 100, version: 5 }` | |
-| `paging` | `object` | | Pagination: `{ limit, offset }` | |
-| `streaming` | `boolean` | | Enable streaming response for large datasets | `false` |
+**Parameters:**
 
-**Request:**
+| Parameter | Type | Required | Description | Default | Example |
+|-----------|------|----------|-------------|---------|----------|
+| `modelIds` | array | ✅ | Array of model IDs to fetch events for |  | `["mempool-1","network-1"]` |
+| `filter` | any |  | Filter criteria for events |  | `{"blockHeight":100,"version":5}` |
+| `paging` | any |  | Pagination settings for event retrieval |  | `{"limit":10,"offset":0}` |
+| `streaming` | boolean |  | Enable streaming response for large event datasets | `false` | `true` |
+
+**Example Request:**
+
 ```json
 {
-  "name": "FetchEventsQuery",
-  "dto": {
-    "modelIds": ["balances"],
-    "filter": { "blockHeight": 850000 },
-    "paging": { "limit": 10, "offset": 0 }
+  "requestId": "uuid-fetch-1",
+  "action": "query",
+  "payload": {
+    "constructorName": "FetchEventsQuery",
+    "dto": {
+      "modelIds": [
+        "mempool-1"
+      ],
+      "filter": {
+        "blockHeight": 100
+      },
+      "paging": {
+        "limit": 10,
+        "offset": 0
+      }
+    }
   }
 }
 ```
 
-**Response:**
+**Example Response:**
+
 ```json
 {
   "events": [
     {
-      "aggregateId": "balances",
+      "aggregateId": "mempool-1",
       "version": 5,
-      "blockHeight": 850000,
-      "type": "DepositReceived",
-      "payload": { "deposits": [] }
+      "blockHeight": 100,
+      "type": "BitcoinMempoolInitializedEvent",
+      "payload": {
+        "allTxidsFromNode": [],
+        "isSynchronized": false
+      }
     }
   ],
   "total": 100
@@ -429,31 +437,46 @@ Retrieves events for one or more models with pagination and filtering.
 
 #### GetModelsQuery
 
-Retrieves the current state of one or more models. Optionally snapshot at a specific block height.
+Retrieves the current state of one or more models at a specified block height
 
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `modelIds` | `string[]` | ✅ | Model IDs to retrieve state for |
-| `filter` | `object` | | e.g. `{ blockHeight: 850000 }` to snapshot at that height |
+**Parameters:**
 
-**Request:**
+| Parameter | Type | Required | Description | Default | Example |
+|-----------|------|----------|-------------|---------|----------|
+| `modelIds` | array | ✅ | Array of model IDs to retrieve current state for |  | `["mempool-1","network-1"]` |
+| `filter` | any |  | Filter criteria for model state retrieval |  | `{"blockHeight":100}` |
+
+**Example Request:**
+
 ```json
 {
-  "name": "GetModelsQuery",
-  "dto": {
-    "modelIds": ["balances", "network-1"],
-    "filter": { "blockHeight": 850000 }
+  "requestId": "uuid-models-1",
+  "action": "query",
+  "payload": {
+    "constructorName": "GetModelsQuery",
+    "dto": {
+      "modelIds": [
+        "mempool-1",
+        "network-1"
+      ],
+      "filter": {
+        "blockHeight": 100
+      }
+    }
   }
 }
 ```
 
-**Response:**
+**Example Response:**
+
 ```json
 [
   {
-    "aggregateId": "balances",
+    "aggregateId": "mempool-1",
     "state": {
-      "balances": {}
+      "totalTxids": 50000,
+      "loadedTransactions": 45000,
+      "isSynchronized": true
     }
   },
   {
@@ -473,14 +496,23 @@ Retrieves the current state of one or more models. Optionally snapshot at a spec
 
 #### GetNetworkStatsQuery
 
-Retrieves blockchain network statistics and chain validation status.
+Retrieves blockchain network statistics and chain validation status
 
-**Request:**
+**Example Request:**
+
 ```json
-{ "name": "GetNetworkStatsQuery", "dto": {} }
+{
+  "requestId": "uuid-8",
+  "action": "query",
+  "payload": {
+    "constructorName": "GetNetworkStatsQuery",
+    "dto": {}
+  }
+}
 ```
 
-**Response:**
+**Example Response:**
+
 ```json
 {
   "size": 1000,
@@ -495,56 +527,44 @@ Retrieves blockchain network statistics and chain validation status.
 
 ---
 
-#### GetNetworkLastBlockQuery
+#### GetNetworkBlockQuery
 
-Retrieves the most recent validated block.
+Retrieves a specific block from the blockchain network by height
 
-**Request:**
-```json
-{ "name": "GetNetworkLastBlockQuery", "dto": {} }
-```
+**Parameters:**
 
-**Response:**
+| Parameter | Type | Required | Description | Default | Example |
+|-----------|------|----------|-------------|---------|----------|
+| `height` | number | ✅ | Block height to retrieve |  | `850000` |
+
+**Example Request:**
+
 ```json
 {
-  "lastBlock": {
-    "height": 850000,
-    "hash": "00000000000000000002a7c4...",
-    "previousblockhash": "00000000000000000008b3a9...",
-    "tx": ["tx1", "tx2", "tx3"]
-  },
-  "hasBlocks": true,
-  "chainStats": {
-    "size": 1000,
-    "currentHeight": 850000,
-    "isEmpty": false
+  "requestId": "uuid-5",
+  "action": "query",
+  "payload": {
+    "constructorName": "GetNetworkBlockQuery",
+    "dto": {
+      "height": 850000
+    }
   }
 }
 ```
 
----
+**Example Response:**
 
-#### GetNetworkBlockQuery
-
-Retrieves a specific block by height.
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `height` | `number` | ✅ | Block height to retrieve |
-
-**Request:**
-```json
-{ "name": "GetNetworkBlockQuery", "dto": { "height": 850000 } }
-```
-
-**Response:**
 ```json
 {
   "block": {
     "height": 850000,
-    "hash": "00000000000000000002a7c4...",
-    "previousblockhash": "00000000000000000008b3a9...",
-    "tx": ["tx1", "tx2", "tx3"]
+    "hash": "00000000000000000002a7c4c1e48d76c5a37902165a270156b7a8d72728a054",
+    "previousblockhash": "00000000000000000008b3a92d5e735e4e8e8e1b2c6f8a3b5d9f2c1a7e4b8d6c",
+    "tx": [
+      "tx1",
+      "tx2",
+      "tx3"
+    ]
   },
   "exists": true,
   "chainStats": {
@@ -558,19 +578,32 @@ Retrieves a specific block by height.
 
 #### GetNetworkBlocksQuery
 
-Retrieves multiple blocks — last N or all blocks in the validated chain.
+Retrieves multiple blocks from the blockchain network (last N blocks or all blocks)
 
-| Parameter | Type | Required | Description | Default |
-|---|---|---|---|---|
-| `lastN` | `number` | | Number of most recent blocks to return | `10` |
-| `all` | `boolean` | | Return all blocks (overrides `lastN`) | `false` |
+**Parameters:**
 
-**Request:**
+| Parameter | Type | Required | Description | Default | Example |
+|-----------|------|----------|-------------|---------|----------|
+| `lastN` | number |  | Number of recent blocks to retrieve (defaults to 10 if neither lastN nor all specified) | `10` | `10` |
+| `all` | boolean |  | Retrieve all blocks in the chain (overrides lastN parameter) | `false` |  |
+
+**Example Request:**
+
 ```json
-{ "name": "GetNetworkBlocksQuery", "dto": { "lastN": 10 } }
+{
+  "requestId": "uuid-6",
+  "action": "query",
+  "payload": {
+    "constructorName": "GetNetworkBlocksQuery",
+    "dto": {
+      "lastN": 10
+    }
+  }
+}
 ```
 
-**Response:**
+**Example Response:**
+
 ```json
 {
   "blocks": [
@@ -578,7 +611,10 @@ Retrieves multiple blocks — last N or all blocks in the validated chain.
       "height": 850000,
       "hash": "000...054",
       "previousblockhash": "000...d6c",
-      "tx": ["tx1", "tx2"]
+      "tx": [
+        "tx1",
+        "tx2"
+      ]
     }
   ],
   "totalCount": 1000,
@@ -592,20 +628,123 @@ Retrieves multiple blocks — last N or all blocks in the validated chain.
 
 ---
 
+#### GetNetworkLastBlockQuery
+
+Retrieves the last (most recent) block from the blockchain network
+
+**Example Request:**
+
+```json
+{
+  "requestId": "uuid-7",
+  "action": "query",
+  "payload": {
+    "constructorName": "GetNetworkLastBlockQuery",
+    "dto": {}
+  }
+}
+```
+
+**Example Response:**
+
+```json
+{
+  "lastBlock": {
+    "height": 850000,
+    "hash": "00000000000000000002a7c4c1e48d76c5a37902165a270156b7a8d72728a054",
+    "previousblockhash": "00000000000000000008b3a92d5e735e4e8e8e1b2c6f8a3b5d9f2c1a7e4b8d6c",
+    "tx": [
+      "tx1",
+      "tx2",
+      "tx3"
+    ]
+  },
+  "hasBlocks": true,
+  "chainStats": {
+    "size": 1000,
+    "currentHeight": 850000,
+    "isEmpty": false
+  }
+}
+```
+
+---
+
 ### Mempool Queries
 
-> These queries require mempool monitoring to be enabled (`MEMPOOL_PROVIDER_TYPE` set).
+#### CheckMempoolTransactionFullQuery
+
+Full check of a mempool transaction: existence, load status, providers, feeRate; optionally metadata and transaction.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description | Default | Example |
+|-----------|------|----------|-------------|---------|----------|
+| `txid` | string | ✅ | Transaction ID to check in mempool |  | `"abc123def4567890abc123def4567890abc123def4567890abc123def4567890"` |
+| `includeMetadata` | boolean |  | Include mempool metadata for the tx | `false` |  |
+| `includeTransaction` | boolean |  | Include normalized transaction object | `true` |  |
+
+**Example Request:**
+
+```json
+{
+  "requestId": "uuid-1",
+  "action": "query",
+  "payload": {
+    "constructorName": "CheckMempoolTransactionFullQuery",
+    "dto": {
+      "txid": "abc123…7890",
+      "includeMetadata": true,
+      "includeTransaction": true
+    }
+  }
+}
+```
+
+**Example Response:**
+
+```json
+{
+  "txid": "abc123…7890",
+  "exists": true,
+  "isLoaded": true,
+  "providers": [
+    "provider_0",
+    "provider_1"
+  ],
+  "feeRate": 52.3,
+  "metadata": {
+    "fee": 20000,
+    "vsize": 382
+  },
+  "transaction": {
+    "txid": "abc123…7890",
+    "vsize": 382
+  }
+}
+```
+
+---
 
 #### GetMempoolOverviewQuery
 
-Retrieves a concise overview of the mempool: stats, size estimates, sync progress, and providers.
+Retrieves a concise overview of mempool: stats, size estimates, sync progress, providers.
 
-**Request:**
+**Example Request:**
+
 ```json
-{ "name": "GetMempoolOverviewQuery", "dto": {} }
+{
+  "requestId": "uuid-2",
+  "action": "query",
+  "payload": {
+    "constructorName": "GetMempoolOverviewQuery",
+    "dto": {}
+  }
+}
 ```
 
-**Response:**
+**Example Response:**
+
 ```json
 {
   "stats": {
@@ -622,52 +761,15 @@ Retrieves a concise overview of the mempool: stats, size estimates, sync progres
     "loaded": 43680,
     "remaining": 4320
   },
-  "providers": ["provider_0", "provider_1"]
+  "providers": [
+    "provider_0",
+    "provider_1"
+  ]
 }
 ```
 
 ---
 
-#### CheckMempoolTransactionFullQuery
-
-Full check of a mempool transaction: existence, load status, providers, fee rate, and optionally full metadata and transaction data.
-
-| Parameter | Type | Required | Description | Default |
-|---|---|---|---|---|
-| `txid` | `string` | ✅ | Transaction ID to check | |
-| `includeMetadata` | `boolean` | | Include mempool metadata (fee, vsize, etc.) | `false` |
-| `includeTransaction` | `boolean` | | Include full normalized transaction object | `true` |
-
-**Request:**
-```json
-{
-  "name": "CheckMempoolTransactionFullQuery",
-  "dto": {
-    "txid": "abc123...7890",
-    "includeMetadata": true,
-    "includeTransaction": true
-  }
-}
-```
-
-**Response:**
-```json
-{
-  "txid": "abc123...7890",
-  "exists": true,
-  "isLoaded": true,
-  "providers": ["provider_0", "provider_1"],
-  "feeRate": 52.3,
-  "metadata": {
-    "fee": 20000,
-    "vsize": 382
-  },
-  "transaction": {
-    "txid": "abc123...7890",
-    "vsize": 382
-  }
-}
-```
 
 <!-- QUERY-API-END -->
 
@@ -769,70 +871,76 @@ The crawler emits these built-in events regardless of your models:
 | Property | Type | Description | Default | Required |
 |---|---|---|---|:---:|
 | `NODE_ENV` | string | Node environment | `"development"` | ✅ |
-| `LOG_LEVEL` | string | Minimum log level (`debug`, `info`, `warn`, `error`, `fatal`) | `"info"` | |
-| `LOGS_FILE` | string | If set, structured NDJSON logs are written to this file | | |
-| `TRACE` | string | Set to `"1"` to force trace-level logging | | |
+| `LOG_LEVEL` | string | Minimum log level to output. Ignored if TRACE=1. Defaults to "info" when not set. |  |  |
+| `LOGS_FILE` | string | If set, structured logs (NDJSON) are appended to this file. When unset, logs go to stdout. |  |  |
+| `TRACE` | string | When set to "1", forces trace-level logging regardless of LOG_LEVEL (except in test). |  |  |
+
+### BlocksQueueConfig
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
+| `BLOCKS_QUEUE_LOADER_STRATEGY_NAME` | string | Loader strategy name for the Bitcoin blocks queue. | `"rpc"` | ✅ |
+
+### BootstrapConfig
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
 
 ### BusinessConfig
 
 | Property | Type | Description | Default | Required |
 |---|---|---|---|:---:|
-| `START_BLOCK_HEIGHT` | number | Block height to begin syncing from. Omit to live-only. | | |
-| `MAX_BLOCK_HEIGHT` | number | Stop processing at this height | `Infinity` | |
-| `NETWORK_TYPE` | string | `mainnet` \| `testnet` \| `regtest` | `"mainnet"` | ✅ |
-| `NETWORK_NATIVE_CURRENCY_SYMBOL` | string | e.g. `BTC` | | ✅ |
-| `NETWORK_NATIVE_CURRENCY_DECIMALS` | number | e.g. `8` | | ✅ |
-| `NETWORK_TARGET_BLOCK_TIME` | number | Target block time in ms (600000 for Bitcoin) | | ✅ |
-| `MEMPOOL_MIN_FEE_RATE` | number | Min fee rate in sat/vB for caching mempool txs | | ✅ |
+| `MAX_BLOCK_HEIGHT` | number | Maximum block height to be processed. Defaults to infinity. | `9007199254740991` | ✅ |
+| `START_BLOCK_HEIGHT` | number | The block height from which processing begins. If not set, only listen to new blocks. |  |  |
+| `NETWORK_TYPE` | string | Bitcoin network type | `"mainnet"` | ✅ |
+| `NETWORK_NATIVE_CURRENCY_SYMBOL` | string | Symbol of the native currency (BTC, LTC, DOGE, etc.) |  | ✅ |
+| `NETWORK_NATIVE_CURRENCY_DECIMALS` | number | Decimals of the native currency |  | ✅ |
+| `NETWORK_TARGET_BLOCK_TIME` | number | Target block time in milliseconds |  | ✅ |
+| `NETWORK_HAS_SEGWIT` | boolean | Whether the network supports SegWit |  | ✅ |
+| `NETWORK_HAS_TAPROOT` | boolean | Whether the network supports Taproot |  | ✅ |
+| `NETWORK_HAS_RBF` | boolean | Whether the network supports Replace-by-Fee |  | ✅ |
+| `NETWORK_HAS_CSV` | boolean | Whether the network supports CheckSequenceVerify |  | ✅ |
+| `NETWORK_HAS_CLTV` | boolean | Whether the network supports CheckLockTimeVerify |  | ✅ |
+| `NETWORK_MAX_BLOCK_SIZE` | number | Maximum block size in bytes (1MB for Bitcoin, 32MB for BCH) |  | ✅ |
+| `NETWORK_MAX_BLOCK_WEIGHT` | number | Maximum block weight in weight units |  | ✅ |
+| `NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL` | number | Difficulty adjustment interval in blocks |  | ✅ |
+| `MEMPOOL_MIN_FEE_RATE` | number | Minimum fee rate for caching transactions in sat/vB |  | ✅ |
 
 ### EventStoreConfig
 
 | Property | Type | Description | Default | Required |
 |---|---|---|---|:---:|
-| `EVENTSTORE_DB_TYPE` | string | `sqlite` \| `postgres` \| `sqljs` (browser) | `"sqlite"` | ✅ |
-| `EVENTSTORE_DB_NAME` | string | SQLite: folder path. Postgres: database name | `./eventstore` | ✅ |
-| `EVENTSTORE_DB_HOST` | string | Postgres host | | |
-| `EVENTSTORE_DB_PORT` | number | Postgres port | | |
-| `EVENTSTORE_DB_USERNAME` | string | Postgres username | | |
-| `EVENTSTORE_DB_PASSWORD` | string | Postgres password | | |
-| `EVENTSTORE_SQLITE_RUNTIME_BASE_URL` | string | Browser only: path to sql.js WASM files | | |
+| `EVENTSTORE_DB_NAME` | string | For SQLite: folder path where the database file will be created; For Postgres: name of the database to connect to. | `"resolve(process.cwd(), eventstore"` | ✅ |
+| `EVENTSTORE_DB_TYPE` | string | Type of database for the eventstore. | `"sqlite"` | ✅ |
+| `EVENTSTORE_DB_SYNCHRONIZE` | boolean | Automatic synchronization that creates or updates tables and columns. Use with caution. | `true` | ✅ |
+| `EVENTSTORE_DB_HOST` | string | Host for the eventstore database connection. |  |  |
+| `EVENTSTORE_DB_PORT` | number | Port for the eventstore database connection. |  |  |
+| `EVENTSTORE_DB_USERNAME` | string | Username for the eventstore database connection. |  |  |
+| `EVENTSTORE_DB_PASSWORD` | string | Password for the eventstore database connection. |  |  |
+| `EVENTSTORE_SQLITE_RUNTIME_BASE_URL` | string | Base URL for @sqlite.org/sqlite-wasm browser runtime files. Only used in browser (sqlite-opfs) mode. The directory must contain index.mjs, sqlite3.wasm, and required worker runtime files such as sqlite3-worker1.mjs. |  |  |
+
+### getUnifiedEnv
+
+| Property | Type | Description | Default | Required |
+|---|---|---|---|:---:|
 
 ### ProvidersConfig
 
 | Property | Type | Description | Default | Required |
 |---|---|---|---|:---:|
-| `NETWORK_PROVIDER_TYPE` | string | `rpc` \| `rpc-zmq` \| `p2p` | | ✅ |
-| `PROVIDER_NETWORK_RPC_URLS` | string | Comma-separated RPC URLs | | |
-| `PROVIDER_NETWORK_ZMQ_ENDPOINT` | string | ZMQ endpoint for `rpc-zmq` strategy | | |
-| `PROVIDER_NETWORK_P2P_PEERS` | string | Comma-separated `host:port` pairs for P2P | | |
-| `PROVIDER_RPC_REQUEST_TIMEOUT` | number | RPC request timeout in ms | | ✅ |
-| `PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE` | number | Max requests per batch | | ✅ |
-| `PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS` | number | Max concurrent requests | | ✅ |
-| `PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS` | number | Delay between batches in ms | | ✅ |
-| `MEMPOOL_PROVIDER_TYPE` | string | Mempool provider type (RPC only) | | ✅ |
-| `PROVIDER_MEMPOOL_RPC_URLS` | string | Mempool RPC URLs | | |
-
-### TransportConfig
-
-| Property | Type | Description |
-|---|---|---|
-| `TRANSPORT_HTTP_HOST` | string | HTTP server host (omit to disable) |
-| `TRANSPORT_HTTP_PORT` | number | HTTP server port |
-| `TRANSPORT_HTTP_WEBHOOK_URL` | string | URL to POST event batches to |
-| `TRANSPORT_HTTP_WEBHOOK_PING_URL` | string | Optional separate ping endpoint |
-| `TRANSPORT_HTTP_WEBHOOK_TOKEN` | string | Auth token for webhook requests |
-| `TRANSPORT_HTTP_MAX_MESSAGE_SIZE` | number | Max HTTP payload in bytes |
-| `TRANSPORT_WS_HOST` | string | WebSocket server host (omit to disable) |
-| `TRANSPORT_WS_PORT` | number | WebSocket server port |
-| `TRANSPORT_WS_PATH` | string | WebSocket path (e.g. `/ws`) |
-| `TRANSPORT_WS_CORS_ORIGIN` | string | CORS origin |
-| `TRANSPORT_WS_MAX_MESSAGE_SIZE` | number | Max WS frame size in bytes |
-| `TRANSPORT_IPC_TYPE` | string | `ipc-parent` \| `ipc-child` \| `electron-ipc` |
-| `TRANSPORT_IPC_MAX_MESSAGE_SIZE` | number | Max IPC message size in bytes |
-| `TRANSPORT_OUTBOX_ENABLE` | string | Set to `"1"` to enable outbox transport |
-| `TRANSPORT_OUTBOX_KIND` | string | `shared-worker-server` (browser) |
-| `TRANSPORT_HEARTBEAT_TIMEOUT` | number | Ping/pong heartbeat timeout in ms |
-| `TRANSPORT_CONNECTION_TIMEOUT` | number | Connection timeout in ms |
+| `NETWORK_PROVIDER_TYPE` | string | Type of the network provider |  | ✅ |
+| `MEMPOOL_PROVIDER_TYPE` | string | Type of the mempool provider - only RPC supported |  | ✅ |
+| `PROVIDER_RPC_REQUEST_TIMEOUT` | number | RPC request timeout in milliseconds for all providers |  | ✅ |
+| `PROVIDER_NETWORK_RPC_URLS` | undefined | Network RPC URLs as comma-separated list |  |  |
+| `PROVIDER_NETWORK_ZMQ_ENDPOINT` | string | Network ZMQ endpoint for real-time notifications |  |  |
+| `PROVIDER_MEMPOOL_RPC_URLS` | undefined | Mempool RPC URLs as comma-separated list |  |  |
+| `PROVIDER_P2P_CONNECTION_TIMEOUT` | number | P2P connection timeout in milliseconds for network provider |  | ✅ |
+| `PROVIDER_P2P_MAX_PEERS` | number | Maximum number of P2P peers to connect for network provider |  | ✅ |
+| `PROVIDER_NETWORK_P2P_PEERS` | undefined | Network P2P peers as comma-separated host:port pairs |  |  |
+| `PROVIDER_NETWORK_P2P_MAX_BLOCKS_BATCH_SIZE` | number | Maximum blocks batch size for network P2P requests |  | ✅ |
+| `PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE` | number | Maximum batch size for requests for all providers |  | ✅ |
+| `PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS` | number | Maximum concurrent requests for providers |  | ✅ |
+| `PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS` | number | Delay between batches in milliseconds for providers |  | ✅ |
 
 <!-- CONFIG-END -->
 
