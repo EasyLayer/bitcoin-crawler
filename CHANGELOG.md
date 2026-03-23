@@ -1,3 +1,12 @@
+# [0.3.0](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.2.1...v0.3.0) (2026-03-23)
+
+
+### Features
+
+* added docker example; added bootstrap config; ([45f0644](https://github.com/EasyLayer/bitcoin-crawler/commit/45f0644668c9a020d9eb90cc78b32806a5c0d1e3))
+
+
+
 ## [0.2.1](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.2.0...v0.2.1) (2025-10-29)
 
 
