@@ -2,21 +2,23 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
 import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import { SyncMempoolCommand, Mempool, BlockchainProviderService } from '@easylayer/bitcoin';
-import { MempoolModelFactoryService } from '../services';
+import { MempoolModelFactoryService, NetworkReadService, MempoolReadService } from '../services';
 import { ModelFactoryService, Model, NormalizedModelCtor } from '../framework';
 import type { MempoolTickExecutionContext } from '../framework';
 
 @Injectable()
 @CommandHandler(SyncMempoolCommand)
 export class SyncMempoolCommandHandler implements ICommandHandler<SyncMempoolCommand> {
-  log = new Logger(SyncMempoolCommandHandler.name);
+  private readonly logger = new Logger(SyncMempoolCommandHandler.name);
   constructor(
     private readonly eventStore: EventStoreWriteService,
     @Inject('FrameworkModelsConstructors')
     private Models: NormalizedModelCtor[],
     private readonly modelFactoryService: ModelFactoryService,
     private readonly mempoolModelFactory: MempoolModelFactoryService,
-    private readonly blockchainProvider: BlockchainProviderService
+    private readonly blockchainProvider: BlockchainProviderService,
+    private readonly networkReadService: NetworkReadService,
+    private readonly mempoolReadService: MempoolReadService
   ) {}
 
   async execute({ payload }: SyncMempoolCommand) {
@@ -34,11 +36,12 @@ export class SyncMempoolCommandHandler implements ICommandHandler<SyncMempoolCom
       await mempoolModel.sync({
         requestId,
         service: this.blockchainProvider,
-        logger: this.log,
+        logger: this.logger,
       });
 
       const ctx: MempoolTickExecutionContext = {
-        mempool: this.mempoolModelFactory,
+        network: this.networkReadService,
+        mempool: this.mempoolReadService,
         networkConfig: this.blockchainProvider.config,
         services: {
           nodeProvider: this.blockchainProvider,
@@ -52,9 +55,9 @@ export class SyncMempoolCommandHandler implements ICommandHandler<SyncMempoolCom
 
       await this.eventStore.save([...models, mempoolModel]);
 
-      this.log.verbose('Mempool saved into eventstore');
+      this.logger.verbose('Mempool saved into eventstore');
     } catch (error) {
-      this.log.warn('Error while syncing mempool', { args: { message: (error as any)?.message } });
+      this.logger.warn('Error while syncing mempool', { args: { message: (error as any)?.message } });
       throw error;
     }
   }

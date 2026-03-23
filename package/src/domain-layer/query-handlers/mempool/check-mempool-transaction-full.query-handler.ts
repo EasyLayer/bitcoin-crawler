@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@easylayer/common/cqrs';
 import { CheckMempoolTransactionFullQuery } from '@easylayer/bitcoin';
 import type { LightTransaction, MempoolTxMetadata } from '@easylayer/bitcoin';
-import { MempoolModelFactoryService } from '../../services';
+import { MempoolModelFactoryService, MempoolReadService } from '../../services';
 
 export interface CheckMempoolTransactionFullResult {
   txid: string;
@@ -18,27 +18,14 @@ export interface CheckMempoolTransactionFullResult {
 export class CheckMempoolTransactionFullHandler
   implements IQueryHandler<CheckMempoolTransactionFullQuery, CheckMempoolTransactionFullResult>
 {
-  constructor(private readonly models: MempoolModelFactoryService) {}
-
-  private feeRateFromMetadata(md?: MempoolTxMetadata): number | undefined {
-    if (!md) return undefined;
-    const v = Number(md.vsize);
-    if (!Number.isFinite(v) || v <= 0) return undefined;
-
-    const n =
-      (typeof (md as any).modifiedfee === 'number' && (md as any).modifiedfee) ??
-      (typeof (md as any).fee === 'number' && (md as any).fee) ??
-      (typeof (md as any).fees?.modified === 'number' && (md as any).fees.modified) ??
-      (typeof (md as any).fees?.base === 'number' && (md as any).fees.base) ??
-      undefined;
-
-    if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return undefined;
-    return n / v;
-  }
+  constructor(
+    private readonly mempoolModelFactory: MempoolModelFactoryService,
+    private readonly mempoolReadService: MempoolReadService
+  ) {}
 
   async execute({ payload }: CheckMempoolTransactionFullQuery): Promise<CheckMempoolTransactionFullResult> {
     const { txid, includeMetadata = false, includeTransaction = true } = payload;
-    const mempool = await this.models.initModel();
+    const mempool = await this.mempoolModelFactory.initModel();
 
     const exists = mempool.hasTransaction(txid);
     const isLoaded = mempool.isTransactionLoaded(txid);
@@ -49,7 +36,7 @@ export class CheckMempoolTransactionFullHandler
     const feeRate =
       transaction && typeof transaction.feeRate === 'number' && Number.isFinite(transaction.feeRate)
         ? transaction.feeRate
-        : this.feeRateFromMetadata(metadata);
+        : this.mempoolReadService.feeRateFromMetadata(metadata);
 
     return {
       txid,

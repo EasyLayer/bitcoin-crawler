@@ -91,18 +91,11 @@ export class AdvancedWalletWatcher extends Model {
     const net = ctx.networkConfig.network;
     const tipHeight = typeof mp.getLastHeight === 'function' ? await mp.getLastHeight() : -1;
 
-    // Optional early-exit guard if provider exposes a cheap size endpoint
-    try {
-      if (typeof mp.getMempoolSize === 'function') {
-        const sz = await this.safeCall(() => mp.getMempoolSize());
-        const cnt = sz?.transactionCount ?? sz?.txidCount ?? undefined;
-        if (typeof cnt === 'number' && cnt >= 0) {
-          if (this.lastMempoolTxCount === cnt && this.outpointToTx.size > 0) return;
-          this.lastMempoolTxCount = cnt;
-        }
-      }
-    } catch {
-      // ignore
+    const sz = await mp.getMempoolSize();
+    const cnt = sz?.transactionCount ?? sz?.txidCount ?? undefined;
+    if (typeof cnt === 'number' && cnt >= 0) {
+      if (this.lastMempoolTxCount === cnt && this.outpointToTx.size > 0) return;
+      this.lastMempoolTxCount = cnt;
     }
 
     // Single-tx processing routine to avoid memory spikes
@@ -318,9 +311,5 @@ export class AdvancedWalletWatcher extends Model {
     const [int, frac = ''] = s.split('.');
     const f = (frac + '00000000').slice(0, 8);
     return (BigInt(int || '0') * 100000000n + BigInt(f)).toString();
-  }
-
-  private async safeCall<T>(fn: () => Promise<T> | T): Promise<T | undefined> {
-    try { return await fn(); } catch { return undefined; }
   }
 }

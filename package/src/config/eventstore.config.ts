@@ -2,16 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { Transform } from 'class-transformer';
 import { IsString, IsBoolean, IsOptional, IsNumber } from 'class-validator';
 import { JSONSchema } from 'class-validator-jsonschema';
+import { getUnifiedEnv } from './unified-env';
 
-type DatabaseTypes = 'sqlite' | 'postgres' | 'sqljs';
+type DatabaseTypes = 'sqlite' | 'postgres' | 'sqlite-opfs';
 
 const isNodeLike = typeof window === 'undefined';
 
 function defaultDbName(dbType?: any, incoming?: string): string {
   if (incoming && incoming.length) return incoming;
 
-  // Browser/sql.js: Just a DB key (name) in IndexedDB
-  if (!isNodeLike || dbType === 'sqljs') return 'bitcoin';
+  if (!isNodeLike || dbType === 'sqlite-opfs') return 'bitcoin.sqlite3';
 
   // Node/Electron:
   if (dbType === 'sqlite' || !dbType) {
@@ -30,18 +30,18 @@ export class EventStoreConfig {
     description:
       'For SQLite: folder path where the database file will be created; ' +
       'For Postgres: name of the database to connect to.',
-    default: `resolve(process.cwd(), 'eventstore`,
+    default: `resolve(process.cwd(), eventstore`,
   })
-  EVENTSTORE_DB_NAME: string = defaultDbName(process.env.EVENTSTORE_DB_TYPE, process.env.EVENTSTORE_DB_NAME);
+  EVENTSTORE_DB_NAME: string = defaultDbName(getUnifiedEnv().EVENTSTORE_DB_TYPE, getUnifiedEnv().EVENTSTORE_DB_NAME);
 
   @IsString()
   @JSONSchema({
     description: 'Type of database for the eventstore.',
     default: 'sqlite',
-    enum: ['sqlite', 'postgres', 'sqljs'],
+    enum: ['sqlite', 'postgres', 'sqlite-opfs'],
   })
-  @Transform(({ value }) => (value?.length ? value : isNodeLike ? 'sqlite' : 'sqljs'))
-  EVENTSTORE_DB_TYPE: DatabaseTypes = isNodeLike ? 'sqlite' : 'sqljs';
+  @Transform(({ value }) => (value?.length ? value : isNodeLike ? 'sqlite' : 'sqlite-opfs'))
+  EVENTSTORE_DB_TYPE: DatabaseTypes = isNodeLike ? 'sqlite' : 'sqlite-opfs';
 
   @IsBoolean()
   @JSONSchema({
@@ -144,7 +144,24 @@ export class EventStoreConfig {
   @IsOptional()
   EVENTSTORE_PG_QUERY_TIMEOUT?: number;
 
+  @Transform(({ value }) => (value?.length ? value : undefined))
+  @IsString()
+  @IsOptional()
+  @JSONSchema({
+    description:
+      'Base URL for @sqlite.org/sqlite-wasm browser runtime files. ' +
+      'Only used in browser (sqlite-opfs) mode. ' +
+      'The directory must contain index.mjs, sqlite3.wasm, and required worker runtime files such as sqlite3-worker1.mjs.',
+    examples: [
+      '/sqlite',
+      'https://cdn.jsdelivr.net/npm/@sqlite.org/sqlite-wasm@3.51.2-build8/dist',
+      'https://your-app.example.com/assets/sqlite',
+    ],
+  })
+  EVENTSTORE_SQLITE_RUNTIME_BASE_URL?: string;
+
   isLogging(): boolean {
-    return process?.env?.DB_DEBUG === '1';
+    // Safe for both Node and browser
+    return getUnifiedEnv().DB_DEBUG === '1';
   }
 }

@@ -7,7 +7,7 @@ import {
   BlockchainProviderService,
   BlockchainValidationError,
 } from '@easylayer/bitcoin';
-import { NetworkModelFactoryService, MempoolModelFactoryService } from '../services';
+import { NetworkModelFactoryService, NetworkReadService, MempoolReadService } from '../services';
 import { ModelFactoryService, Model, NormalizedModelCtor } from '../framework';
 import type { ProcessBlockExecutionContext } from '../framework';
 
@@ -25,15 +25,16 @@ function deepFreeze<T>(obj: T): T {
 @Injectable()
 @CommandHandler(AddBlocksBatchCommand)
 export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBatchCommand> {
-  log = new Logger(AddBlocksBatchCommandHandler.name);
+  private readonly logger = new Logger(AddBlocksBatchCommandHandler.name);
   constructor(
     private readonly networkModelFactory: NetworkModelFactoryService,
-    private readonly mempoolModelFactory: MempoolModelFactoryService,
     private readonly blockchainProvider: BlockchainProviderService,
     private readonly eventStore: EventStoreWriteService,
     @Inject('FrameworkModelsConstructors')
     private Models: NormalizedModelCtor[],
-    private readonly modelFactoryService: ModelFactoryService
+    private readonly modelFactoryService: ModelFactoryService,
+    private readonly networkReadService: NetworkReadService,
+    private readonly mempoolReadService: MempoolReadService
   ) {}
 
   async execute({ payload }: AddBlocksBatchCommand) {
@@ -48,13 +49,14 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
         models.push(await this.modelFactoryService.restoreByCtor(m));
       }
 
-      await networkModel.addBlocks({ requestId, blocks: batch, logger: this.log });
+      await networkModel.addBlocks({ requestId, blocks: batch, logger: this.logger });
 
       for (const block of batch) {
         const frozen = deepFreeze(block);
         const ctx: ProcessBlockExecutionContext = {
           block: frozen,
-          mempool: this.mempoolModelFactory,
+          network: this.networkReadService,
+          mempool: this.mempoolReadService,
           services: {
             nodeProvider: this.blockchainProvider,
             networkModelService: this.networkModelFactory,
@@ -70,7 +72,7 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
 
       await this.eventStore.save([...models, networkModel]);
 
-      this.log.verbose('Blocks saved into eventstore');
+      this.logger.verbose('Blocks saved into eventstore');
     } catch (error) {
       if (error instanceof BlockchainValidationError) {
         const networkModel: Network = await this.networkModelFactory.initModel();
@@ -82,7 +84,7 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
           requestId,
           blocks: [],
           service: this.blockchainProvider,
-          logger: this.log,
+          logger: this.logger,
         });
 
         // IMPORTANT: set blockHeight from last state of Network AFTER state reorganisation
@@ -94,11 +96,11 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
           modelsToSave: [networkModel],
         });
 
-        this.log.debug('Blocks successfully reorganized', { args: { blockHeight: reorgHeight, requestId } });
+        this.logger.debug('Blocks successfully reorganized', { args: { blockHeight: reorgHeight, requestId } });
         return;
       }
 
-      this.log.warn('Error while adding blocks', { args: { message: (error as any)?.message } });
+      this.logger.warn('Error while adding blocks', { args: { message: (error as any)?.message } });
       throw error;
     }
   }

@@ -14,12 +14,12 @@ export class AppConfig {
 
   @IsOptional()
   @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase() : undefined))
-  @IsIn(['trace', 'debug', 'info', 'warn', 'error', 'fatal'], {
-    message: 'LOG_LEVEL must be one of: trace, debug, info, warn, error, fatal',
+  @IsIn(['debug', 'info', 'warn', 'error', 'fatal'], {
+    message: 'LOG_LEVEL must be one of: debug, info, warn, error, fatal',
   })
   @JSONSchema({
-    description: 'Minimum log level to output. Ignored if DEBUG=1. Defaults to "info" when not set.',
-    examples: ['trace', 'debug', 'info', 'warn', 'error', 'fatal'],
+    description: 'Minimum log level to output. Ignored if TRACE=1. Defaults to "info" when not set.',
+    examples: ['debug', 'info', 'warn', 'error', 'fatal'],
   })
   LOG_LEVEL?: LogLevel;
 
@@ -35,10 +35,10 @@ export class AppConfig {
   @Transform(({ value }) => (value === '1' ? '1' : undefined))
   @IsString()
   @JSONSchema({
-    description: 'When set to "1", forces debug-level logging regardless of LOG_LEVEL (except in test).',
+    description: 'When set to "1", forces trace-level logging regardless of LOG_LEVEL (except in test).',
     example: '1',
   })
-  DEBUG?: '1';
+  TRACE?: '1';
 
   isPRODUCTION(): boolean {
     return this.NODE_ENV === 'production';
@@ -52,7 +52,7 @@ export class AppConfig {
     return this.NODE_ENV === 'test';
   }
 
-  isDEBUG(): boolean {
-    return this.DEBUG === '1';
+  isTRACE(): boolean {
+    return this.TRACE === '1';
   }
 }

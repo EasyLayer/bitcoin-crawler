@@ -6,10 +6,10 @@ import { MempoolModelFactoryService } from '../../services';
 @Injectable()
 @QueryHandler(GetMempoolOverviewQuery)
 export class GetMempoolOverviewHandler implements IQueryHandler<GetMempoolOverviewQuery> {
-  constructor(private readonly models: MempoolModelFactoryService) {}
+  constructor(private readonly mempoolModelFactory: MempoolModelFactoryService) {}
 
   async execute(): Promise<any> {
-    const mempool = await this.models.initModel();
+    const mempool = await this.mempoolModelFactory.initModel();
     return {
       stats: mempool.getMemoryUsage(),
     };

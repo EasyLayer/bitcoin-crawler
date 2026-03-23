@@ -71,7 +71,7 @@ export class TransportConfig {
   @JSONSchema({ description: 'Path to HTTP TLS CA bundle (PEM)' })
   TRANSPORT_HTTP_SSL_CA_PATH?: string;
 
-  // HTTP Webhook (optional outbound publishing)
+  // HTTP Webhook (used as outbox target in Node, AND as the browser client's endpoint)
   @Transform(({ value }) => (value?.length ? value : undefined))
   @IsString()
   @IsOptional()
@@ -90,12 +90,20 @@ export class TransportConfig {
   @JSONSchema({ description: 'Optional bearer/shared token for webhook auth' })
   TRANSPORT_HTTP_WEBHOOK_TOKEN?: string;
 
+  @Transform(({ value }) => {
+    if (value === '' || value == null) return undefined;
+    const n = parseInt(value, 10);
+    return Number.isFinite(n) ? n : undefined;
+  })
+  @IsNumber()
+  @IsOptional()
+  @JSONSchema({ description: 'HTTP request timeout in ms for browser webhook client' })
+  TRANSPORT_HTTP_WEBHOOK_TIMEOUT_MS?: number;
+
   @Transform(({ value }) => (value?.length ? value : undefined))
   @IsString()
   @IsOptional()
-  @JSONSchema({
-    description: 'WebSocket server host (if omitted, WS is disabled)',
-  })
+  @JSONSchema({ description: 'WebSocket server host (if omitted, WS server is disabled)' })
   TRANSPORT_WS_HOST?: string;
 
   @Transform(({ value }) => (value?.length ? value : undefined))
@@ -114,7 +122,7 @@ export class TransportConfig {
   @Min(0)
   @Max(65535)
   @JSONSchema({
-    description: 'WebSocket server port. If undefined or 0, WS transport is disabled.',
+    description: 'WebSocket server port. If undefined or 0, WS server is disabled.',
     minimum: 0,
     maximum: 65535,
   })
@@ -153,9 +161,7 @@ export class TransportConfig {
   @Transform(({ value }) => (value === 'true' || value === true ? true : value === 'false' ? false : undefined))
   @IsBoolean()
   @IsOptional()
-  @JSONSchema({
-    description: 'Enable TLS for WebSocket server. If undefined, treated as disabled.',
-  })
+  @JSONSchema({ description: 'Enable TLS for WebSocket server. If undefined, treated as disabled.' })
   TRANSPORT_WS_SSL_ENABLED?: boolean;
 
   @Transform(({ value }) => (value?.length ? value : undefined))
@@ -192,6 +198,20 @@ export class TransportConfig {
     examples: ['websocket,polling', 'websocket', 'polling'],
   })
   TRANSPORT_WS_TRANSPORTS?: string[];
+
+  // ─────────────────── BROWSER WS CLIENT ───────────────────
+  // Full ws:// or wss:// URL for the browser WebSocket client.
+  // Used only in browser/Electron renderer builds.
+
+  @Transform(({ value }) => (value?.length ? value : undefined))
+  @IsString()
+  @IsOptional()
+  @JSONSchema({
+    description:
+      'Full WebSocket URL for the browser client (e.g., ws://localhost:3001). Browser/Electron renderer only.',
+    examples: ['ws://localhost:3001', 'wss://my-node.example.com/ws'],
+  })
+  TRANSPORT_WS_BROWSER_URL?: string;
 
   // ───────────────────────────── IPC ─────────────────────────────
 
@@ -272,6 +292,8 @@ export class TransportConfig {
   })
   TRANSPORT_IPC_TYPE?: IpcKind;
 
+  // ===================== NODE SSL helpers =====================
+
   getHTTPSSLOptions() {
     if (!this.TRANSPORT_HTTP_SSL_ENABLED) return { enabled: false };
     try {
@@ -300,8 +322,9 @@ export class TransportConfig {
     }
   }
 
+  // ===================== NODE server transport configs =====================
+
   getHTTPTransportConfig() {
-    // enable only if port > 0
     if (!this.TRANSPORT_HTTP_PORT || this.TRANSPORT_HTTP_PORT <= 0) return undefined;
 
     const webhook = this.TRANSPORT_HTTP_WEBHOOK_URL
@@ -324,7 +347,6 @@ export class TransportConfig {
   }
 
   getWSTransportConfig() {
-    // enable only if port > 0
     if (!this.TRANSPORT_WS_PORT || this.TRANSPORT_WS_PORT <= 0) return undefined;
 
     return {
@@ -338,9 +360,9 @@ export class TransportConfig {
       ssl: this.getWSSSLOptions(),
       cors: {
         origin: this.TRANSPORT_WS_CORS_ORIGIN,
-        credentials: this.TRANSPORT_WS_CORS_CREDENTIALS ?? false, // undefined → false by default in server
+        credentials: this.TRANSPORT_WS_CORS_CREDENTIALS ?? false,
       },
-      transports: this.TRANSPORT_WS_TRANSPORTS, // undefined → library default resolution
+      transports: this.TRANSPORT_WS_TRANSPORTS,
     };
   }
 
@@ -377,6 +399,17 @@ export class TransportConfig {
   }
 
   /** Returns only the transports explicitly enabled by config/runtime. */
+  getElectronIpcMainConfig() {
+    if (this.TRANSPORT_OUTBOX_KIND !== 'electron-ipc-main' && this.TRANSPORT_IPC_TYPE !== ('electron-ipc-main' as any))
+      return undefined;
+
+    return {
+      type: 'electron-ipc-main' as const,
+      heartbeatTimeout: this.TRANSPORT_HEARTBEAT_TIMEOUT,
+      connectionTimeout: this.TRANSPORT_CONNECTION_TIMEOUT,
+    };
+  }
+
   getEnabledTransports() {
     const out: any[] = [];
 
@@ -391,6 +424,73 @@ export class TransportConfig {
 
     const ipcParent = this.getIpcParentTransportConfig();
     if (ipcParent) out.push(ipcParent);
+
+    const electronMain = this.getElectronIpcMainConfig();
+    if (electronMain) out.push(electronMain);
+
+    return out;
+  }
+
+  // ===================== BROWSER client transport configs =====================
+
+  /**
+   * Browser HTTP client that POSTs event batches to a webhook endpoint.
+   * Enabled when TRANSPORT_HTTP_WEBHOOK_URL is set.
+   */
+  getHTTPBrowserConfig() {
+    if (!this.TRANSPORT_HTTP_WEBHOOK_URL) return undefined;
+
+    return {
+      type: 'http' as const,
+      webhook: {
+        url: this.TRANSPORT_HTTP_WEBHOOK_URL,
+        pingUrl: this.TRANSPORT_HTTP_WEBHOOK_PING_URL,
+        token: this.TRANSPORT_HTTP_WEBHOOK_TOKEN,
+        timeoutMs: this.TRANSPORT_HTTP_WEBHOOK_TIMEOUT_MS,
+      },
+    };
+  }
+
+  /**
+   * Browser WebSocket client that connects to a WS server.
+   * Enabled when TRANSPORT_WS_BROWSER_URL is set (full ws:// or wss:// URL).
+   */
+  getWSBrowserConfig() {
+    if (!this.TRANSPORT_WS_BROWSER_URL) return undefined;
+
+    return {
+      type: 'ws' as const,
+      url: this.TRANSPORT_WS_BROWSER_URL,
+    };
+  }
+
+  /**
+   * Electron IPC renderer transport.
+   * Enabled when TRANSPORT_OUTBOX_KIND === 'electron-ipc-renderer'.
+   */
+  getElectronIpcRendererConfig() {
+    if (this.TRANSPORT_OUTBOX_KIND !== 'electron-ipc-renderer') return undefined;
+
+    return {
+      type: 'electron-ipc-renderer' as const,
+    };
+  }
+
+  /**
+   * Browser/Electron renderer: returns client-side transports only.
+   * Called by browser AppModule instead of getEnabledTransports().
+   */
+  getEnabledBrowserTransports() {
+    const out: any[] = [];
+
+    const http = this.getHTTPBrowserConfig();
+    if (http) out.push(http);
+
+    const ws = this.getWSBrowserConfig();
+    if (ws) out.push(ws);
+
+    const electron = this.getElectronIpcRendererConfig();
+    if (electron) out.push(electron);
 
     return out;
   }

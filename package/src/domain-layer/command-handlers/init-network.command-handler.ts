@@ -3,23 +3,25 @@ import { CommandHandler, ICommandHandler } from '@easylayer/common/cqrs';
 import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import { InitNetworkCommand, Network, BlockchainProviderService } from '@easylayer/bitcoin';
 import { NetworkModelFactoryService } from '../services';
-import { BusinessConfig } from '../../config';
-import { ConsolePromptService } from '../services/console-prompt.service';
+import { BusinessConfig, BootstrapConfig } from '../../config';
 import { ModelFactoryService, NormalizedModelCtor } from '../framework';
 
 @Injectable()
 @CommandHandler(InitNetworkCommand)
 export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCommand> {
-  log = new Logger(InitNetworkCommandHandler.name);
+  private readonly logger = new Logger(InitNetworkCommandHandler.name);
   constructor(
     private readonly eventStore: EventStoreWriteService,
     private readonly networkModelFactory: NetworkModelFactoryService,
     private readonly businessConfig: BusinessConfig,
     private readonly blockchainProviderService: BlockchainProviderService,
-    private readonly consolePromptService: ConsolePromptService,
+    @Inject('ConsolePromptService')
+    private readonly consolePromptService: any, // TODO: to add unifed interface
     @Inject('FrameworkModelsConstructors')
     private Models: NormalizedModelCtor[],
-    private readonly modelFactoryService: ModelFactoryService
+    private readonly modelFactoryService: ModelFactoryService,
+    @Inject('BootstrapConfig')
+    private readonly bootstrapConfig: BootstrapConfig
   ) {}
 
   async execute({ payload }: InitNetworkCommand) {
@@ -29,13 +31,15 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
 
     const currentNetworkHeight = await this.blockchainProviderService.getCurrentBlockHeightFromNetwork();
     const configStartHeight = this.businessConfig.START_BLOCK_HEIGHT;
+    const bootstrapLastBlockHeight = this.bootstrapConfig.lastBlockHeight;
     const currentDbHeight = networkModel.lastBlockHeight;
 
     try {
       const finalStartHeight = await this.determineStartHeight(
         currentDbHeight,
         configStartHeight,
-        currentNetworkHeight
+        currentNetworkHeight,
+        bootstrapLastBlockHeight
       );
 
       // Initialize the network with the determined start height
@@ -45,15 +49,15 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
         requestId,
         currentNetworkHeight,
         startHeight: finalStartHeight,
-        logger: this.log,
+        logger: this.logger,
       });
 
       await this.eventStore.save(networkModel);
 
-      this.log.debug('Network saved into eventstore');
+      this.logger.debug('Network saved into eventstore');
     } catch (error) {
       if ((error as any)?.message === 'DATA_RESET_REQUIRED') {
-        this.log.log('Clearing database as requested by user');
+        this.logger.log('Clearing database as requested by user');
 
         const models = this.Models.map((ModelCtr) => this.modelFactoryService.createNewModel(ModelCtr));
 
@@ -67,11 +71,11 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
           modelsToSave: [networkModel],
         });
 
-        this.log.log('Database cleared successfully, saga will reinitialize network');
+        this.logger.log('Database cleared successfully, saga will reinitialize network');
         return;
       }
 
-      this.log.error('Error while initializing Network', { args: { message: (error as any)?.message } });
+      this.logger.error('Error while initializing Network', { args: { message: (error as any)?.message } });
       throw error;
     }
   }
@@ -79,10 +83,31 @@ export class InitNetworkCommandHandler implements ICommandHandler<InitNetworkCom
   private async determineStartHeight(
     currentDbHeight: number,
     configStartHeight: number | undefined,
-    currentNetworkHeight: number
+    currentNetworkHeight: number,
+    bootstrapLastBlockHeight: number | undefined
   ): Promise<number> {
     // Database is considered empty if currentDbHeight is -1
     const isEmpty = currentDbHeight < 0;
+
+    // Bootstrap runtime config has priority over START_BLOCK_HEIGHT from env.
+    if (bootstrapLastBlockHeight !== undefined) {
+      if (bootstrapLastBlockHeight < -1) {
+        throw new Error('lastBlockHeight cannot be less than -1');
+      }
+
+      if (isEmpty) {
+        return bootstrapLastBlockHeight;
+      }
+
+      if (currentDbHeight === bootstrapLastBlockHeight) {
+        return currentDbHeight;
+      }
+
+      this.logger.warn(
+        `Database height (${currentDbHeight}) does not match bootstrap lastBlockHeight (${bootstrapLastBlockHeight}). Reset is required.`
+      );
+      throw new Error('DATA_RESET_REQUIRED');
+    }
 
     if (isEmpty) {
       // First launch: choose between live listen mode or historical mode

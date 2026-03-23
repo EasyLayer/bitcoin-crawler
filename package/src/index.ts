@@ -1,2 +1,2 @@
-export { bootstrap } from './bootstrap';
-export * from './domain-layer/framework';
+// Node (default) entry point.
+export * from './node';
