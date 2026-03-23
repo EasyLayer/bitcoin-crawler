@@ -3,14 +3,16 @@
   "compilerOptions": {
     "noEmit": false,
     "rootDir": "src",
-    "outDir": "dist",
+    "outDir": "dist/esm",
+    "module": "ESNext",
+    "target": "ES2020",
+    "moduleResolution": "Bundler",
     "declaration": true,
     "allowJs": true
   },
   "include": ["src"],
   "exclude": [
     "dist",
-    "src/browser",
     "**/*.test.ts",
     "**/__tests__",
   ],

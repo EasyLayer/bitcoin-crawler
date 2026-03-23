@@ -56,6 +56,7 @@ report.xml
 ############################
 
 dist
+dist-tmp
 tsconfig.tsbuildinfo
 tsconfig.build.tsbuildinfo
 **/tsconfig.tsbuildinfo

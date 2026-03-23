@@ -1,4 +1,4 @@
-export { bootstrapBrowser } from './bootstrap';
+export { bootstrap } from './bootstrap';
 export type { BrowserBootstrapOptions } from './bootstrap';
 export * from './app.module';
 // Same framework exports as node index — Model, ModelFactoryService, ModelInput, etc.

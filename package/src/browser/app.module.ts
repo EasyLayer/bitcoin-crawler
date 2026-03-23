@@ -125,17 +125,14 @@ export class BrowserAppModule {
             connections: mempoolConnections,
           },
         }),
-
-        // Browser EventStoreModule uses sql.js backed by IndexedDB (localforage)
-        // The `type: 'sqljs'` option is required; EVENTSTORE_DB_NAME becomes the
-        // IndexedDB key / localforage store name.
         (EventStoreModule as any).forRootAsync({
           isGlobal: true,
           name: `${appName}-eventstore`,
-          type: 'sqljs',
+          type: 'sqlite-opfs',
           database: eventstoreConfig.EVENTSTORE_DB_NAME,
           aggregates: [...userModels, networkModel, mempoolModel],
           logging: eventstoreConfig.isLogging(),
+          sqliteRuntimeBaseUrl: eventstoreConfig.EVENTSTORE_SQLITE_RUNTIME_BASE_URL,
         }),
 
         BlocksQueueModule.forRootAsync({

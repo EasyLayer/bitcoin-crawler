@@ -3,7 +3,7 @@
  *
  * Architecture:
  *   SharedWorker (this file)
- *   └── bootstrapBrowser()
+ *   └── bootstrap()
  *         ├── EventStore  (sql.js + IndexedDB — shared across all tabs)
  *         ├── BlockchainProvider (fetch-based RPC)
  *         ├── AddressUtxoWatcher model
@@ -12,8 +12,7 @@
  *               ├── ping → pong
  *               └── query.request → QueryBus → query.response
  */
-import 'reflect-metadata';
-import { bootstrapBrowser } from '@easylayer/bitcoin-crawler';
+import { bootstrap } from '@easylayer/bitcoin-crawler';
 import { AddressUtxoWatcher } from './model';
 import { GetBalanceQueryHandler } from './query';
 
@@ -33,20 +32,18 @@ import { GetBalanceQueryHandler } from './query';
   NETWORK_TYPE: 'testnet',
   NETWORK_PROVIDER_TYPE: 'rpc',
   START_BLOCK_HEIGHT: '0',
-
-  PROVIDER_NETWORK_RPC_URLS: 'http://btc:ak3p9g7s2tey@127.0.0.1:18332',
-
+  PROVIDER_NETWORK_RPC_URLS: 'http://btc:ak3p9g7s2tey@localhost:4173/rpc',
   EVENTSTORE_DB_TYPE: 'sqljs',
-
   TRANSPORT_OUTBOX_ENABLE: '1',
   TRANSPORT_OUTBOX_KIND: 'shared-worker-server',
+  EVENTSTORE_SQLITE_RUNTIME_BASE_URL: '/sqlite' //'https://cdn.jsdelivr.net/npm/@sqlite.org/sqlite-wasm@3.51.2-build8/dist'
 };
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 (async () => {
   console.log('[worker] starting bitcoin crawler...');
 
-  await bootstrapBrowser({
+  await bootstrap({
     Models: [AddressUtxoWatcher],
     QueryHandlers: [GetBalanceQueryHandler],
   });

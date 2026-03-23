@@ -58,7 +58,7 @@ await esbuild({
 //
 // Solution:
 //   platform: 'browser' + conditions: ['browser'] → esbuild picks up the
-//   browser entry of @easylayer/transport-sdk (dist/esm/browser/index.js)
+//   browser entry of @easylayer/transport-sdk (dist/browser/index.js)
 //   which only contains ElectronIpcRendererTransport — no express, no node:path.
 //
 // 'electron' stays external so ipcRenderer import works at runtime.

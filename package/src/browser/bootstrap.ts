@@ -28,7 +28,7 @@ export interface BrowserBootstrapOptions {
   Providers?: any[];
 }
 
-export const bootstrapBrowser = async ({
+export const bootstrap = async ({
   Models = [],
   QueryHandlers: UserQueryHandlers = [],
   EventHandlers: UserEventHandlers = [],

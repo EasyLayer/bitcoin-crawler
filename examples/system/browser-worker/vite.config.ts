@@ -1,46 +1,40 @@
 import { defineConfig } from 'vite';
 
+/**
+ * vite.config.ts — app bundle + dev/preview server
+ *
+ * src/app.ts → dist/assets/app-[hash].js
+ *
+ * Build order:
+ *   yarn build:worker  → dist/worker.js
+ *   yarn build:app     → dist/index.html + dist/assets/app.js
+ *   yarn start         → yarn build && vite preview
+ */
 export default defineConfig({
-  root: '.',
-  build: {
-    target: 'es2020',
-    outDir: 'dist',
-    rollupOptions: {
-      input: {
-        index: 'index.html',
-        worker: 'src/worker.ts',
-      },
-      output: {
-        entryFileNames: (chunk) =>
-          chunk.name === 'worker' ? 'worker.js' : 'assets/[name]-[hash].js',
-        // Logger browser build has a top-level IIFE that references `window`
-        // before any user code runs — polyfill it as the very first line.
-        banner: (chunk) =>
-          chunk.name === 'worker'
-            ? 'if (typeof window === "undefined") { self.window = self; }'
-            : '',
-      },
-    },
-  },
   resolve: {
     conditions: ['browser', 'module', 'default'],
+    mainFields: ['browser', 'module', 'main'],
   },
-  optimizeDeps: {
-    exclude: ['sql.js'],
-  },
-  worker: {
-    format: 'es',
-  },
-  server: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
+
+  build: {
+    outDir: 'dist',
+    emptyOutDir: false,
+    rollupOptions: {
+      input: 'index.html',
     },
   },
+
   preview: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
+    port: 4173,
+  },
+
+  server: {
+    proxy: {
+      '/rpc': {
+        target: 'http://127.0.0.1:18332',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/rpc/, ''),
+      },
     },
   },
 });
