@@ -1,7 +1,7 @@
 {
   "name": "bitcoin-crawler-docker-example",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "This is an example app for development",
   "type": "commonjs",
   "scripts": {
@@ -15,8 +15,8 @@
     "docker:logs": "docker logs -f bitcoin-crawler-docker-example"
   },
   "dependencies": {
-    "@easylayer/bitcoin-crawler": "0.3.0",
-    "@easylayer/common": "1.2.0",
+    "@easylayer/bitcoin-crawler": "0.3.1",
+    "@easylayer/common": "1.2.1",
     "@easylayer/transport-sdk": "1.3.0",
     "express": "5.1.0",
     "uuid": "9.0.1"

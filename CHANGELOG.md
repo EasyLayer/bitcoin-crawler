@@ -1,3 +1,12 @@
+## [0.3.1](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.3.0...v0.3.1) (2026-04-26)
+
+
+### Bug Fixes
+
+* added fix for issue desynchronization of write and read models; updated easylayer; ([8d973e7](https://github.com/EasyLayer/bitcoin-crawler/commit/8d973e78d569f5c5bf51a00e7a7454bda04c2f3e))
+
+
+
 # [0.3.0](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.2.1...v0.3.0) (2026-03-23)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "bitcoin-crawler-desktop-example",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "main": "dist/electron/main.js",
   "build": {
@@ -46,9 +46,9 @@
     "app:linux": "yarn build && electron-builder --linux"
   },
   "dependencies": {
-    "@easylayer/bitcoin": "1.2.0",
-    "@easylayer/bitcoin-crawler": "0.3.0",
-    "@easylayer/common": "1.2.0",
+    "@easylayer/bitcoin": "1.2.1",
+    "@easylayer/bitcoin-crawler": "0.3.1",
+    "@easylayer/common": "1.2.1",
     "@easylayer/transport-sdk": "1.3.0",
     "dotenv": "16.3.1",
     "reflect-metadata": "0.1.14"
