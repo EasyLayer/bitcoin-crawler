@@ -1,9 +1,16 @@
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import { BitcoinMempoolInitializedEvent, BitcoinMempoolSynchronizedEvent } from '@easylayer/bitcoin';
+import {
+  BitcoinMempoolInitializedEvent,
+  BitcoinMempoolSynchronizedEvent,
+  BlockchainProviderService,
+} from '@easylayer/bitcoin';
 import { SQLiteService } from '../../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../../+helpers/clean-data-folder';
+
+jest.spyOn(BlockchainProviderService.prototype, 'getMempoolTransactionsByTxids').mockResolvedValue([]);
+// ───────────────────────────────────────────────────────────────────────────
 
 describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
   let dbService!: SQLiteService;

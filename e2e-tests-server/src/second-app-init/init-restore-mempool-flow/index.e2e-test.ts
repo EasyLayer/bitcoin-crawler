@@ -1,11 +1,14 @@
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import { BitcoinMempoolInitializedEvent } from '@easylayer/bitcoin';
+import { BitcoinMempoolInitializedEvent, BlockchainProviderService } from '@easylayer/bitcoin';
 import { SQLiteService } from '../../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 import type { MempoolRecord } from './mocks';
 import { mempoolTableSQL, mockMempool } from './mocks';
+
+jest.spyOn(BlockchainProviderService.prototype, 'getMempoolTransactionsByTxids').mockResolvedValue([]);
+// ───────────────────────────────────────────────────────────────────────────
 
 function escapeSqlString(s: string): string {
   return s.replace(/'/g, "''");
