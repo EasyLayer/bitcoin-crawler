@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import { BitcoinNetworkClearedEvent } from '@easylayer/bitcoin';
+import { BitcoinNetworkClearedEvent, BlockchainProviderService } from '@easylayer/bitcoin';
 import { SQLiteService } from '../../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 import { networkTableSQL, seedNetworkEvent } from './mocks';
@@ -12,6 +12,9 @@ jest.mock('readline', () => ({
     close: () => undefined,
   }),
 }));
+
+// Prevent block loading during a test that only cares about NetworkClearedEvent.
+jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(-1);
 
 function escapeSqlString(s: string): string {
   return s.replace(/'/g, "''");
@@ -52,6 +55,7 @@ describe('/Bitcoin Crawler: Clear Network Table Flow', () => {
       );
     `;
     await db.exec(insertSql);
+    await db.close();
 
     await bootstrap({
       testing: {
@@ -69,6 +73,9 @@ describe('/Bitcoin Crawler: Clear Network Table Flow', () => {
   });
 
   it('should clear network table', async () => {
+    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    await db.connect();
+
     const [{ integrity_check }] = await db.all(`PRAGMA integrity_check`);
     expect(integrity_check).toBe('ok');
 

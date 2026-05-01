@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import { BitcoinNetworkInitializedEvent } from '@easylayer/bitcoin';
+import { BitcoinNetworkInitializedEvent, BlockchainProviderService } from '@easylayer/bitcoin';
 import { SQLiteService } from '../../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 import type { NetworkRecord } from './mocks';
@@ -44,6 +44,10 @@ describe('/Bitcoin Crawler: Second Initialization External Checkpoint Flow', () 
   beforeEach(async () => {
     jest.resetModules();
     jest.clearAllMocks();
+
+    // Re-apply after each afterEach's restoreAllMocks() removes the spy.
+    // Prevents block-loader from firing real RPC calls during checkpoint tests.
+    jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(-1);
 
     config({ path: resolve(process.cwd(), 'src/second-app-init/external-checkpoint-flow/.env') });
     await cleanDataFolder('eventstore');

@@ -1,9 +1,14 @@
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import { BitcoinNetworkInitializedEvent } from '@easylayer/bitcoin';
+import { BitcoinNetworkInitializedEvent, BlockchainProviderService } from '@easylayer/bitcoin';
 import { SQLiteService } from '../../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../../+helpers/clean-data-folder';
+
+// Prevent block loading during a test that only needs NetworkInitializedEvent.
+// Without this, the blocks-loader fires with real timers, loads real blocks from
+// testnet concurrently with app shutdown, risking SQLITE_BUSY.
+jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(-1);
 
 describe('Bitcoin Crawler: First Initializaton Only Network Flow', () => {
   let dbService!: SQLiteService;

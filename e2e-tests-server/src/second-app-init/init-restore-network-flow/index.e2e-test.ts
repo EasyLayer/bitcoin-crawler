@@ -1,11 +1,14 @@
 import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import { bootstrap } from '@easylayer/bitcoin-crawler';
-import { BitcoinNetworkInitializedEvent } from '@easylayer/bitcoin';
+import { BitcoinNetworkInitializedEvent, BlockchainProviderService } from '@easylayer/bitcoin';
 import { SQLiteService } from '../../+helpers/sqlite/sqlite.service';
 import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 import type { NetworkRecord } from './mocks';
 import { networkTableSQL, mockNetworks } from './mocks';
+
+// Prevent block loading during a test that only needs NetworkInitializedEvent.
+jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(-1);
 
 function escapeSqlString(s: string): string {
   return s.replace(/'/g, "''");

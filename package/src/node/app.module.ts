@@ -118,13 +118,6 @@ export class AppModule {
           logging: eventstoreConfig.isLogging(),
           type: eventstoreConfig.EVENTSTORE_DB_TYPE as any,
           database: eventstoreConfig.EVENTSTORE_DB_NAME,
-          // SQLite WAL mode allows concurrent reads but only one writer at a time.
-          // busyTimeout tells SQLite to retry writes for up to 5s instead of
-          // immediately returning SQLITE_BUSY when concurrent command handlers
-          // (network init, mempool init, block loading) write simultaneously.
-          ...(eventstoreConfig.EVENTSTORE_DB_TYPE === 'sqlite' && {
-            busyTimeout: 5000,
-          }),
           ...(eventstoreConfig.EVENTSTORE_DB_HOST && {
             host: eventstoreConfig.EVENTSTORE_DB_HOST,
           }),
