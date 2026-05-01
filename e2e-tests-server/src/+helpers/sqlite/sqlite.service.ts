@@ -23,8 +23,20 @@ export class SQLiteService {
 
   public async connect(): Promise<void> {
     try {
-      // This call will create a new database if it doesn't exist
       await this.openDatabase();
+
+      // Tell SQLite to retry internally for up to 5s if the DB is locked.
+      // Works at C-library level — unaffected by jest fake timers.
+      await this.exec('PRAGMA busy_timeout = 5000');
+
+      // Attempt a passive WAL checkpoint: flushes any WAL pages left by the
+      // just-closed NestJS app connection back into the main DB file.
+      // Passive mode never blocks — only checkpoints pages safe to flush now.
+      await this.exec('PRAGMA wal_checkpoint(PASSIVE)');
+
+      // Run a no-op read to confirm the lock has been released.
+      // With busy_timeout=5000 this will block up to 5s at C level if needed.
+      await this.get('SELECT 1');
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(error);
@@ -39,6 +51,22 @@ export class SQLiteService {
             reject(err);
           } else {
             resolve();
+          }
+        });
+      } else {
+        reject('Connection was lost');
+      }
+    });
+  }
+
+  public async get(query: string, params: any[] = []): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (this.db) {
+        this.db.get(query, params, (err, row) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(row);
           }
         });
       } else {
@@ -105,7 +133,6 @@ export class SQLiteService {
     });
   }
 
-  // Check if any table exists
   private async checkDatabaseExists(): Promise<boolean> {
     return new Promise((resolve) => {
       if (!this.db) {
