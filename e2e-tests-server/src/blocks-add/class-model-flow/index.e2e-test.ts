@@ -11,11 +11,20 @@ import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 import BlocksModel, { AGGREGATE_ID, BlockAddedEvent } from './blocks.model';
 import { mockBlocks } from './mocks';
 
+// Note: getCurrentBlockHeightFromNetwork() is intentionally NOT mocked here.
+// One real RPC call is made during network init — that is acceptable in e2e tests.
+// Block loading is fully mocked via getManyBlocksStatsByHeights/getManyBlocksByHeights.
+//
+// MAX_BLOCK_HEIGHT in .env is set to the last mock block height (2), so the
+// queue's isMaxHeightReached guard fires after block 2 — before the loader
+// can attempt block 3 — regardless of the real network height.
+
 jest
   .spyOn(BlockchainProviderService.prototype, 'getManyBlocksStatsByHeights')
   .mockImplementation(async (heights: (string | number)[]): Promise<any> => {
+    const numHeights = heights.map(Number);
     return mockBlocks
-      .filter((block: any) => heights.includes(block.height))
+      .filter((block: any) => numHeights.includes(Number(block.height)))
       .map((block: any) => ({
         blockhash: block.hash,
         total_size: 1,
@@ -27,7 +36,7 @@ jest
   .spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHeights')
   .mockImplementation(async (heights: any[]): Promise<any[]> => {
     return heights.map((height) => {
-      const blk = mockBlocks.find((b) => b.height === height);
+      const blk = mockBlocks.find((b) => b.height === Number(height));
       if (!blk) throw new Error(`No mock block for height ${height}`);
       return blk;
     });
