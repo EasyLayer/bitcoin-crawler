@@ -7,8 +7,14 @@ import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 import type { MempoolRecord } from './mocks';
 import { mempoolTableSQL, mockMempool } from './mocks';
 
+// Prevent block loading (no concurrent writes with mempool init).
+jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(-1);
+
+jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromMempool').mockResolvedValue(1504847);
+
+jest.spyOn(BlockchainProviderService.prototype, 'getRawMempoolFromAll').mockResolvedValue([]);
+
 jest.spyOn(BlockchainProviderService.prototype, 'getMempoolTransactionsByTxids').mockResolvedValue([]);
-// ───────────────────────────────────────────────────────────────────────────
 
 function escapeSqlString(s: string): string {
   return s.replace(/'/g, "''");
@@ -55,6 +61,8 @@ describe('/Bitcoin Crawler: Second Initialization Only Mempool Flow', () => {
       await dbService.exec(sql);
     }
 
+    // IMPORTANT: close before bootstrap so the EventStore (locking_mode=EXCLUSIVE)
+    // doesn't compete with this connection → prevents SQLITE_BUSY.
     await dbService.close();
 
     await bootstrap({
