@@ -1,6 +1,6 @@
 {
   "name": "bitcoin-crawler-browser-worker-example",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@easylayer/bitcoin": "1.3.1",
-    "@easylayer/bitcoin-crawler": "0.3.1",
+    "@easylayer/bitcoin-crawler": "0.4.0",
     "@easylayer/common": "1.3.1",
     "@easylayer/transport-sdk": "1.3.0",
     "reflect-metadata": "0.1.14"
