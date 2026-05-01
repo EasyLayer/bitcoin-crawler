@@ -11,13 +11,18 @@ import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 import BlocksModel, { AGGREGATE_ID, BlockAddedEvent } from './blocks.model';
 import { mockBlocks } from './mocks';
 
-// Note: getCurrentBlockHeightFromNetwork() is intentionally NOT mocked here.
-// One real RPC call is made during network init — that is acceptable in e2e tests.
-// Block loading is fully mocked via getManyBlocksStatsByHeights/getManyBlocksByHeights.
+// IMPORTANT: must mock getCurrentBlockHeightFromNetwork because this test uses
+// jest.useFakeTimers({ advanceTimers: true }). Without the mock, advanceTimers fires
+// the blocks-loader monitoring timer while the real HTTP request for network height
+// is in-flight (event loop idle). This creates dozens of concurrent load() calls,
+// each racing toward BEGIN IMMEDIATE inside the Mutex, causing SQLITE_BUSY.
 //
-// MAX_BLOCK_HEIGHT in .env is set to the last mock block height (2), so the
-// queue's isMaxHeightReached guard fires after block 2 — before the loader
-// can attempt block 3 — regardless of the real network height.
+// Returning LAST_MOCK_HEIGHT (= 2) makes the mock resolve synchronously, so no
+// IO idle window exists → no fake timer fires during the call → no concurrency issue.
+// The while-loop: lastHeight < 2 → loads blocks 0,1,2 then exits (2 < 2 = false).
+const LAST_MOCK_HEIGHT = mockBlocks[mockBlocks.length - 1]!.height; // 2
+
+jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(LAST_MOCK_HEIGHT);
 
 jest
   .spyOn(BlockchainProviderService.prototype, 'getManyBlocksStatsByHeights')

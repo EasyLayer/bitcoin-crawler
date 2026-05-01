@@ -11,13 +11,12 @@ import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 import BlocksModel, { AGGREGATE_ID, BlockAddedEvent } from './blocks.model';
 import { mockBlocks } from './mocks';
 
-// Note: getCurrentBlockHeightFromNetwork() is intentionally NOT mocked here.
-// One real RPC call is made during network init — that is acceptable in e2e tests.
-// Block loading is fully mocked via getManyBlocksStatsByHeights/getManyBlocksByHeights.
-//
-// MAX_BLOCK_HEIGHT in .env is set to the last mock block height (2), so the
-// queue's isMaxHeightReached guard fires after block 2 — before the loader
-// can attempt block 3 — regardless of the real network height.
+// IMPORTANT: must mock getCurrentBlockHeightFromNetwork because this test uses
+// jest.useFakeTimers({ advanceTimers: true }). See declarative-model-flow for
+// the full explanation of why this prevents SQLITE_BUSY.
+const LAST_MOCK_HEIGHT = mockBlocks[mockBlocks.length - 1]!.height; // 2
+
+jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(LAST_MOCK_HEIGHT);
 
 jest
   .spyOn(BlockchainProviderService.prototype, 'getManyBlocksStatsByHeights')
