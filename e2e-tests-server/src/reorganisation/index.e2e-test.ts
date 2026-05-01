@@ -16,6 +16,18 @@ let useReal = false;
 
 const pickSrc = () => (useReal ? mockRealChainBlocks : mockFakeChainBlocks);
 
+// Mock network height to the last mock block height (3).
+// Without this, advanceTimers fires the blocks-loader with a real RPC call
+// during each await → concurrent loads → SQLITE_BUSY.
+// Returning 3 means while(lastHeight < 3) exits naturally after the reorg
+// resolves, with no real IO and no concurrent timer fires.
+const LAST_MOCK_HEIGHT = Math.max(
+  ...mockFakeChainBlocks.map((b: any) => Number(b.height)),
+  ...mockRealChainBlocks.map((b: any) => Number(b.height))
+);
+
+jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(LAST_MOCK_HEIGHT);
+
 jest
   .spyOn(BlockchainProviderService.prototype, 'getBasicBlockByHeight')
   .mockImplementation(async (height: string | number): Promise<any> => {
