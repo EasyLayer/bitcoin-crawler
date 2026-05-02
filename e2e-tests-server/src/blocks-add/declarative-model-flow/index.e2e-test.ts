@@ -11,16 +11,8 @@ import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 import BlocksModel, { AGGREGATE_ID, BlockAddedEvent } from './blocks.model';
 import { mockBlocks } from './mocks';
 
-// IMPORTANT: must mock getCurrentBlockHeightFromNetwork because this test uses
-// jest.useFakeTimers({ advanceTimers: true }). Without the mock, advanceTimers fires
-// the blocks-loader monitoring timer while the real HTTP request for network height
-// is in-flight (event loop idle). This creates dozens of concurrent load() calls,
-// each racing toward BEGIN IMMEDIATE inside the Mutex, causing SQLITE_BUSY.
-//
-// Returning LAST_MOCK_HEIGHT (= 2) makes the mock resolve synchronously, so no
-// IO idle window exists → no fake timer fires during the call → no concurrency issue.
-// The while-loop: lastHeight < 2 → loads blocks 0,1,2 then exits (2 < 2 = false).
 const LAST_MOCK_HEIGHT = mockBlocks[mockBlocks.length - 1]!.height; // 2
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(LAST_MOCK_HEIGHT);
 
@@ -29,23 +21,18 @@ jest
   .mockImplementation(async (heights: (string | number)[]): Promise<any> => {
     const numHeights = heights.map(Number);
     return mockBlocks
-      .filter((block: any) => numHeights.includes(Number(block.height)))
-      .map((block: any) => ({
-        blockhash: block.hash,
-        total_size: 1,
-        height: block.height,
-      }));
+      .filter((b: any) => numHeights.includes(Number(b.height)))
+      .map((b: any) => ({ blockhash: b.hash, total_size: 1, height: b.height }));
   });
 
-jest
-  .spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHeights')
-  .mockImplementation(async (heights: any[]): Promise<any[]> => {
-    return heights.map((height) => {
-      const blk = mockBlocks.find((b) => b.height === Number(height));
-      if (!blk) throw new Error(`No mock block for height ${height}`);
+jest.spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHeights').mockImplementation(
+  async (heights: any[]): Promise<any[]> =>
+    heights.map((h) => {
+      const blk = mockBlocks.find((b) => b.height === Number(h));
+      if (!blk) throw new Error(`No mock block for height ${h}`);
       return blk;
-    });
-  });
+    })
+);
 
 function payloadToObject(p: any): any {
   if (p == null) return p;
@@ -63,80 +50,70 @@ describe('/Bitcoin Crawler: Add Blocks Flow (declarative model)', () => {
 
   beforeAll(async () => {
     jest.resetModules();
-    jest.useFakeTimers({ advanceTimers: true });
-
     config({ path: resolve(process.cwd(), 'src/blocks-add/declarative-model-flow/.env') });
-
     await cleanDataFolder('eventstore');
-
     await bootstrap({
       Models: [BlocksModel],
       testing: {
         handlerEventsToWait: [{ eventType: BitcoinNetworkBlocksAddedEvent, count: mockBlocks.length }],
       },
     });
-
-    jest.runAllTimers();
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     jest.restoreAllMocks();
-    if (dbService) {
-      await dbService.close().catch(() => undefined as any);
-    }
+    await dbService?.close().catch(() => {});
   });
 
   it('should save and verify Network Model events with correct payload structure', async () => {
     dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
+    const [integrity] = await dbService.all(`PRAGMA integrity_check`);
+    expect(integrity.integrity_check).toBe('ok');
+
     const events = await dbService.all(`SELECT * FROM network ORDER BY id ASC`);
 
-    const initEvent = events.find((event: any) => event.type === BitcoinNetworkInitializedEvent.name);
+    const initEvent = events.find((e: any) => e.type === BitcoinNetworkInitializedEvent.name);
     expect(initEvent).toBeDefined();
+    expect(initEvent.version).toBe(1);
+    expect(UUID_RE.test(initEvent.requestId)).toBe(true);
+    expect(Number.isInteger(initEvent.timestamp)).toBe(true);
+    expect(initEvent.timestamp).toBeGreaterThan(1e15);
 
-    const blockEvents = events.filter((event: any) => event.type === BitcoinNetworkBlocksAddedEvent.name);
+    const blockEvents = events.filter((e: any) => e.type === BitcoinNetworkBlocksAddedEvent.name);
     expect(blockEvents.length).toBe(mockBlocks.length);
 
-    blockEvents.forEach((event: any) => {
-      const blockPayload = payloadToObject(event.payload);
-      expect(blockPayload.blocks).toBeDefined();
-      expect(Array.isArray(blockPayload.blocks)).toBe(true);
-
-      blockPayload.blocks.forEach((block: any) => {
-        expect(block.height).toBeDefined();
-        expect(block.hash).toBeDefined();
-        expect(block.tx).toBeDefined();
-        expect(Array.isArray(block.tx)).toBe(true);
-        expect(block.tx.length).toBeGreaterThan(0);
+    blockEvents.forEach((ev: any, i: number) => {
+      expect(Number(ev.blockHeight)).toBe(i);
+      expect(Number(ev.version)).toBe(i + 2);
+      const payload = payloadToObject(ev.payload);
+      expect(Array.isArray(payload.blocks)).toBe(true);
+      payload.blocks.forEach((b: any) => {
+        expect(typeof b.height).toBe('number');
+        expect(typeof b.hash).toBe('string');
+        expect(Array.isArray(b.tx)).toBe(true);
+        expect(b.tx.length).toBeGreaterThan(0);
+        expect(b.hash).toBe(mockBlocks[b.height]!.hash);
       });
     });
   });
 
-  it('should save and verify User Models events with correct payload structure', async () => {
+  it('should save and verify User Model events with correct payload structure', async () => {
     dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
     const events = await dbService.all(`SELECT * FROM ${AGGREGATE_ID} ORDER BY version ASC`);
-
-    const userEvents = events.filter((event: any) => event.type === BlockAddedEvent.name);
+    const userEvents = events.filter((e: any) => e.type === BlockAddedEvent.name);
     expect(userEvents.length).toBe(mockBlocks.length);
 
-    const firstEvent = userEvents[0];
-    const secondEvent = userEvents[1];
-    const thirdEvent = userEvents[2];
-
-    expect(firstEvent.version).toBe(1);
-    expect(firstEvent.type).toBe('BlockAddedEvent');
-    expect(firstEvent.blockHeight).toBe(0);
-
-    expect(secondEvent.version).toBe(2);
-    expect(secondEvent.type).toBe('BlockAddedEvent');
-    expect(secondEvent.blockHeight).toBe(1);
-
-    expect(thirdEvent.version).toBe(3);
-    expect(thirdEvent.type).toBe('BlockAddedEvent');
-    expect(thirdEvent.blockHeight).toBe(2);
+    userEvents.forEach((ev: any, i: number) => {
+      expect(ev.version).toBe(i + 1);
+      expect(ev.type).toBe('BlockAddedEvent');
+      expect(Number(ev.blockHeight)).toBe(i);
+      const payload = payloadToObject(ev.payload);
+      expect(typeof payload.hash).toBe('string');
+      expect(payload.hash).toBe(mockBlocks[i]!.hash);
+    });
   });
 });
