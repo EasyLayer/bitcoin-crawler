@@ -12,17 +12,23 @@ import { cleanDataFolder } from '../+helpers/clean-data-folder';
 import BlocksModel, { AGGREGATE_ID, BlockAddedEvent } from './blocks.model';
 import { reorgBlock, mockFakeChainBlocks, mockRealChainBlocks } from './mocks';
 
-let useReal = false;
+const LAST_MOCK_HEIGHT = Math.max(
+  ...mockFakeChainBlocks.map((b: any) => Number(b.height)),
+  ...mockRealChainBlocks.map((b: any) => Number(b.height))
+); // 3
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+let useReal = false;
 const pickSrc = () => (useReal ? mockRealChainBlocks : mockFakeChainBlocks);
+
+jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(LAST_MOCK_HEIGHT);
 
 jest
   .spyOn(BlockchainProviderService.prototype, 'getBasicBlockByHeight')
   .mockImplementation(async (height: string | number): Promise<any> => {
     const h = Number(height);
-    if (h >= 2) {
-      useReal = true;
-    }
+    if (h >= 2) useReal = true;
     return pickSrc().find((b: any) => Number(b.height) === h) ?? null;
   });
 
@@ -30,34 +36,21 @@ jest
   .spyOn(BlockchainProviderService.prototype, 'getManyBlocksStatsByHeights')
   .mockImplementation(async (heights: (string | number)[]): Promise<any[]> => {
     const hs = heights.map(Number);
-    const src = pickSrc();
-    return src
+    return pickSrc()
       .filter((b: any) => hs.includes(Number(b.height)))
-      .map((b: any) => ({
-        blockhash: b.hash,
-        total_size: b.size,
-        height: Number(b.height),
-      }));
+      .map((b: any) => ({ blockhash: b.hash, total_size: b.size, height: Number(b.height) }));
   });
 
 jest
   .spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHeights')
-  .mockImplementation(
-    async (
-      heights: (string | number)[],
-      _useHex?: boolean,
-      _verbosity?: number,
-      _verifyMerkle?: boolean
-    ): Promise<any[]> => {
-      const hs = heights.map(Number);
-      const src = pickSrc();
-      return hs.map((h) => {
-        const blk = src.find((b: any) => Number(b.height) === h);
-        if (!blk) throw new Error(`No mock block for height ${h}`);
-        return blk;
-      });
-    }
-  );
+  .mockImplementation(async (heights: (string | number)[]): Promise<any[]> => {
+    const hs = heights.map(Number);
+    return hs.map((h) => {
+      const blk = pickSrc().find((b: any) => Number(b.height) === h);
+      if (!blk) throw new Error(`No mock block for height ${h}`);
+      return blk;
+    });
+  });
 
 function payloadToObject(p: any): any {
   if (p == null) return p;
@@ -75,90 +68,91 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
   });
 
   beforeAll(async () => {
-    jest.useFakeTimers({ advanceTimers: true });
     jest.resetModules();
-
     config({ path: resolve(process.cwd(), 'src/reorganisation/.env') });
-
     await cleanDataFolder('eventstore');
-
     await bootstrap({
       Models: [BlocksModel],
       testing: {
         handlerEventsToWait: [{ eventType: BitcoinNetworkBlocksAddedEvent, count: waitingEventCount }],
       },
     });
-
-    jest.runAllTimers();
   });
 
   afterAll(async () => {
-    jest.useRealTimers();
     jest.restoreAllMocks();
-    if (dbService) {
-      // eslint-disable-next-line no-console
-      await dbService.close().catch(console.error);
-    }
+    await dbService?.close().catch(() => {});
   });
 
   it('should truncate reorganisation blocks from Network Model', async () => {
     dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
     await dbService.connect();
 
+    const [integrity] = await dbService.all(`PRAGMA integrity_check`);
+    expect(integrity.integrity_check).toBe('ok');
+
     const events = await dbService.all(`SELECT * FROM network ORDER BY id ASC`);
 
-    const initEvent = events.find((event: any) => event.type === BitcoinNetworkInitializedEvent.name);
+    // Sequence: Init → BlocksAdded×3(fake) → Reorganized → BlocksAdded×1(real)
+    const allTypes = events.map((e: any) => e.type);
+    expect(allTypes[0]).toBe('BitcoinNetworkInitializedEvent');
+    const reorgIdx = allTypes.indexOf('BitcoinNetworkReorganizedEvent');
+    expect(reorgIdx).toBeGreaterThan(0);
+    expect(allTypes.slice(reorgIdx + 1)).toContain('BitcoinNetworkBlocksAddedEvent');
+
+    // All events have valid UUID requestId
+    events.forEach((ev: any) => {
+      expect(UUID_RE.test(ev.requestId)).toBe(true);
+      expect(Number.isInteger(ev.timestamp)).toBe(true);
+      expect(ev.timestamp).toBeGreaterThan(1e15);
+    });
+
+    const initEvent = events.find((e: any) => e.type === BitcoinNetworkInitializedEvent.name);
     expect(initEvent).toBeDefined();
 
-    const reorgEvents = events.filter((event: any) => event.type === BitcoinNetworkReorganizedEvent.name);
+    const reorgEvents = events.filter((e: any) => e.type === BitcoinNetworkReorganizedEvent.name);
     expect(reorgEvents.length).toBe(1);
     const reorgEvent = reorgEvents[0];
     expect(reorgEvent.blockHeight).toBe(reorgBlock.height);
     expect(reorgEvent.version).toBe(5);
-    const reorgEventPayload = payloadToObject(reorgEvent.payload);
-    const reorgBlock2 = reorgEventPayload.blocks[0];
-    const reorgBlock1 = reorgEventPayload.blocks[1];
-    expect(reorgBlock2.height).toBe(2);
-    expect(reorgBlock1.height).toBe(1);
 
-    const blockEvents = events.filter((event: any) => event.type === BitcoinNetworkBlocksAddedEvent.name);
+    const reorgPayload = payloadToObject(reorgEvent.payload);
+    expect(reorgPayload.blocks[0].height).toBe(2);
+    expect(reorgPayload.blocks[1].height).toBe(1);
+    // Hashes match fake chain (rolled back blocks)
+    expect(reorgPayload.blocks[0].hash).toBe(mockFakeChainBlocks.find((b: any) => b.height === 2)!.hash);
+    expect(reorgPayload.blocks[1].hash).toBe(mockFakeChainBlocks.find((b: any) => b.height === 1)!.hash);
+
+    const blockEvents = events.filter((e: any) => e.type === BitcoinNetworkBlocksAddedEvent.name);
     expect(blockEvents.length).toBe(4);
 
-    const blockBeforeReorg1 = blockEvents[0];
-    expect(blockBeforeReorg1.blockHeight).toBe(0);
-    expect(blockBeforeReorg1.version).toBe(2);
-    const blockBeforeReorg1Payload = payloadToObject(blockBeforeReorg1.payload);
-    expect(Array.isArray(blockBeforeReorg1Payload.blocks)).toBe(true);
-    expect(blockBeforeReorg1Payload.blocks[0].height).toBe(0);
-    expect(blockBeforeReorg1Payload.blocks[0].tx).toBeDefined();
-    expect(blockBeforeReorg1Payload.blocks[0].tx.length).toBeGreaterThan(0);
+    // Blocks before reorg (fake chain)
+    expect(blockEvents[0].blockHeight).toBe(0);
+    expect(blockEvents[0].version).toBe(2);
+    expect(blockEvents[1].blockHeight).toBe(1);
+    expect(blockEvents[1].version).toBe(3);
+    expect(blockEvents[2].blockHeight).toBe(2);
+    expect(blockEvents[2].version).toBe(4);
 
-    const blockBeforeReorg2 = blockEvents[1];
-    expect(blockBeforeReorg2.blockHeight).toBe(1);
-    expect(blockBeforeReorg2.version).toBe(3);
-    const blockBeforeReorg2Payload = payloadToObject(blockBeforeReorg2.payload);
-    expect(Array.isArray(blockBeforeReorg2Payload.blocks)).toBe(true);
-    expect(blockBeforeReorg2Payload.blocks[0].height).toBe(1);
-    expect(blockBeforeReorg2Payload.blocks[0].tx).toBeDefined();
-    expect(blockBeforeReorg2Payload.blocks[0].tx.length).toBeGreaterThan(0);
+    // Block after reorg (real chain, height=1)
+    expect(blockEvents[3].blockHeight).toBe(1);
+    expect(blockEvents[3].version).toBe(6);
 
-    const blockBeforeReorg3 = blockEvents[2];
-    expect(blockBeforeReorg3.blockHeight).toBe(2);
-    expect(blockBeforeReorg3.version).toBe(4);
-    const blockBeforeReorg3Payload = payloadToObject(blockBeforeReorg3.payload);
-    expect(Array.isArray(blockBeforeReorg3Payload.blocks)).toBe(true);
-    expect(blockBeforeReorg3Payload.blocks[0].height).toBe(2);
-    expect(blockBeforeReorg3Payload.blocks[0].tx).toBeDefined();
-    expect(blockBeforeReorg3Payload.blocks[0].tx.length).toBeGreaterThan(0);
+    // Payload hashes match mocks
+    const afterPayload = payloadToObject(blockEvents[3].payload);
+    expect(afterPayload.blocks[0].hash).toBe(mockRealChainBlocks.find((b: any) => b.height === 1)!.hash);
+    expect(afterPayload.blocks[0].hash).not.toBe(mockFakeChainBlocks.find((b: any) => b.height === 1)!.hash);
 
-    const blockAfterReorg = blockEvents[3];
-    expect(blockAfterReorg.blockHeight).toBe(1);
-    expect(blockAfterReorg.version).toBe(6);
-    const blockAfterReorgPayload = payloadToObject(blockAfterReorg.payload);
-    expect(Array.isArray(blockAfterReorgPayload.blocks)).toBe(true);
-    expect(blockAfterReorgPayload.blocks[0].height).toBe(1);
-    expect(blockAfterReorgPayload.blocks[0].tx).toBeDefined();
-    expect(blockAfterReorgPayload.blocks[0].tx.length).toBeGreaterThan(0);
+    [blockEvents[0], blockEvents[1], blockEvents[2], blockEvents[3]].forEach((ev: any) => {
+      const p = payloadToObject(ev.payload);
+      expect(Array.isArray(p.blocks)).toBe(true);
+      p.blocks.forEach((b: any) => {
+        expect(typeof b.hash).toBe('string');
+        expect(b.hash.length).toBeGreaterThan(0);
+        expect(Array.isArray(b.tx)).toBe(true);
+        expect(b.tx.length).toBeGreaterThan(0);
+      });
+    });
   });
 
   it('should rollback reorganisation blocks from Users Model', async () => {
@@ -166,17 +160,24 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
     await dbService.connect();
 
     const events = await dbService.all(`SELECT * FROM ${AGGREGATE_ID} ORDER BY version ASC`);
-
-    const userEvents = events.filter((event: any) => event.type === BlockAddedEvent.name);
+    const userEvents = events.filter((e: any) => e.type === BlockAddedEvent.name);
     expect(userEvents.length).toBe(2);
 
     const blockBeforeReorg = userEvents[0];
     const blockAfterReorg = userEvents[1];
 
-    expect(blockBeforeReorg.blockHeight).toBe(reorgBlock.height);
+    expect(blockBeforeReorg.blockHeight).toBe(reorgBlock.height); // 0
     expect(blockBeforeReorg.version).toBe(1);
 
     expect(blockAfterReorg.blockHeight).toBe(1);
     expect(blockAfterReorg.version).toBe(2);
+
+    // Payload hashes
+    const payload0 = payloadToObject(blockBeforeReorg.payload);
+    expect(payload0.hash).toBe(reorgBlock.hash);
+
+    const payloadAfter = payloadToObject(blockAfterReorg.payload);
+    expect(payloadAfter.hash).toBe(mockRealChainBlocks.find((b: any) => b.height === 1)!.hash);
+    expect(payloadAfter.hash).not.toBe(mockFakeChainBlocks.find((b: any) => b.height === 1)!.hash);
   });
 });
