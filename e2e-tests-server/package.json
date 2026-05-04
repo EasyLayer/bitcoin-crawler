@@ -1,13 +1,13 @@
 {
     "name": "e2e-tests-server",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "description": "",
     "private": true,
     "type": "commonjs",
     "scripts": {
         "clear": "yarn run clear:node_modules",
         "clear:node_modules": "rimraf node_modules",
-        "test:e2e": "jest --clearCache && jest --detectOpenHandles --forceExit -c ./jest.config.mjs",
+        "test:e2e": "jest --clearCache && jest --forceExit --runInBand -c ./jest.config.mjs",
         "lint": "eslint -c eslint.config.mjs \"src/**/*.ts\"",
         "lint:fix": "eslint -c eslint.config.mjs \"src/**/*.ts\" --fix",
         "format": "prettier -c prettier.config.mjs --write \"src/**/*.ts\""
@@ -16,7 +16,7 @@
     "license": "",
     "packageManager": "yarn@4.5.0",
     "dependencies": {
-        "@easylayer/bitcoin-crawler": "0.3.1",
+        "@easylayer/bitcoin-crawler": "0.4.0",
         "dotenv": "16.4.5",
         "sqlite3": "5.1.7"
     },
