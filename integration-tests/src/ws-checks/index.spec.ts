@@ -12,6 +12,21 @@ import { cleanDataFolder } from '../+helpers/clean-data-folder';
 import BlocksModel, { AGGREGATE_ID } from './blocks.model';
 import { mockBlocks } from './mocks';
 
+const LAST_MOCK_HEIGHT = mockBlocks[mockBlocks.length - 1]!.height;
+
+function cloneMockBlock(block: any): any {
+  return JSON.parse(JSON.stringify(block));
+}
+
+function toRawMockBlock(block: any): any {
+  return {
+    hash: block.hash,
+    height: Number(block.height),
+    size: Number(block.size ?? 1),
+    bytes: Buffer.from(`mock-bitcoin-block:${block.height}`),
+  };
+}
+
 jest.setTimeout(60000);
 
 describe('/Bitcoin Crawler: WS Transport', () => {
@@ -42,23 +57,36 @@ describe('/Bitcoin Crawler: WS Transport', () => {
 
     await cleanDataFolder('eventstore');
 
+    jest
+      .spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork')
+      .mockResolvedValue(LAST_MOCK_HEIGHT);
+
     // Mocks for bitcoin provider
     jest
       .spyOn(BlockchainProviderService.prototype, 'getManyBlocksStatsByHeights')
       .mockImplementation(async (heights: (string | number)[]): Promise<any> => {
+        const requestedHeights = heights.map(Number);
         return mockBlocks
-          .filter((block: any) => heights.includes(block.height))
-          .map((block: any) => ({ blockhash: block.hash, total_size: 1, height: block.height }));
+          .filter((block: any) => requestedHeights.includes(Number(block.height)))
+          .map((block: any) => ({ blockhash: block.hash, total_size: block.size ?? 1, height: block.height }));
       });
 
     jest
-      .spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHeights')
-      .mockImplementation(async (heights: any[]): Promise<any[]> => {
+      .spyOn(BlockchainProviderService.prototype, 'getManyBlocksRawByHeights')
+      .mockImplementation(async (heights: number[]): Promise<any[]> => {
         return heights.map((height) => {
-          const blk = mockBlocks.find((b) => b.height === height);
-          if (!blk) throw new Error(`No mock block for height ${height}`);
-          return blk;
+          const block = mockBlocks.find((item) => Number(item.height) === Number(height));
+          if (!block) throw new Error(`No mock raw block for height ${height}`);
+          return toRawMockBlock(block);
         });
+      });
+
+    jest
+      .spyOn(BlockchainProviderService.prototype, 'parseBlock')
+      .mockImplementation((_bytes: Buffer, height: number): any => {
+        const block = mockBlocks.find((item) => Number(item.height) === Number(height));
+        if (!block) throw new Error(`No mock parsed block for height ${height}`);
+        return cloneMockBlock(block);
       });
 
     // Client (receiver) — connects to server WS and handles events+queries over WS

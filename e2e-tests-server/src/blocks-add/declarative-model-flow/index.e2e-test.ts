@@ -14,6 +14,19 @@ import { mockBlocks } from './mocks';
 const LAST_MOCK_HEIGHT = mockBlocks[mockBlocks.length - 1]!.height; // 2
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function cloneMockBlock(block: any): any {
+  return JSON.parse(JSON.stringify(block));
+}
+
+function toRawMockBlock(block: any): any {
+  return {
+    hash: block.hash,
+    height: Number(block.height),
+    size: Number(block.size ?? 1),
+    bytes: Buffer.from(`mock-bitcoin-block:${block.height}`),
+  };
+}
+
 jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(LAST_MOCK_HEIGHT);
 
 jest
@@ -22,17 +35,25 @@ jest
     const numHeights = heights.map(Number);
     return mockBlocks
       .filter((b: any) => numHeights.includes(Number(b.height)))
-      .map((b: any) => ({ blockhash: b.hash, total_size: 1, height: b.height }));
+      .map((b: any) => ({ blockhash: b.hash, total_size: b.size ?? 1, height: b.height }));
   });
 
-jest.spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHeights').mockImplementation(
-  async (heights: any[]): Promise<any[]> =>
-    heights.map((h) => {
-      const blk = mockBlocks.find((b) => b.height === Number(h));
-      if (!blk) throw new Error(`No mock block for height ${h}`);
-      return blk;
+jest.spyOn(BlockchainProviderService.prototype, 'getManyBlocksRawByHeights').mockImplementation(
+  async (heights: number[]): Promise<any[]> =>
+    heights.map((height) => {
+      const block = mockBlocks.find((item) => Number(item.height) === Number(height));
+      if (!block) throw new Error(`No mock raw block for height ${height}`);
+      return toRawMockBlock(block);
     })
 );
+
+jest
+  .spyOn(BlockchainProviderService.prototype, 'parseBlock')
+  .mockImplementation((_bytes: Buffer, height: number): any => {
+    const block = mockBlocks.find((item) => Number(item.height) === Number(height));
+    if (!block) throw new Error(`No mock parsed block for height ${height}`);
+    return cloneMockBlock(block);
+  });
 
 function payloadToObject(p: any): any {
   if (p == null) return p;

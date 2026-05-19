@@ -12,10 +12,87 @@ import { cleanDataFolder } from '../../+helpers/clean-data-folder';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const mockMempoolTransactions = [
+  {
+    txid: 'mempool_tx_a',
+    hash: 'mempool_tx_a',
+    version: 2,
+    size: 220,
+    strippedsize: 160,
+    sizeWithoutWitnesses: 160,
+    vsize: 180,
+    weight: 720,
+    locktime: 0,
+    fee: 3600,
+    feeRate: 20,
+    vin: [
+      {
+        txid: 'prev_tx_a',
+        vout: 0,
+        sequence: 0xffffffff,
+      },
+    ],
+    vout: [
+      {
+        value: 0.0001,
+        n: 0,
+        scriptPubKey: {
+          asm: '0 mock',
+          hex: '0014'.padEnd(44, '0'),
+          type: 'witness_v0_keyhash',
+          address: 'tb1qmockaddress0000000000000000000000000000',
+        },
+      },
+    ],
+  },
+  {
+    txid: 'mempool_tx_b',
+    hash: 'mempool_tx_b',
+    version: 2,
+    size: 230,
+    strippedsize: 170,
+    sizeWithoutWitnesses: 170,
+    vsize: 190,
+    weight: 760,
+    locktime: 0,
+    fee: 4750,
+    feeRate: 25,
+    vin: [
+      {
+        txid: 'prev_tx_b',
+        vout: 1,
+        sequence: 0xffffffff,
+      },
+    ],
+    vout: [
+      {
+        value: 0.0002,
+        n: 0,
+        scriptPubKey: {
+          asm: '0 mock',
+          hex: '0014'.padEnd(44, '1'),
+          type: 'witness_v0_keyhash',
+          address: 'tb1qmockaddress1111111111111111111111111111',
+        },
+      },
+    ],
+  },
+];
+
 jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(-1);
 jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromMempool').mockResolvedValue(850000);
-jest.spyOn(BlockchainProviderService.prototype, 'getRawMempoolFromAll').mockResolvedValue([]);
-jest.spyOn(BlockchainProviderService.prototype, 'getMempoolTransactionsByTxids').mockResolvedValue([]);
+jest.spyOn(BlockchainProviderService.prototype, 'getRawMempoolFromAll').mockResolvedValue([
+  {
+    providerName: 'rpc_1',
+    value: mockMempoolTransactions.map((tx) => tx.txid),
+  },
+]);
+jest
+  .spyOn(BlockchainProviderService.prototype, 'getMempoolTransactionsByTxids')
+  .mockImplementation(
+    async (txids: string[]) =>
+      mockMempoolTransactions.filter((tx) => txids.includes(tx.txid)).map((tx) => JSON.parse(JSON.stringify(tx))) as any
+  );
 
 describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
   let dbService!: SQLiteService;
