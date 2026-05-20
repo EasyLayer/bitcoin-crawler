@@ -10,18 +10,8 @@ import {
 import { NetworkModelFactoryService, NetworkReadService, MempoolReadService } from '../services';
 import { ModelFactoryService, Model, NormalizedModelCtor } from '../framework';
 import type { ProcessBlockExecutionContext } from '../framework';
+import { deepFreeze } from '../../utils/deep-freeze';
 
-function deepFreeze<T>(obj: T): T {
-  Object.getOwnPropertyNames(obj).forEach((name) => {
-    const value = (obj as any)[name];
-
-    if (value && typeof value === 'object') {
-      deepFreeze(value);
-    }
-  });
-
-  return Object.freeze(obj);
-}
 @Injectable()
 @CommandHandler(AddBlocksBatchCommand)
 export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBatchCommand> {

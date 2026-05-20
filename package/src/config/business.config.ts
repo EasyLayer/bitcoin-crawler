@@ -138,7 +138,7 @@ export class BusinessConfig {
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
-    return n || 1;
+    return Number.isFinite(n) ? n : 1;
   })
   @IsNumber()
   @JSONSchema({

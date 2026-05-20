@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { LightTransaction, MempoolTxMetadata } from '@easylayer/bitcoin';
 import { MempoolModelFactoryService } from './mempool-model-factory.service';
+import type { IMempoolReadService } from './mempool-read.interface';
 
 @Injectable()
-export class MempoolReadService {
+export class MempoolReadService implements IMempoolReadService {
   constructor(private readonly mempoolModelFactory: MempoolModelFactoryService) {}
 
   // ---------- helpers (local) ----------
@@ -13,16 +14,9 @@ export class MempoolReadService {
     if (!md) return undefined;
     const v = Number(md.vsize);
     if (!Number.isFinite(v) || v <= 0) return undefined;
-
-    const n =
-      (typeof (md as any).modifiedfee === 'number' && (md as any).modifiedfee) ??
-      (typeof (md as any).fee === 'number' && (md as any).fee) ??
-      (typeof (md as any).fees?.modified === 'number' && (md as any).fees.modified) ??
-      (typeof (md as any).fees?.base === 'number' && (md as any).fees.base) ??
-      undefined;
-
-    if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) return undefined;
-    return n / v;
+    const fee = Number(md.modifiedfee);
+    if (!Number.isFinite(fee) || fee <= 0) return undefined;
+    return fee / v;
   }
 
   // ========== Read API ==========
