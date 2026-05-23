@@ -22,6 +22,8 @@ export type Locals = {
   vout: any[];
   vin: any[];
   tx: any[];
+  mempool: any[];
+  mempoolTx: any[];
 };
 
 // Minimal, read-only state wrapper for sources (compile-time only)
@@ -197,7 +199,7 @@ export function compileStateModel<State>(
       const baseCtx = Object.create(ctx);
 
       // Per-block accumulator; not persisted
-      const locals: Locals = { vout: [], vin: [], tx: [] };
+      const locals: Locals = { vout: [], vin: [], tx: [], mempool: [], mempoolTx: [] };
 
       // Inject stable references into baseCtx
       Object.defineProperty(baseCtx, 'state', { value: this.state, writable: false, enumerable: false });
@@ -271,7 +273,7 @@ export function compileStateModel<State>(
       const baseCtx = Object.create(ctx);
 
       // Per-tick accumulator for mempool; not persisted
-      const locals: Locals = { vout: [], vin: [], tx: [] };
+      const locals: Locals = { vout: [], vin: [], tx: [], mempool: [], mempoolTx: [] };
 
       // Inject stable references into baseCtx
       Object.defineProperty(baseCtx, 'state', { value: this.state, writable: false, enumerable: false });
@@ -282,49 +284,22 @@ export function compileStateModel<State>(
       });
       Object.defineProperty(baseCtx, 'locals', { value: locals, writable: false, enumerable: false });
 
-      // 1) vout — reverse
-      if (has('vout')) {
-        const bag: any[] = [];
-        await walker('mempool.tx.vout', mempool, (subctx) => {
-          bag.push(subctx);
-        });
-        for (let i = bag.length - 1; i >= 0; i--) {
-          const subctx = bag[i] as VoutCtx<State>;
-          Object.setPrototypeOf(subctx, baseCtx);
-          const ret = await (sources!.vout as any)(subctx);
-          pushTo(locals.vout, ret);
-        }
+      // 1) mempool — whole-tick handler (once, before per-tx)
+      if (has('mempool')) {
+        const subctx = { mempool } as MempoolCtx<State>;
+        Object.setPrototypeOf(subctx, baseCtx);
+        const ret = await (sources!.mempool as any)(subctx);
+        pushTo(locals.mempool, ret);
       }
 
-      // 2) vin — reverse
-      if (has('vin')) {
-        const bag: any[] = [];
-        await walker('mempool.tx.vin', mempool, (subctx) => {
-          bag.push(subctx);
-        });
-        for (let i = bag.length - 1; i >= 0; i--) {
-          const subctx = bag[i] as VinCtx<State>;
-          Object.setPrototypeOf(subctx, baseCtx);
-          const ret = await (sources!.vin as any)(subctx);
-          pushTo(locals.vin, ret);
-        }
-      }
-
-      // 3) tx — forward
-      if (has('tx')) {
+      // 2) mempoolTx — per-transaction handler
+      if (has('mempoolTx')) {
         await walker('mempool.tx', mempool, async (subctx) => {
           const ctxTx = subctx as MempoolTxCtx<State>;
           Object.setPrototypeOf(ctxTx, baseCtx);
-          const ret = await (sources!.tx as any)(ctxTx);
-          pushTo(locals.tx, ret);
+          const ret = await (sources!.mempoolTx as any)(ctxTx);
+          pushTo(locals.mempoolTx, ret);
         });
-      }
-
-      // 4) block — forward (once)
-      if (has('block')) {
-        const subctx = { mempool } as MempoolCtx<State>;
-        Object.setPrototypeOf(subctx, baseCtx);
-        await (sources!.block as any)(subctx);
       }
     }
   }

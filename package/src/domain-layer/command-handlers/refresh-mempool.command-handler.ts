@@ -30,7 +30,7 @@ export class RefreshMempoolCommandHandler implements ICommandHandler<RefreshMemp
 
       this.logger.verbose('Mempool saved into eventstore');
     } catch (error) {
-      this.logger.warn('Error while refreshing mempool', '', { args: { message: (error as any)?.message } });
+      this.logger.warn('Error while refreshing mempool', { args: { message: (error as any)?.message } });
       throw error;
     }
   }

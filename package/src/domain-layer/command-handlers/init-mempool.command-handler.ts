@@ -23,7 +23,7 @@ export class InitMempoolCommandHandler implements ICommandHandler<InitMempoolCom
 
     const currentNetworkHeight = await this.blockchainProviderService.getCurrentBlockHeightFromMempool({});
 
-    if (this.businessConfig.START_BLOCK_HEIGHT) {
+    if (this.businessConfig.START_BLOCK_HEIGHT !== undefined) {
       throw new Error('Mempool cannot be initialized with the specified START_BLOCK_HEIGHT parameter');
     }
 

@@ -19,6 +19,19 @@ const LAST_MOCK_HEIGHT = Math.max(
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function cloneMockBlock(block: any): any {
+  return JSON.parse(JSON.stringify(block));
+}
+
+function toRawMockBlock(block: any): any {
+  return {
+    hash: block.hash,
+    height: Number(block.height),
+    size: Number(block.size ?? 1),
+    bytes: Buffer.from(`mock-bitcoin-block:${block.height}`),
+  };
+}
+
 let useReal = false;
 const pickSrc = () => (useReal ? mockRealChainBlocks : mockFakeChainBlocks);
 
@@ -42,14 +55,21 @@ jest
   });
 
 jest
-  .spyOn(BlockchainProviderService.prototype, 'getManyBlocksByHeights')
-  .mockImplementation(async (heights: (string | number)[]): Promise<any[]> => {
-    const hs = heights.map(Number);
-    return hs.map((h) => {
-      const blk = pickSrc().find((b: any) => Number(b.height) === h);
-      if (!blk) throw new Error(`No mock block for height ${h}`);
-      return blk;
+  .spyOn(BlockchainProviderService.prototype, 'getManyBlocksRawByHeights')
+  .mockImplementation(async (heights: number[]): Promise<any[]> => {
+    return heights.map((height) => {
+      const block = pickSrc().find((item: any) => Number(item.height) === Number(height));
+      if (!block) throw new Error(`No mock raw block for height ${height}`);
+      return toRawMockBlock(block);
     });
+  });
+
+jest
+  .spyOn(BlockchainProviderService.prototype, 'parseBlock')
+  .mockImplementation((_bytes: Buffer, height: number): any => {
+    const block = pickSrc().find((item: any) => Number(item.height) === Number(height));
+    if (!block) throw new Error(`No mock parsed block for height ${height}`);
+    return cloneMockBlock(block);
   });
 
 function payloadToObject(p: any): any {

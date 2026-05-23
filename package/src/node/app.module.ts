@@ -15,6 +15,7 @@ import {
   NetworkModelFactoryService,
   MempoolModelFactoryService,
   MempoolReadService,
+  MempoolTickReadService,
   NetworkReadService,
   NETWORK_AGGREGATE_ID,
   MEMPOOL_AGGREGATE_ID,
@@ -130,24 +131,21 @@ export class AppModule {
           ...(eventstoreConfig.EVENTSTORE_DB_PASSWORD && {
             password: eventstoreConfig.EVENTSTORE_DB_PASSWORD,
           }),
-          ...(eventstoreConfig.EVENTSTORE_PG_POOL_MAX && {
-            extra: {
-              min: eventstoreConfig.EVENTSTORE_PG_POOL_MIN,
-              max: eventstoreConfig.EVENTSTORE_PG_POOL_MAX,
-            },
-          }),
+          ...(() => {
+            const extra: Record<string, number> = {};
+            if (eventstoreConfig.EVENTSTORE_PG_POOL_MIN !== undefined)
+              extra.min = eventstoreConfig.EVENTSTORE_PG_POOL_MIN;
+            if (eventstoreConfig.EVENTSTORE_PG_POOL_MAX !== undefined)
+              extra.max = eventstoreConfig.EVENTSTORE_PG_POOL_MAX;
+            if (eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT !== undefined)
+              extra.idleTimeoutMillis = eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT;
+            if (eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT !== undefined)
+              extra.connectionTimeoutMillis = eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT;
+            return Object.keys(extra).length > 0 ? { extra } : {};
+          })(),
           ...(eventstoreConfig.EVENTSTORE_PG_QUERY_TIMEOUT && {
             maxQueryExecutionTime: eventstoreConfig.EVENTSTORE_PG_QUERY_TIMEOUT,
           }),
-          ...(eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT &&
-            ({
-              extra: {
-                idleTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_IDLE_TIMEOUT,
-                ...(eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT && {
-                  connectionTimeoutMillis: eventstoreConfig.EVENTSTORE_PG_CONNECTION_TIMEOUT,
-                }),
-              },
-            } as any)),
         }),
         BlocksQueueModule.forRootAsync({
           mempoolCommandExecutor: MempoolCommandFactoryService,
@@ -186,6 +184,7 @@ export class AppModule {
         MempoolCommandFactoryService,
         MempoolModelFactoryService,
         MempoolReadService,
+        MempoolTickReadService,
         NetworkReadService,
         ...Providers,
       ],
@@ -208,6 +207,7 @@ export class AppModule {
         BlocksQueueModule,
         EventStoreModule,
         MempoolReadService,
+        MempoolTickReadService,
         NetworkReadService,
         ...Providers,
       ],

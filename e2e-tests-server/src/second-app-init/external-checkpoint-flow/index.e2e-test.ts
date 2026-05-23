@@ -89,4 +89,74 @@ describe('/Bitcoin Crawler: Second Initialization External Checkpoint Flow', () 
       'External checkpoint (2) is ahead of local EventStore (0)'
     );
   });
+
+  it('should rollback EventStore to empty when external checkpoint is -1', async () => {
+    await seedNetworkTable(db, checkpointRollbackNetworkEvents);
+    await db.close();
+
+    await bootstrap({
+      config: { lastBlockHeight: -1 },
+      testing: {
+        handlerEventsToWait: [{ eventType: BitcoinNetworkInitializedEvent, count: 1 }],
+      },
+    });
+
+    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    await db.connect();
+
+    const [integrity] = await db.all(`PRAGMA integrity_check`);
+    expect(integrity.integrity_check).toBe('ok');
+
+    const rows = await db.all(`SELECT * FROM network ORDER BY id ASC`);
+
+    // After rollback to -1, no BlocksAdded events should remain
+    expect(rows.some((r: any) => r.type === 'BitcoinNetworkBlocksAddedEvent')).toBe(false);
+
+    // Exactly one Initialized event should be present
+    const initEvents = rows.filter((r: any) => r.type === 'BitcoinNetworkInitializedEvent');
+    expect(initEvents.length).toBe(1);
+
+    const latest = rows[rows.length - 1];
+    expect(latest.type).toBe('BitcoinNetworkInitializedEvent');
+    expect(UUID_RE.test(latest.requestId)).toBe(true);
+  });
+
+  it('should reject bootstrap when lastBlockHeight is less than -1', async () => {
+    // No seed needed: guard is checked before any DB inspection
+    await db.close();
+
+    await expect(bootstrap({ config: { lastBlockHeight: -2 } })).rejects.toThrow(
+      'lastBlockHeight cannot be less than -1'
+    );
+  });
+
+  it('should not rollback when external checkpoint equals local EventStore height', async () => {
+    await seedNetworkTable(db, checkpointRollbackNetworkEvents);
+    await db.close();
+
+    // checkpointRollbackNetworkEvents tops out at blockHeight=3
+    await bootstrap({
+      config: { lastBlockHeight: 3 },
+      testing: {
+        handlerEventsToWait: [{ eventType: BitcoinNetworkInitializedEvent, count: 1 }],
+      },
+    });
+
+    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    await db.connect();
+
+    const [integrity] = await db.all(`PRAGMA integrity_check`);
+    expect(integrity.integrity_check).toBe('ok');
+
+    const rows = await db.all(`SELECT * FROM network ORDER BY id ASC`);
+
+    // All seeded BlocksAdded events must still be present (no rollback)
+    expect(rows.some((r: any) => r.type === 'BitcoinNetworkBlocksAddedEvent' && r.blockHeight === 1)).toBe(true);
+    expect(rows.some((r: any) => r.type === 'BitcoinNetworkBlocksAddedEvent' && r.blockHeight === 2)).toBe(true);
+    expect(rows.some((r: any) => r.type === 'BitcoinNetworkBlocksAddedEvent' && r.blockHeight === 3)).toBe(true);
+
+    // A new Initialized event was appended at the bootstrap height
+    const latest = rows[rows.length - 1];
+    expect(latest.type).toBe('BitcoinNetworkInitializedEvent');
+  });
 });
