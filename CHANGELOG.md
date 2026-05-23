@@ -1,3 +1,12 @@
+## [0.4.1](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.4.0...v0.4.1) (2026-05-23)
+
+
+### Bug Fixes
+
+* fixed bugs: mempool tick, mempool model service; mempool framework part; add e2e and unit tests ([1e9067e](https://github.com/EasyLayer/bitcoin-crawler/commit/1e9067e0982ce7826b7f64ff7560231a63b42e6f))
+
+
+
 # [0.4.0](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.3.1...v0.4.0) (2026-05-01)
 
 
