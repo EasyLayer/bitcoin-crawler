@@ -716,8 +716,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@easylayer/bitcoin-crawler@workspace:package"
   dependencies:
-    "@easylayer/bitcoin": "npm:1.3.3"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/bitcoin": "npm:1.3.4"
+    "@easylayer/common": "npm:1.3.4"
     "@nestjs/common": "npm:10.2.10"
     "@nestjs/core": "npm:10.2.10"
     "@nestjs/testing": "npm:10.2.10"
@@ -751,12 +751,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@easylayer/bitcoin@npm:1.3.3":
-  version: 1.3.3
-  resolution: "@easylayer/bitcoin@npm:1.3.3"
+"@easylayer/bitcoin@npm:1.3.4":
+  version: 1.3.4
+  resolution: "@easylayer/bitcoin@npm:1.3.4"
   dependencies:
     "@bitcoinerlab/secp256k1": "npm:1.2.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@nestjs/common": "npm:10.2.10"
     "@nestjs/swagger": "npm:7.1.17"
     "@noble/secp256k1": "npm:3.0.0"
@@ -774,13 +774,13 @@ __metadata:
     rxjs: "npm:7.8.1"
     uuid: "npm:9.0.1"
     zeromq: "npm:6.5.0"
-  checksum: 10/a046910df6929ed11abd334d63ec7c586f7c6456f0690fa9ca3b96dd658ad264b874f86d5f9fd7a18be63f88acabba09882d01a5895849469fbe915237a3bcd4
+  checksum: 10/d327ed12890055c6660dd7b64192de5e681bdbac6e1d24cbcfd692ee273d6b0f4873eb307c0d12afedc87f1da6801f1990e1bf2491238d084b44bfec8109e32f
   languageName: node
   linkType: hard
 
-"@easylayer/common@npm:1.3.3":
-  version: 1.3.3
-  resolution: "@easylayer/common@npm:1.3.3"
+"@easylayer/common@npm:1.3.4":
+  version: 1.3.4
+  resolution: "@easylayer/common@npm:1.3.4"
   dependencies:
     "@nestjs/common": "npm:10.2.10"
     "@nestjs/swagger": "npm:7.1.17"
@@ -803,7 +803,7 @@ __metadata:
     stream-json: "npm:1.8.0"
     typeorm: "npm:0.3.20"
     uuid: "npm:9.0.1"
-  checksum: 10/cd754503582628503d98eff8b989c17320c9b8ac76ef6d68525738da484d823d929a1192cba7108cbf8189b055c8e67abc4831632309615f10b1ddcc5e4658b6
+  checksum: 10/80204d73163f40b65dc93a3e6b82b2578bcbb4bd7f79d41c874385e710d46953281d2b53cdcb17aa63e8ec949146cb6af4d3731efe80528323728c4aa06f6513
   languageName: node
   linkType: hard
 
@@ -3944,7 +3944,7 @@ __metadata:
   resolution: "advanced-wallet-watcher@workspace:examples/business/advanced-wallet-watcher"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@easylayer/transport-sdk": "npm:1.3.1"
     "@types/express": "npm:5"
     "@types/node": "npm:20.10.4"
@@ -4413,7 +4413,7 @@ __metadata:
   resolution: "base-wallet-watcher@workspace:examples/business/base-wallet-watcher"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@easylayer/transport-sdk": "npm:1.3.1"
     "@types/express": "npm:5"
     "@types/node": "npm:20.10.4"
@@ -4543,9 +4543,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "bitcoin-crawler-browser-worker-example@workspace:examples/system/browser-worker"
   dependencies:
-    "@easylayer/bitcoin": "npm:1.3.3"
+    "@easylayer/bitcoin": "npm:1.3.4"
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@easylayer/transport-sdk": "npm:1.3.1"
     "@types/node": "npm:20.10.4"
     reflect-metadata: "npm:0.1.14"
@@ -4558,9 +4558,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "bitcoin-crawler-desktop-example@workspace:examples/system/desktop"
   dependencies:
-    "@easylayer/bitcoin": "npm:1.3.3"
+    "@easylayer/bitcoin": "npm:1.3.4"
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@easylayer/transport-sdk": "npm:1.3.1"
     "@electron/rebuild": "npm:4.0.3"
     "@types/node": "npm:20.10.4"
@@ -4581,7 +4581,7 @@ __metadata:
   resolution: "bitcoin-crawler-docker-example@workspace:examples/system/docker"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@easylayer/transport-sdk": "npm:1.3.1"
     "@types/express": "npm:5"
     "@types/node": "npm:20.10.4"
@@ -5261,7 +5261,7 @@ __metadata:
   resolution: "class-model@workspace:examples/system/class-model"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@types/node": "npm:20.10.4"
     rimraf: "npm:5.0.5"
     ts-node: "npm:10.9.2"
@@ -6198,7 +6198,7 @@ __metadata:
   resolution: "declarative-model@workspace:examples/system/declarative-model"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@types/node": "npm:20.10.4"
     rimraf: "npm:5.0.5"
     ts-node: "npm:10.9.2"
@@ -8596,7 +8596,7 @@ __metadata:
   resolution: "integration-tests@workspace:integration-tests"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@easylayer/transport-sdk": "npm:1.3.1"
     "@types/jest": "npm:29.5.11"
     "@types/node": "npm:20.10.4"
@@ -11572,7 +11572,7 @@ __metadata:
   resolution: "postgres@workspace:examples/system/postgres"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@types/node": "npm:20.10.4"
     rimraf: "npm:5.0.5"
     ts-node: "npm:10.9.2"
@@ -13405,7 +13405,7 @@ __metadata:
   resolution: "transport@workspace:examples/system/transport"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.0"
-    "@easylayer/common": "npm:1.3.3"
+    "@easylayer/common": "npm:1.3.4"
     "@easylayer/transport-sdk": "npm:1.3.1"
     "@types/express": "npm:5"
     "@types/node": "npm:20.10.4"
