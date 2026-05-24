@@ -34,7 +34,7 @@ describe('/Bitcoin Crawler: Clear Network Table — Decline Flow', () => {
     config({ path: resolve(process.cwd(), 'src/second-app-init/clear-network-table-decline-flow/.env') });
     await cleanDataFolder('eventstore');
 
-    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await db.connect();
     await db.exec(networkTableSQL);
 
@@ -59,7 +59,7 @@ describe('/Bitcoin Crawler: Clear Network Table — Decline Flow', () => {
   });
 
   it('should NOT have written BitcoinNetworkClearedEvent (data preserved)', async () => {
-    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await db.connect();
 
     const [integrity] = await db.all(`PRAGMA integrity_check`);

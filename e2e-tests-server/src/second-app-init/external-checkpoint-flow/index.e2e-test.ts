@@ -40,7 +40,7 @@ describe('/Bitcoin Crawler: Second Initialization External Checkpoint Flow', () 
     jest.spyOn(BlockchainProviderService.prototype, 'getCurrentBlockHeightFromNetwork').mockResolvedValue(-1);
     config({ path: resolve(process.cwd(), 'src/second-app-init/external-checkpoint-flow/.env') });
     await cleanDataFolder('eventstore');
-    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await db.connect();
   });
 
@@ -60,7 +60,7 @@ describe('/Bitcoin Crawler: Second Initialization External Checkpoint Flow', () 
       },
     });
 
-    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await db.connect();
 
     const [integrity] = await db.all(`PRAGMA integrity_check`);
@@ -101,7 +101,7 @@ describe('/Bitcoin Crawler: Second Initialization External Checkpoint Flow', () 
       },
     });
 
-    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await db.connect();
 
     const [integrity] = await db.all(`PRAGMA integrity_check`);
@@ -142,7 +142,7 @@ describe('/Bitcoin Crawler: Second Initialization External Checkpoint Flow', () 
       },
     });
 
-    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    db = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await db.connect();
 
     const [integrity] = await db.all(`PRAGMA integrity_check`);

@@ -121,7 +121,7 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
   });
 
   it('should create DB with correct tables and schema', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const [integrity] = await dbService.all(`PRAGMA integrity_check`);
@@ -148,7 +148,7 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
   });
 
   it('should persist mempool initialization and sync events with correct metadata', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const mempoolEvents = await dbService.all(`SELECT * FROM mempool ORDER BY id ASC`);
@@ -184,7 +184,7 @@ describe('/Bitcoin Crawler: First Initialization Mempool Flow', () => {
   });
 
   it('should also have network table with NetworkInitializedEvent', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
     const networkEvents = await dbService.all(`SELECT * FROM network`);
     expect(networkEvents.length).toBeGreaterThanOrEqual(1);

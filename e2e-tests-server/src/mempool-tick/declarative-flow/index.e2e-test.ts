@@ -93,7 +93,7 @@ describe('/Bitcoin Crawler: Mempool Monitoring Flow (declarative model)', () => 
   });
 
   it('should create user model table alongside network and mempool tables', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const [integrity] = await dbService.all(`PRAGMA integrity_check`);
@@ -106,7 +106,7 @@ describe('/Bitcoin Crawler: Mempool Monitoring Flow (declarative model)', () => 
   });
 
   it('should invoke sources.mempool — MempoolTickEvent persisted in user model', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const events = await dbService.all(`SELECT * FROM ${AGGREGATE_ID} ORDER BY version ASC`);
@@ -122,7 +122,7 @@ describe('/Bitcoin Crawler: Mempool Monitoring Flow (declarative model)', () => 
   });
 
   it('should invoke sources.mempoolTx for each loaded transaction', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const events = await dbService.all(`SELECT * FROM ${AGGREGATE_ID} ORDER BY version ASC`);

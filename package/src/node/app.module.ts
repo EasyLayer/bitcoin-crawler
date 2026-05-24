@@ -131,6 +131,7 @@ export class AppModule {
           ...(eventstoreConfig.EVENTSTORE_DB_PASSWORD && {
             password: eventstoreConfig.EVENTSTORE_DB_PASSWORD,
           }),
+          allowPruning: businessConfig.ALLOW_PRUNING,
           ...(() => {
             const extra: Record<string, number> = {};
             if (eventstoreConfig.EVENTSTORE_PG_POOL_MIN !== undefined)

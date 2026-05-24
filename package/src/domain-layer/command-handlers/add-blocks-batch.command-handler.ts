@@ -4,13 +4,20 @@ import { EventStoreWriteService } from '@easylayer/common/eventstore';
 import {
   AddBlocksBatchCommand,
   Network,
+  Mempool,
   BlockchainProviderService,
   BlockchainValidationError,
 } from '@easylayer/bitcoin';
-import { NetworkModelFactoryService, NetworkReadService, MempoolReadService } from '../services';
+import {
+  NetworkModelFactoryService,
+  MempoolModelFactoryService,
+  NetworkReadService,
+  MempoolReadService,
+} from '../services';
 import { ModelFactoryService, Model, NormalizedModelCtor } from '../framework';
 import type { ProcessBlockExecutionContext } from '../framework';
 import { deepFreeze } from '../../utils/deep-freeze';
+import { BusinessConfig } from '../../config';
 
 @Injectable()
 @CommandHandler(AddBlocksBatchCommand)
@@ -18,8 +25,10 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
   private readonly logger = new Logger(AddBlocksBatchCommandHandler.name);
   constructor(
     private readonly networkModelFactory: NetworkModelFactoryService,
+    private readonly mempoolModelFactory: MempoolModelFactoryService,
     private readonly blockchainProvider: BlockchainProviderService,
     private readonly eventStore: EventStoreWriteService,
+    private readonly businessConfig: BusinessConfig,
     @Inject('FrameworkModelsConstructors')
     private Models: NormalizedModelCtor[],
     private readonly modelFactoryService: ModelFactoryService,
@@ -60,7 +69,35 @@ export class AddBlocksBatchCommandHandler implements ICommandHandler<AddBlocksBa
         }
       }
 
-      await this.eventStore.save([...models, networkModel]);
+      // Compute irreversibleHeight: the latest processed block height minus
+      // the configured depth of confirmations required to consider a block final.
+      // Only passed when depth >= 0; otherwise rotation is disabled.
+      const latestHeight = batch[batch.length - 1]!.height;
+      const depth = this.businessConfig.NETWORK_IRREVERSIBLE_DEPTH;
+      const irreversibleHeight = depth >= 0 ? Math.max(0, latestHeight - depth) : undefined;
+
+      // Remove confirmed transactions from mempool.
+      // Collect all txids from all blocks in the batch and remove them immediately
+      // so they don't linger until the next refresh cycle.
+      let mempoolModel: Mempool | undefined;
+      if (this.blockchainProvider.mempoolManager.allProviders.length > 0) {
+        const confirmedTxids = batch.flatMap((b: any) =>
+          (b.tx ?? []).map((tx: any) => (typeof tx === 'string' ? tx : tx.txid)).filter(Boolean)
+        );
+        if (confirmedTxids.length > 0) {
+          mempoolModel = await this.mempoolModelFactory.initModel();
+          await mempoolModel.removeConfirmed({
+            requestId,
+            txids: confirmedTxids,
+            blockHeight: latestHeight,
+            logger: this.logger,
+          });
+        }
+      }
+
+      await this.eventStore.save(mempoolModel ? [...models, networkModel, mempoolModel] : [...models, networkModel], {
+        irreversibleHeight,
+      });
 
       this.logger.verbose('Blocks saved into eventstore');
     } catch (error) {

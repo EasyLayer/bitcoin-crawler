@@ -18,7 +18,6 @@ export class NetworkModelFactoryService {
       aggregateId: NETWORK_AGGREGATE_ID,
       blockHeight: -1,
       options: {
-        allowPruning: false,
         snapshotsEnabled: true,
         snapshotInterval: 25,
       },
