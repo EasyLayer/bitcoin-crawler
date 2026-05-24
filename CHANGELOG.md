@@ -1,3 +1,12 @@
+## [0.4.2](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.4.1...v0.4.2) (2026-05-24)
+
+
+### Features
+
+* implemented eventstore rotation mechanism for sqlite only; ([dae3919](https://github.com/EasyLayer/bitcoin-crawler/commit/dae3919715873fe55458df7bc17a721bd27db728))
+
+
+
 ## [0.4.1](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.4.0...v0.4.1) (2026-05-23)
 
 
