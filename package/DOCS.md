@@ -298,7 +298,7 @@ app.whenReady().then(async () => {
 # .env for Electron
 TRANSPORT_IPC_TYPE=electron-ipc
 EVENTSTORE_DB_TYPE=sqlite
-EVENTSTORE_DB_NAME=./eventstore/bitcoin.db
+EVENTSTORE_DB_NAME=./eventstore
 PROVIDER_NETWORK_RPC_URLS=http://user:pass@node:8332
 ```
 
@@ -905,6 +905,8 @@ The crawler emits these built-in events regardless of your models:
 | `NETWORK_MAX_BLOCK_WEIGHT` | number | Maximum block weight in weight units |  | ✅ |
 | `NETWORK_DIFFICULTY_ADJUSTMENT_INTERVAL` | number | Difficulty adjustment interval in blocks |  | ✅ |
 | `MEMPOOL_MIN_FEE_RATE` | number | Minimum fee rate for caching transactions in sat/vB |  | ✅ |
+| `NETWORK_IRREVERSIBLE_DEPTH` | number | Number of block confirmations required before a block height is considered irreversible. Used to determine when to rotate the active SQLite eventstore file. Set -1 to disable rotation. Default: 6 (Bitcoin standard finality depth). | `6` | ✅ |
+| `ALLOW_PRUNING` | boolean | Allow deletion of old archived SQLite eventstore files after snapshot rotation. Global setting — applies to all models or none, since all models share the same files. Default: false. | `false` | ✅ |
 
 ### EventStoreConfig
 

@@ -35,7 +35,7 @@ describe('Bitcoin Crawler: First Initialization Only Network Flow', () => {
   });
 
   it('should bootstrap, create database with required tables, and persist initialization events', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     // integrity

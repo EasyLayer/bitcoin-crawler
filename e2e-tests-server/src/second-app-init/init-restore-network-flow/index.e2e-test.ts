@@ -30,7 +30,7 @@ describe('/Bitcoin Crawler: Second Initialization Only Network Flow', () => {
     config({ path: resolve(process.cwd(), 'src/second-app-init/init-restore-network-flow/.env') });
     await cleanDataFolder('eventstore');
 
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
     await dbService.exec(networkTableSQL);
 
@@ -59,7 +59,7 @@ describe('/Bitcoin Crawler: Second Initialization Only Network Flow', () => {
   });
 
   it('should init existing Network aggregate with correct height', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const events = await dbService.all(`SELECT * FROM network ORDER BY version ASC`);

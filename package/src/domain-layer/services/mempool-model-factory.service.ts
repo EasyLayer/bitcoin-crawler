@@ -18,7 +18,6 @@ export class MempoolModelFactoryService {
       minFeeRate: this.businessConfig.MEMPOOL_MIN_FEE_RATE,
       blockHeight: -1,
       options: {
-        allowPruning: true,
         snapshotsEnabled: true,
         snapshotInterval: 6,
       },

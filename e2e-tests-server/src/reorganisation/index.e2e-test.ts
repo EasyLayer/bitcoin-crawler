@@ -105,7 +105,7 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
   });
 
   it('should truncate reorganisation blocks from Network Model', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const [integrity] = await dbService.all(`PRAGMA integrity_check`);
@@ -176,7 +176,7 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
   });
 
   it('should rollback reorganisation blocks from Users Model', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const events = await dbService.all(`SELECT * FROM ${AGGREGATE_ID} ORDER BY version ASC`);

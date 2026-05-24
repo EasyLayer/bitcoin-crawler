@@ -87,7 +87,7 @@ describe('/Bitcoin Crawler: Add Blocks Flow (class model)', () => {
   });
 
   it('should create DB with correct structure', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const [integrity] = await dbService.all(`PRAGMA integrity_check`);
@@ -112,7 +112,7 @@ describe('/Bitcoin Crawler: Add Blocks Flow (class model)', () => {
   });
 
   it('should save and verify Network Model events with correct payload structure', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const events = await dbService.all(`SELECT * FROM network ORDER BY id ASC`);
@@ -149,7 +149,7 @@ describe('/Bitcoin Crawler: Add Blocks Flow (class model)', () => {
   });
 
   it('should save and verify User Model events with correct payload structure', async () => {
-    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/bitcoin.db') });
+    dbService = new SQLiteService({ path: resolve(process.cwd(), 'eventstore/current.sqlite3') });
     await dbService.connect();
 
     const events = await dbService.all(`SELECT * FROM ${AGGREGATE_ID} ORDER BY version ASC`);

@@ -146,6 +146,36 @@ export class BusinessConfig {
   })
   MEMPOOL_MIN_FEE_RATE: number = 1;
 
+  @Transform(({ value }) => {
+    const n = parseInt(value, 10);
+    // -1 disables SQLite file rotation entirely
+    return Number.isFinite(n) ? n : 6;
+  })
+  @IsNumber()
+  @JSONSchema({
+    description:
+      'Number of block confirmations required before a block height is considered irreversible. ' +
+      'Used to determine when to rotate the active SQLite eventstore file. ' +
+      'Set -1 to disable rotation. Default: 6 (Bitcoin standard finality depth).',
+    default: 6,
+  })
+  NETWORK_IRREVERSIBLE_DEPTH: number = 6;
+
+  @Transform(({ value }) => {
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return false;
+  })
+  @IsBoolean()
+  @JSONSchema({
+    description:
+      'Allow deletion of old archived SQLite eventstore files after snapshot rotation. ' +
+      'Global setting — applies to all models or none, since all models share the same files. ' +
+      'Default: false.',
+    default: false,
+  })
+  ALLOW_PRUNING: boolean = false;
+
   /**
    * Returns normalized network configuration built from this config.
    */
