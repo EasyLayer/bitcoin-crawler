@@ -716,8 +716,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@easylayer/bitcoin-crawler@workspace:package"
   dependencies:
-    "@easylayer/bitcoin": "npm:1.3.5"
-    "@easylayer/common": "npm:1.3.5"
+    "@easylayer/bitcoin": "npm:1.3.6"
+    "@easylayer/common": "npm:1.3.6"
     "@nestjs/common": "npm:10.2.10"
     "@nestjs/core": "npm:10.2.10"
     "@nestjs/testing": "npm:10.2.10"
@@ -751,12 +751,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@easylayer/bitcoin@npm:1.3.5":
-  version: 1.3.5
-  resolution: "@easylayer/bitcoin@npm:1.3.5"
+"@easylayer/bitcoin@npm:1.3.6":
+  version: 1.3.6
+  resolution: "@easylayer/bitcoin@npm:1.3.6"
   dependencies:
     "@bitcoinerlab/secp256k1": "npm:1.2.0"
-    "@easylayer/common": "npm:1.3.5"
+    "@easylayer/common": "npm:1.3.6"
     "@nestjs/common": "npm:10.2.10"
     "@nestjs/swagger": "npm:7.1.17"
     "@noble/secp256k1": "npm:3.0.0"
@@ -774,13 +774,13 @@ __metadata:
     rxjs: "npm:7.8.1"
     uuid: "npm:9.0.1"
     zeromq: "npm:6.5.0"
-  checksum: 10/802a5a1edfdfc33f35f54f9089e8f3ff321c18d2dd22427611d4abef61f6bfa780dd94c3255a8bd8bdccea324cb4df6f8a80ef23cb2b5f857d0ef9785061ea3f
+  checksum: 10/697d52dd8ae23d9baa61513c4b000fc258972c20d8f03e3bd693031a2f12fd2ce190121f730f94b4ab273b57bddd26c6fde7cd31f72f4e85fe30d8992a34fc49
   languageName: node
   linkType: hard
 
-"@easylayer/common@npm:1.3.5":
-  version: 1.3.5
-  resolution: "@easylayer/common@npm:1.3.5"
+"@easylayer/common@npm:1.3.6":
+  version: 1.3.6
+  resolution: "@easylayer/common@npm:1.3.6"
   dependencies:
     "@nestjs/common": "npm:10.2.10"
     "@nestjs/swagger": "npm:7.1.17"
@@ -803,17 +803,17 @@ __metadata:
     stream-json: "npm:1.8.0"
     typeorm: "npm:0.3.20"
     uuid: "npm:9.0.1"
-  checksum: 10/946f68ecb98bc7cc56c9359bf59b4261e442f79528982279b3c8ee4529d03785036c58b8255362972ab02903cd21e71dd6650a73cc071fc61b5e0ea51866d5c8
+  checksum: 10/ec39f0bf1727ca3d114b2a3f565f8c646ff0926c7447fc1ffd82b7f328692b90c3cf76502c12b1734df87c485e7cc3300b31a2a7e132aaba16202b195b7b82ae
   languageName: node
   linkType: hard
 
-"@easylayer/transport-sdk@npm:1.3.1":
-  version: 1.3.1
-  resolution: "@easylayer/transport-sdk@npm:1.3.1"
+"@easylayer/transport-sdk@npm:1.3.2":
+  version: 1.3.2
+  resolution: "@easylayer/transport-sdk@npm:1.3.2"
   dependencies:
     express: "npm:5.1.0"
     ws: "npm:8.18.3"
-  checksum: 10/5a92bbcf68dd5f5393a5cccd67e5ab533e042f96b8423b21579ae28e2b4b8ca340c4ef451655c1329caaa76b67b8cbde88e1393bf3c789a3b48a6962c77d6a06
+  checksum: 10/e2849ed379fa51711327efa3b240c873b901002b609f28bc0304939042b207cdba198db0b2f4eec91e4a0533cada3fb24007cac7a2505a38b2fca1cc5b107a72
   languageName: node
   linkType: hard
 
@@ -3944,8 +3944,8 @@ __metadata:
   resolution: "advanced-wallet-watcher@workspace:examples/business/advanced-wallet-watcher"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
-    "@easylayer/transport-sdk": "npm:1.3.1"
+    "@easylayer/common": "npm:1.3.6"
+    "@easylayer/transport-sdk": "npm:1.3.2"
     "@types/express": "npm:5"
     "@types/node": "npm:20.10.4"
     express: "npm:5.1.0"
@@ -4413,8 +4413,8 @@ __metadata:
   resolution: "base-wallet-watcher@workspace:examples/business/base-wallet-watcher"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
-    "@easylayer/transport-sdk": "npm:1.3.1"
+    "@easylayer/common": "npm:1.3.6"
+    "@easylayer/transport-sdk": "npm:1.3.2"
     "@types/express": "npm:5"
     "@types/node": "npm:20.10.4"
     express: "npm:5.1.0"
@@ -4543,10 +4543,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "bitcoin-crawler-browser-worker-example@workspace:examples/system/browser-worker"
   dependencies:
-    "@easylayer/bitcoin": "npm:1.3.5"
+    "@easylayer/bitcoin": "npm:1.3.6"
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
-    "@easylayer/transport-sdk": "npm:1.3.1"
+    "@easylayer/common": "npm:1.3.6"
+    "@easylayer/transport-sdk": "npm:1.3.2"
     "@types/node": "npm:20.10.4"
     reflect-metadata: "npm:0.1.14"
     typescript: "npm:5.3.3"
@@ -4558,10 +4558,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "bitcoin-crawler-desktop-example@workspace:examples/system/desktop"
   dependencies:
-    "@easylayer/bitcoin": "npm:1.3.5"
+    "@easylayer/bitcoin": "npm:1.3.6"
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
-    "@easylayer/transport-sdk": "npm:1.3.1"
+    "@easylayer/common": "npm:1.3.6"
+    "@easylayer/transport-sdk": "npm:1.3.2"
     "@electron/rebuild": "npm:4.0.3"
     "@types/node": "npm:20.10.4"
     concurrently: "npm:8.0.0"
@@ -4581,8 +4581,8 @@ __metadata:
   resolution: "bitcoin-crawler-docker-example@workspace:examples/system/docker"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
-    "@easylayer/transport-sdk": "npm:1.3.1"
+    "@easylayer/common": "npm:1.3.6"
+    "@easylayer/transport-sdk": "npm:1.3.2"
     "@types/express": "npm:5"
     "@types/node": "npm:20.10.4"
     express: "npm:5.1.0"
@@ -5261,7 +5261,7 @@ __metadata:
   resolution: "class-model@workspace:examples/system/class-model"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
+    "@easylayer/common": "npm:1.3.6"
     "@types/node": "npm:20.10.4"
     rimraf: "npm:5.0.5"
     ts-node: "npm:10.9.2"
@@ -6198,7 +6198,7 @@ __metadata:
   resolution: "declarative-model@workspace:examples/system/declarative-model"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
+    "@easylayer/common": "npm:1.3.6"
     "@types/node": "npm:20.10.4"
     rimraf: "npm:5.0.5"
     ts-node: "npm:10.9.2"
@@ -8596,8 +8596,8 @@ __metadata:
   resolution: "integration-tests@workspace:integration-tests"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
-    "@easylayer/transport-sdk": "npm:1.3.1"
+    "@easylayer/common": "npm:1.3.6"
+    "@easylayer/transport-sdk": "npm:1.3.2"
     "@types/jest": "npm:29.5.11"
     "@types/node": "npm:20.10.4"
     dotenv: "npm:16.4.5"
@@ -11572,7 +11572,7 @@ __metadata:
   resolution: "postgres@workspace:examples/system/postgres"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
+    "@easylayer/common": "npm:1.3.6"
     "@types/node": "npm:20.10.4"
     rimraf: "npm:5.0.5"
     ts-node: "npm:10.9.2"
@@ -13405,8 +13405,8 @@ __metadata:
   resolution: "transport@workspace:examples/system/transport"
   dependencies:
     "@easylayer/bitcoin-crawler": "npm:0.4.2"
-    "@easylayer/common": "npm:1.3.5"
-    "@easylayer/transport-sdk": "npm:1.3.1"
+    "@easylayer/common": "npm:1.3.6"
+    "@easylayer/transport-sdk": "npm:1.3.2"
     "@types/express": "npm:5"
     "@types/node": "npm:20.10.4"
     express: "npm:5.1.0"

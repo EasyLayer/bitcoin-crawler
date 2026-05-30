@@ -68,7 +68,7 @@ describe('/Bitcoin Crawler: HTTP Transport', () => {
     };
     eventsDeferred = makeDeferred();
 
-    config({ path: resolve(process.cwd(), 'src/http-checks/.env') });
+    config({ path: resolve(process.cwd(), 'src/http-checks/.env'), override: true });
 
     await cleanDataFolder('eventstore');
 
@@ -111,6 +111,18 @@ describe('/Bitcoin Crawler: HTTP Transport', () => {
         return heights.map((height) => {
           const block = mockBlocks.find((item) => Number(item.height) === Number(height));
           if (!block) throw new Error(`No mock raw block for height ${height}`);
+          return toRawMockBlock(block);
+        });
+      });
+
+    jest
+      .spyOn(BlockchainProviderService.prototype, 'getManyBlocksRawByKnownHashes')
+      .mockImplementation(async (infos: Array<{ hash?: string; height?: number } | null>): Promise<any[]> => {
+        return infos.map((info) => {
+          const block = mockBlocks.find(
+            (item) => String(item.hash) === String(info?.hash) || Number(item.height) === Number(info?.height)
+          );
+          if (!block) throw new Error(`No mock raw block for known hash ${info?.hash} at height ${info?.height}`);
           return toRawMockBlock(block);
         });
       });

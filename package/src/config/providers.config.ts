@@ -130,13 +130,15 @@ export class ProvidersConfig {
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);
-    return n || 1000;
+    return n || 15;
   })
   @IsNumber()
   @JSONSchema({
-    description: 'Maximum batch size for requests for all providers',
+    description:
+      'Maximum JSON-RPC method calls per HTTP batch request for all providers. Also used as the initial RPC preload count.',
+    default: 15,
   })
-  PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE: number = 1000;
+  PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE: number = 15;
 
   @Transform(({ value }) => {
     const n = parseInt(value, 10);

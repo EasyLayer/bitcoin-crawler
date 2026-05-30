@@ -880,6 +880,9 @@ The crawler emits these built-in events regardless of your models:
 | Property | Type | Description | Default | Required |
 |---|---|---|---|:---:|
 | `BLOCKS_QUEUE_LOADER_STRATEGY_NAME` | string | Loader strategy name for the Bitcoin blocks queue. | `"rpc"` | ✅ |
+| `BLOCKS_QUEUE_LOADER_REQUEST_BLOCKS_BATCH_SIZE` | number | Optional maximum predicted RPC raw-block reply size per loader request in bytes. When unset, AppModule keeps the legacy default: NETWORK_MAX_BLOCK_WEIGHT * 2. |  |  |
+| `BLOCKS_QUEUE_ITERATOR_BLOCKS_BATCH_SIZE` | number | Optional maximum raw bytes to parse/process from queue in one iterator batch. When unset, AppModule keeps the legacy default: NETWORK_MAX_BLOCK_WEIGHT * 2. |  |  |
+| `BLOCKS_QUEUE_VERIFY_MERKLE_ROOT` | boolean | Verify block Merkle roots while parsing raw blocks from BlocksQueue. Default false for throughput; enable for diagnostic/safety runs. | `false` | ✅ |
 
 ### BootstrapConfig
 
@@ -940,7 +943,7 @@ The crawler emits these built-in events regardless of your models:
 | `PROVIDER_P2P_MAX_PEERS` | number | Maximum number of P2P peers to connect for network provider |  | ✅ |
 | `PROVIDER_NETWORK_P2P_PEERS` | undefined | Network P2P peers as comma-separated host:port pairs |  |  |
 | `PROVIDER_NETWORK_P2P_MAX_BLOCKS_BATCH_SIZE` | number | Maximum blocks batch size for network P2P requests |  | ✅ |
-| `PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE` | number | Maximum batch size for requests for all providers |  | ✅ |
+| `PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE` | number | Maximum JSON-RPC method calls per HTTP batch request for all providers. Also used as the initial RPC preload count. | `15` | ✅ |
 | `PROVIDER_RATE_LIMIT_MAX_CONCURRENT_REQUESTS` | number | Maximum concurrent requests for providers |  | ✅ |
 | `PROVIDER_RATE_LIMIT_REQUEST_DELAY_MS` | number | Delay between batches in milliseconds for providers |  | ✅ |
 
