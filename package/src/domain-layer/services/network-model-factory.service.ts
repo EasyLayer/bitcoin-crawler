@@ -1,20 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { EventStoreReadService } from '@easylayer/common/eventstore';
 import { Network, LightBlock } from '@easylayer/bitcoin';
-import { BlocksQueueConfig } from '../../config';
 
 export const NETWORK_AGGREGATE_ID = 'network';
 
 @Injectable()
 export class NetworkModelFactoryService {
-  constructor(
-    private readonly eventStoreService: EventStoreReadService<Network>,
-    private readonly blocksQueueConfig: BlocksQueueConfig
-  ) {}
+  constructor(private readonly eventStoreService: EventStoreReadService<Network>) {}
 
   public createNewModel(): Network {
     return new Network({
-      maxSize: Math.max(this.blocksQueueConfig.BLOCKS_QUEUE_LOADER_PRELOADER_BASE_COUNT, 1000),
+      maxSize: 1000,
       aggregateId: NETWORK_AGGREGATE_ID,
       blockHeight: -1,
       options: {

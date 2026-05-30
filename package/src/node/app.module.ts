@@ -70,9 +70,13 @@ export class AppModule {
       validator: { whitelist: true },
     });
 
-    const queueIteratorBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
-    const queueLoaderRequestBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
+    const defaultQueueBlocksBatchSize = businessConfig.NETWORK_MAX_BLOCK_WEIGHT * 2;
+    const queueIteratorBlocksBatchSize =
+      blocksQueueConfig.BLOCKS_QUEUE_ITERATOR_BLOCKS_BATCH_SIZE ?? defaultQueueBlocksBatchSize;
+    const queueLoaderRequestBlocksBatchSize =
+      blocksQueueConfig.BLOCKS_QUEUE_LOADER_REQUEST_BLOCKS_BATCH_SIZE ?? defaultQueueBlocksBatchSize;
     const maxQueueSize = queueIteratorBlocksBatchSize * 10;
+    const queueLoaderPreloadCount = Math.max(1, providersConfig.PROVIDER_RATE_LIMIT_MAX_BATCH_SIZE);
 
     // This models will not be used, only for run event store
     const networkModel = new Network({ aggregateId: NETWORK_AGGREGATE_ID, maxSize: 0, blockHeight: -1 });
@@ -153,10 +157,11 @@ export class AppModule {
           blocksCommandExecutor: NetworkCommandFactoryService,
           maxBlockHeight: businessConfig.MAX_BLOCK_HEIGHT,
           queueLoaderStrategyName: blocksQueueConfig.BLOCKS_QUEUE_LOADER_STRATEGY_NAME,
-          basePreloadCount: blocksQueueConfig.BLOCKS_QUEUE_LOADER_PRELOADER_BASE_COUNT,
+          preloadCount: queueLoaderPreloadCount,
           blockSize: businessConfig.NETWORK_MAX_BLOCK_WEIGHT,
           queueLoaderRequestBlocksBatchSize,
           queueIteratorBlocksBatchSize,
+          verifyMerkleRoot: blocksQueueConfig.BLOCKS_QUEUE_VERIFY_MERKLE_ROOT,
           maxQueueSize,
           blockTimeMs: businessConfig.NETWORK_TARGET_BLOCK_TIME,
         }),

@@ -48,6 +48,18 @@ jest.spyOn(BlockchainProviderService.prototype, 'getManyBlocksRawByHeights').moc
 );
 
 jest
+  .spyOn(BlockchainProviderService.prototype, 'getManyBlocksRawByKnownHashes')
+  .mockImplementation(async (infos: Array<{ hash?: string; height?: number } | null>): Promise<any[]> => {
+    return infos.map((info) => {
+      const block = mockBlocks.find(
+        (item) => String(item.hash) === String(info?.hash) || Number(item.height) === Number(info?.height)
+      );
+      if (!block) throw new Error(`No mock raw block for known hash ${info?.hash} at height ${info?.height}`);
+      return toRawMockBlock(block);
+    });
+  });
+
+jest
   .spyOn(BlockchainProviderService.prototype, 'parseBlock')
   .mockImplementation((_bytes: Buffer, height: number): any => {
     const block = mockBlocks.find((item) => Number(item.height) === Number(height));
@@ -71,7 +83,7 @@ describe('/Bitcoin Crawler: Add Blocks Flow (declarative model)', () => {
 
   beforeAll(async () => {
     jest.resetModules();
-    config({ path: resolve(process.cwd(), 'src/blocks-add/declarative-model-flow/.env') });
+    config({ path: resolve(process.cwd(), 'src/blocks-add/declarative-model-flow/.env'), override: true });
     await cleanDataFolder('eventstore');
     await bootstrap({
       Models: [BlocksModel],

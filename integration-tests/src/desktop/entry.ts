@@ -41,6 +41,18 @@ BlockchainProviderService.prototype.getManyBlocksRawByHeights = async function (
   });
 };
 
+BlockchainProviderService.prototype.getManyBlocksRawByKnownHashes = async function (
+  infos: Array<{ hash?: string; height?: number } | null>
+): Promise<any[]> {
+  return infos.map((info) => {
+    const block = mockBlocks.find(
+      (item: any) => String(item.hash) === String(info?.hash) || Number(item.height) === Number(info?.height)
+    );
+    if (!block) throw new Error(`No mock raw block for known hash ${info?.hash} at height ${info?.height}`);
+    return toRawMockBlock(block);
+  });
+};
+
 BlockchainProviderService.prototype.parseBlock = function (_bytes: Buffer, height: number): any {
   const block = mockBlocks.find((item: any) => Number(item.height) === Number(height));
   if (!block) throw new Error(`No mock parsed block for height ${height}`);
@@ -55,7 +67,7 @@ async function run() {
   await app.whenReady();
 
   try {
-    config({ path: resolve(process.cwd(), 'src/desktop/.env') });
+    config({ path: resolve(process.cwd(), 'src/desktop/.env'), override: true });
     await cleanDataFolder('eventstore');
 
     const easylayer = await bootstrap({

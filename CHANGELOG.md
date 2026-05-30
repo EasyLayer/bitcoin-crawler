@@ -1,3 +1,12 @@
+## [0.4.3](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.4.2...v0.4.3) (2026-05-30)
+
+
+### Bug Fixes
+
+* fixed duplication events; updated config envs; fixed rpc load strategy; ([f8896ba](https://github.com/EasyLayer/bitcoin-crawler/commit/f8896ba810f4f1a4c4ad1b6c4e6bfaceb0bbcafd))
+
+
+
 ## [0.4.2](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.4.1...v0.4.2) (2026-05-24)
 
 

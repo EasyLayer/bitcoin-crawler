@@ -65,6 +65,18 @@ jest
   });
 
 jest
+  .spyOn(BlockchainProviderService.prototype, 'getManyBlocksRawByKnownHashes')
+  .mockImplementation(async (infos: Array<{ hash?: string; height?: number } | null>): Promise<any[]> => {
+    return infos.map((info) => {
+      const block = pickSrc().find(
+        (item: any) => String(item.hash) === String(info?.hash) || Number(item.height) === Number(info?.height)
+      );
+      if (!block) throw new Error(`No mock raw block for known hash ${info?.hash} at height ${info?.height}`);
+      return toRawMockBlock(block);
+    });
+  });
+
+jest
   .spyOn(BlockchainProviderService.prototype, 'parseBlock')
   .mockImplementation((_bytes: Buffer, height: number): any => {
     const block = pickSrc().find((item: any) => Number(item.height) === Number(height));
@@ -89,7 +101,7 @@ describe('/Bitcoin Crawler: Reorganisation Flow', () => {
 
   beforeAll(async () => {
     jest.resetModules();
-    config({ path: resolve(process.cwd(), 'src/reorganisation/.env') });
+    config({ path: resolve(process.cwd(), 'src/reorganisation/.env'), override: true });
     await cleanDataFolder('eventstore');
     await bootstrap({
       Models: [BlocksModel],

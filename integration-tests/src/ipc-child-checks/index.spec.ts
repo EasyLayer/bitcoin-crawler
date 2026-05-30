@@ -75,7 +75,7 @@ describe('/Bitcoin Crawler: IPC Transport (server in child, client in parent)', 
 
     eventsDeferred = makeDeferred();
 
-    config({ path: resolve(process.cwd(), 'src/ipc-child-checks/.env') });
+    config({ path: resolve(process.cwd(), 'src/ipc-child-checks/.env'), override: true });
 
     await cleanDataFolder('eventstore');
 
