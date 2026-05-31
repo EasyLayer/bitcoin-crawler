@@ -1,3 +1,12 @@
+## [0.4.4](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.4.3...v0.4.4) (2026-05-31)
+
+
+### Bug Fixes
+
+* fixed trace logging; ([2c3a281](https://github.com/EasyLayer/bitcoin-crawler/commit/2c3a2819b66fc0f4520222c66967f0ae22ac8091))
+
+
+
 ## [0.4.3](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.4.2...v0.4.3) (2026-05-30)
 
 
