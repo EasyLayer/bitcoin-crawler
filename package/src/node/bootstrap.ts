@@ -25,7 +25,7 @@ export const bootstrap = async ({
 
   const allowedLevels = new Set(['debug', 'info', 'warn', 'error', 'fatal']);
   const envLevel = (process.env.LOG_LEVEL || '').toLowerCase();
-  const loggerLevel = allowedLevels.has(envLevel) ? (envLevel as any) : process.env.TRACE === '1' ? 'trace' : 'info';
+  const loggerLevel = process.env.TRACE === '1' ? 'trace' : allowedLevels.has(envLevel) ? (envLevel as any) : 'info';
 
   const commonFactoryOpts = {
     bufferLogs: true,
