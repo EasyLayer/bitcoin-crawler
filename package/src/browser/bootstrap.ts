@@ -39,7 +39,7 @@ export const bootstrap = async ({
 
   const allowedLevels = new Set(['debug', 'info', 'warn', 'error', 'fatal']);
   const envLevel = (env.LOG_LEVEL || '').toLowerCase();
-  const loggerLevel = allowedLevels.has(envLevel) ? (envLevel as any) : env.TRACE === '1' ? 'trace' : 'info';
+  const loggerLevel = env.TRACE === '1' ? 'trace' : allowedLevels.has(envLevel) ? (envLevel as any) : 'info';
 
   const { classHandlers, factories } = splitQueryHandlers(UserQueryHandlers);
 
