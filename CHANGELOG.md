@@ -1,3 +1,12 @@
+# [0.5.0](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.4.4...v0.5.0) (2026-06-06)
+
+
+### Features
+
+* improved memory handling; removed rust queue; ([103735c](https://github.com/EasyLayer/bitcoin-crawler/commit/103735cfcba7c7a2a23a1e4ec7403e0d1087d573))
+
+
+
 ## [0.4.4](https://github.com/EasyLayer/bitcoin-crawler/compare/v0.4.3...v0.4.4) (2026-05-31)
 
 
