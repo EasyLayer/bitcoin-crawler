@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@easylayer/bitcoin-crawler": "0.4.4",
-    "@easylayer/common": "1.3.7",
+    "@easylayer/common": "1.4.0",
     "@easylayer/transport-sdk": "1.3.2",
     "express": "5.1.0",
     "uuid": "9.0.1"
